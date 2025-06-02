@@ -8,9 +8,8 @@ from app.models.user import User
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-# Pydantic schemas
 class UserBase(BaseModel):
-    email: EmailStr
+    email: str
     username: str
 
 
@@ -20,7 +19,6 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     id: int
-    is_active: bool
 
     class Config:
         from_attributes = True
@@ -39,12 +37,7 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
             status_code=400, detail="Email or username already registered"
         )
 
-    # Hash password (in production, use proper password hashing)
-    hashed_password = f"hashed_{user.password}"
-
-    db_user = User(
-        email=user.email, username=user.username, hashed_password=hashed_password
-    )
+    db_user = User(email=user.email, username=user.username, password=user.password)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)

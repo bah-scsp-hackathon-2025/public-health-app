@@ -8,7 +8,6 @@ from app.models.alert import Alert
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
 
-# Pydantic schemas
 class AlertModel(BaseModel):
     name: str
     description: str
@@ -17,14 +16,14 @@ class AlertModel(BaseModel):
     location: str
 
 
+class AlertResponse(AlertModel):
+    id: int
+
+
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_alert(alert: AlertModel, db: Session = Depends(get_db)):
     # Check if alert already exists
-    db_alert = (
-        db.query(Alert)
-        .filter(Alert.name == alert.name)
-        .first()
-    )
+    db_alert = db.query(Alert).filter(Alert.name == alert.name).first()
     if db_alert:
         raise HTTPException(status_code=400, detail="Alert already exists")
 
@@ -33,7 +32,7 @@ async def create_alert(alert: AlertModel, db: Session = Depends(get_db)):
         description=alert.description,
         risk_score=alert.risk_score,
         risk_reason=alert.risk_reason,
-        location=alert.location
+        location=alert.location,
     )
     db.add(db_alert)
     db.commit()

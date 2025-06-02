@@ -1,3 +1,41 @@
+# Security
+**/*.env
+!**/*.env.example
+.dccache
+
+# Python
+**/__pycache__/
+**/*pytest_cache/
+**/*venv/
+
+# SQLite
+**/*.db
+**/*.sqlite
+**/*.env
+
+# Builds
+**/dist/
+**/build/
+
+# Workspace
+**/.astro/
+**/.idea/
+**/.vscode/
+
+# Packages
+**/node_modules/
+
+# Package manager logs
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
+
+# Misc
+**/.DS_Store
+**/Thumbs.db
+**/*~
+**/*.swp
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
