@@ -11,6 +11,7 @@
 # SQLite
 **/*.db
 **/*.sqlite
+**/*.env
 
 # Builds
 **/dist/
