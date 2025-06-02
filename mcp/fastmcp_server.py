@@ -2,9 +2,10 @@
 """
 FastMCP Public Health Server with SSE Transport
 
-This server provides two tools:
+This server provides three tools:
 1. get_public_health_alerts - Retrieves public health alerts with filtering options
 2. get_health_risk_trends - Returns time series data for public health risk trends
+3. get_server_info - Server information and capabilities
 
 Uses FastMCP framework with SSE transport for improved developer experience.
 """
@@ -16,7 +17,7 @@ from fastmcp import FastMCP
 # Create the MCP server with SSE transport
 mcp = FastMCP("Public Health FastMCP")
 
-# Complete mock data for public health alerts (keeping all detail)
+# Complete mock data for public health alerts
 MOCK_ALERTS = [
     {
         "id": "alert_001",
@@ -116,7 +117,7 @@ MOCK_ALERTS = [
     }
 ]
 
-# Complete mock data for health risk trends (keeping all detail)
+# Complete mock data for health risk trends
 MOCK_RISK_TRENDS = {
     "covid_doctor_visits": {
         "name": "COVID-19 Doctor Visits",
