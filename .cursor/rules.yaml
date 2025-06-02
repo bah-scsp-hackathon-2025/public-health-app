@@ -1,0 +1,63 @@
+version: 1
+groups:
+  - name: "Frontend"
+    match:
+      - path: "frontend/**"
+      - path: "apps/nextjs/**"
+      - path: "**/pages/**"
+      - path: "**/components/**"
+      - path: "**/*.tsx"
+      - path: "**/*.jsx"
+      - path: "**/*.css"
+      - path: "**/*.scss"
+    language: "typescript"
+
+  - name: "Backend"
+    match:
+      - path: "backend/**"
+      - path: "**/main.py"
+      - path: "**/api/**"
+      - path: "**/services/**"
+      - path: "**/*.py"
+    language: "python"
+
+  - name: "LangGraph Workflows"
+    match:
+      - path: "**/workflows/**"
+      - path: "**/langgraph/**"
+      - path: "**/*_workflow.py"
+    language: "python"
+    description: "LangGraph orchestration flows and state management logic"
+
+  - name: "MCP Services"
+    match:
+      - path: "mcp/**"
+      - path: "**/mcp/**"
+      - path: "**/services/mcp_*.py"
+    language: "python"
+    description: "Microservice control plane logic and support files"
+
+  - name: "Shared"
+    match:
+      - path: "**/utils/**"
+      - path: "**/shared/**"
+      - path: "**/lib/**"
+    description: "Common utilities, helpers, and shared modules"
+
+  - name: "Configuration"
+    match:
+      - path: "**/next.config.js"
+      - path: "**/tsconfig.json"
+      - path: "**/pyproject.toml"
+      - path: "**/requirements.txt"
+      - path: "**/.env"
+      - path: "**/docker-compose.yml"
+    description: "Build and deployment configuration"
+
+  - name: "Tests"
+    match:
+      - path: "**/tests/**"
+      - path: "**/__tests__/**"
+      - path: "**/test_*.py"
+      - path: "**/*.test.ts"
+    description: "Unit and integration tests"

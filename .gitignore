@@ -184,6 +184,12 @@ out/
 *.swo
 *~
 
+# Cursor IDE - exclude user-specific files but keep project config
+.cursor/chats/
+.cursor/logs/
+.cursor/settings.json
+# Keep .cursor/rules.yaml (project-specific configuration)
+
 # OS generated files
 .DS_Store
 .DS_Store?
