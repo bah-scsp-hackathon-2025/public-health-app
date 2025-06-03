@@ -42,10 +42,16 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     delphi_epidata_key: str = ""
     
-    # LangSmith Configuration
-    langsmith_api_key: str = ""
-    langsmith_project: str = "public-health-dashboard"
-    langsmith_tracing: bool = True
+    # Langfuse Configuration
+    langfuse_secret_key: str = ""
+    langfuse_public_key: str = ""
+    langfuse_host: str = "https://cloud.langfuse.com"
+    langfuse_project: str = "public-health-dashboard"
+    langfuse_tracing: bool = True
+    
+    # SSL Configuration
+    ssl_verify: bool = True  # Set to False to disable SSL verification if needed
+    ssl_ca_bundle: str = ""  # Path to custom CA bundle if needed
 
     class Config:
         env_file = [".env", "../.env", "../../.env"]  # Multiple possible locations

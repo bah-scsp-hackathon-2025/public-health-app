@@ -9,12 +9,14 @@ Phase 2: Generate comprehensive dashboard summaries with actionable insights
 The agent demonstrates modern LLM workflows with tool integration for public health analysis.
 """
 
+import anthropic
 import asyncio
-import os
+import certifi
+import httpx
 import logging
+import os
+import ssl
 from datetime import datetime
-from typing import Dict, List, Optional, Annotated, Any, TypedDict
-from operator import add
 
 from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
 from langchain_anthropic import ChatAnthropic
@@ -23,7 +25,11 @@ from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from pydantic import BaseModel, Field
-import anthropic
+from operator import add
+from typing import Dict, List, Optional, Annotated, Any, TypedDict
+
+# Langfuse imports
+from langfuse.callback import CallbackHandler
 
 
 # Load configuration from settings
@@ -126,8 +132,8 @@ class PublicHealthReActAgent:
     """LangGraph ReAct agent for public health dashboard generation using epidemiological data"""
     
     def __init__(self):
-        # Initialize LangSmith tracing if configured
-        self._setup_langsmith_tracing()
+        # Initialize Langfuse tracing if configured
+        self._setup_langfuse_tracing()
         # Load MCP configuration from environment variables
         self.mcp_host = settings.mcp_server_host if hasattr(settings, 'mcp_server_host') else os.getenv("MCP_SERVER_HOST", "localhost")
         self.mcp_port = int(settings.mcp_server_port if hasattr(settings, 'mcp_server_port') else os.getenv("MCP_SERVER_PORT", "8000"))
@@ -148,8 +154,27 @@ class PublicHealthReActAgent:
                 betas=["extended-cache-ttl-2025-04-11", "files-api-2025-04-14"],
                 api_key=anthropic_key
             )
-            # Initialize direct Anthropic client for Files API
-            self.anthropic_client = anthropic.Anthropic(api_key=anthropic_key)
+            # Initialize direct Anthropic client for Files API with SSL configuration
+            # Create custom httpx client with proper SSL configuration
+            ssl_verify = settings.ssl_verify if hasattr(settings, 'ssl_verify') else True
+            if ssl_verify:
+                # Use certifi CA bundle for SSL verification
+                ca_bundle = settings.ssl_ca_bundle if hasattr(settings, 'ssl_ca_bundle') and settings.ssl_ca_bundle else certifi.where()
+                ssl_context = ssl.create_default_context(cafile=ca_bundle)
+                verify_setting = ssl_context
+                logger.debug(f"🔒 SSL verification enabled with CA bundle: {ca_bundle}")
+            else:
+                verify_setting = False
+                logger.warning("⚠️ SSL verification disabled - this is not recommended for production")
+            
+            custom_httpx_client = httpx.Client(
+                verify=verify_setting,
+                timeout=httpx.Timeout(60.0, read=60.0, write=60.0, connect=10.0)
+            )
+            self.anthropic_client = anthropic.Anthropic(
+                api_key=anthropic_key,
+                http_client=custom_httpx_client
+            )
         else:
             print("⚠️  Anthropic API key not found or invalid. ReAct agent requires valid Anthropic API key.")
             raise ValueError("ReAct agent requires valid Anthropic API key")
@@ -161,23 +186,36 @@ class PublicHealthReActAgent:
         # Initialize the workflow
         self.workflow = None
         
-    def _setup_langsmith_tracing(self):
-        """Configure LangSmith tracing for workflow observability"""
+        # Initialize Langfuse callback handler
+        self.langfuse_handler = None
+        
+    def _setup_langfuse_tracing(self):
+        """Configure Langfuse tracing for workflow observability"""
         try:
-            langsmith_api_key = settings.langsmith_api_key if hasattr(settings, 'langsmith_api_key') else os.getenv("LANGSMITH_API_KEY")
+            langfuse_secret_key = settings.langfuse_secret_key if hasattr(settings, 'langfuse_secret_key') else os.getenv("LANGFUSE_SECRET_KEY")
+            langfuse_public_key = settings.langfuse_public_key if hasattr(settings, 'langfuse_public_key') else os.getenv("LANGFUSE_PUBLIC_KEY")
+            langfuse_host = settings.langfuse_host if hasattr(settings, 'langfuse_host') else os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
             
-            if langsmith_api_key and settings.langsmith_tracing if hasattr(settings, 'langsmith_tracing') else os.getenv("LANGSMITH_TRACING", "true").lower() == "true":
-                # Set LangSmith environment variables
-                os.environ["LANGCHAIN_TRACING_V2"] = "true"
-                os.environ["LANGCHAIN_API_KEY"] = langsmith_api_key
-                os.environ["LANGCHAIN_PROJECT"] = settings.langsmith_project if hasattr(settings, 'langsmith_project') else "public-health-dashboard"
-                
-                logger.info(f"✅ LangSmith tracing enabled for project: {os.environ['LANGCHAIN_PROJECT']}")
+            if langfuse_secret_key and langfuse_public_key and (settings.langfuse_tracing if hasattr(settings, 'langfuse_tracing') else os.getenv("LANGFUSE_TRACING", "true").lower() == "true"):
+                self.langfuse_handler = CallbackHandler(
+                    secret_key=langfuse_secret_key,
+                    public_key=langfuse_public_key,
+                    host=langfuse_host,
+                    session_id=f"react-agent-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+                    user_id="public-health-system",
+                    metadata={
+                        "agent_type": "react",
+                        "project": settings.langfuse_project if hasattr(settings, 'langfuse_project') else "public-health-dashboard",
+                        "environment": "production"
+                    }
+                )
+                logger.info(f"✅ Langfuse tracing enabled for project: {settings.langfuse_project if hasattr(settings, 'langfuse_project') else 'public-health-dashboard'}")
             else:
-                logger.info("ℹ️  LangSmith tracing disabled (no API key or tracing disabled)")
+                logger.info("ℹ️  Langfuse tracing disabled (missing keys or tracing disabled)")
                 
         except Exception as e:
-            logger.warning(f"⚠️ Failed to setup LangSmith tracing: {str(e)}")
+            logger.warning(f"⚠️ Failed to setup Langfuse tracing: {str(e)}")
+            self.langfuse_handler = None
         
     async def _init_mcp_client_and_workflow(self):
         """Initialize MCP client connection, tools, and workflow"""
@@ -286,8 +324,10 @@ Respond with either:
             # Add conversation context
             messages = [system_msg] + state["messages"]
             
-            # Get LLM response
-            response = await self.llm.ainvoke(messages)
+            # Get LLM response with Langfuse callback if available
+            callbacks = [self.langfuse_handler] if self.langfuse_handler else []
+            config = {"callbacks": callbacks} if callbacks else {}
+            response = await self.llm.ainvoke(messages, config=config)
             
             # Update state with reasoning
             new_state = state.copy()
@@ -493,7 +533,9 @@ Use the structured data provided to create specific, evidence-based insights tha
                 response = await self._invoke_with_files(messages, policy_file_ids)
             else:
                 logger.debug("📄 No policy documents found, proceeding without files")
-                response = await self.llm.ainvoke(messages)
+                callbacks = [self.langfuse_handler] if self.langfuse_handler else []
+                config = {"callbacks": callbacks} if callbacks else {}
+                response = await self.llm.ainvoke(messages, config=config)
             
             # Build structured outputs from state data
             final_state = state.copy()
@@ -768,7 +810,7 @@ An error occurred while generating the epidemiological dashboard:
             
             logger.info("🔄 Starting LangGraph ReAct workflow...")
             
-            # Run the workflow with enhanced config for LangSmith tracing
+            # Run the workflow with enhanced config for Langfuse tracing
             config = {
                 "configurable": {"thread_id": "react_dashboard_session"},
                 "tags": ["public-health", "react-agent", "epidemiological-analysis"],
@@ -779,6 +821,11 @@ An error occurred while generating the epidemiological dashboard:
                     "data_sources": ["delphi_epidata", "policy_documents"]
                 }
             }
+            
+            # Add Langfuse callback if available
+            if self.langfuse_handler:
+                config["callbacks"] = [self.langfuse_handler]
+                
             final_state = await self.workflow.ainvoke(initial_state, config=config)
             
             logger.info("✅ LangGraph ReAct workflow completed")
