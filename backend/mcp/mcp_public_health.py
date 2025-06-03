@@ -16,11 +16,14 @@ from fastmcp import FastMCP
 import pandas as pd
 import numpy as np
 from scipy.stats import linregress
-from epidatpy import EpiDataContext, EpiRange
 import os
 import tempfile
 import logging
 import json
+import requests
+# from load_dotenv import load_dotenv
+# load_dotenv(".env")
+
 
 def setup_debug_logging():
     """Setup comprehensive debug logging for MCP server"""
@@ -51,14 +54,14 @@ mcp = FastMCP("Public Health FastMCP")
 @mcp.tool()
 def fetch_epi_signal(
     signal: str,
-    time_type: Literal["day", "week", "month"] = "day",
-    geo_type: Literal["county", "hrr", "msa", "dma", "state"] = "state",
-    start_time: Optional[str] = None,
-    end_time: Optional[str] = None,
-    geo_values: Optional[List[str]] = None
-) -> str:
+    time_type: str,
+    geo_type: str,
+    start_time: str,
+    end_time: str,
+    as_json: bool = True
+) -> json:
     """
-    Fetch a specific COVID-19 signal from the EpiDataContext and save it to a CSV file.
+    Fetch a specific COVID-19 signal from the EpiDataContext and return a JSON.
     Args:
         signal (str): The specific signal to fetch. The options are: 
         - smoothed_wwearing_mask_7d. -> Description: People Wearing Masks
@@ -75,7 +78,6 @@ def fetch_epi_signal(
         geo_type (Literal["state", "county", "hrr", "msa"]): The geographic granularity of the data.
         start_time (str, optional): The start time for the data query. Format: YYYYMMDD
         end_time (str, optional): The end time for the data query. Format: YYYYMMDD
-        geo_values (List[str], optional): Geographic locations to fetch data for.
         Accepted values depend on geo_type:
         - "county": 5-digit FIPS codes (e.g., "06037" for Los Angeles County).
         - "hrr": Hospital Referral Region numbers (1-457).
@@ -86,62 +88,35 @@ def fetch_epi_signal(
         - "nation": ISO country code ("us" only).
 
     Returns:
-        json: A JSON converted DataFrame containing the fetched signal data, with additional metadata columns. 
+        json: A JSON containing the fetched signal data, with additional metadata columns. 
     """
-    try:
-        # Initialize EpiData context
-        client = EpiDataContext()
-        logger.debug(f"🔍 Fetching signal: {signal}, geo_type: {geo_type}, time_type: {time_type}")
-        
-        # Build the EpiRange for time
-        if start_time and end_time:
-            time_range = EpiRange(start_time, end_time)
-        elif start_time:
-            time_range = EpiRange(start_time, int(start_time) + 30)  # Default 30-day range
-        else:
-            # Default to last 30 days from a reasonable date
-            time_range = EpiRange(20231201, 20231231)
-        
-        # Build the EpiRange for geo
-        if geo_values:
-            geo_range = EpiRange(*geo_values[:10])  # Limit to first 10 for performance
-        else:
-            geo_range = EpiRange("*")  # All locations
-        
-        logger.debug(f"📅 Time range: {time_range}")
-        logger.debug(f"🗺️ Geo range: {geo_range}")
-        
-        # Fetch data from COVIDcast
-        try:
-            result = client.covidcast(
-                signal=signal,
-                time_type=time_type,
-                geo_type=geo_type,
-                time_values=time_range,
-                geo_values=geo_range
-            )
-            logger.debug(f"📊 Raw result type: {type(result)}")
-            
-            if hasattr(result, 'df') and result.df is not None:
-                df = result.df
-                logger.debug(f"📈 DataFrame shape: {df.shape}")
-                logger.debug(f"📊 DataFrame columns: {list(df.columns)}")
-                
-                # Convert to JSON
-                json_result = df.to_json(orient='records', date_format='iso')
-                logger.debug(f"✅ Successfully fetched {len(df)} records for signal: {signal}")
-                return json_result
-            else:
-                logger.warning(f"⚠️ No data returned for signal: {signal}")
-                return "[]"
-                
-        except Exception as fetch_error:
-            logger.error(f"❌ Error fetching from EpiData: {str(fetch_error)}")
-            return "[]"
-            
-    except Exception as e:
-        logger.error(f"❌ Error in fetch_epi_signal: {str(e)}")
-        return "[]"
+    BASE_URL = "https://api.delphi.cmu.edu/epidata/covidcast/"
+
+    signal_to_source = {
+        "smoothed_wwearing_mask_7d": "fb-survey",
+        "smoothed_wcovid_vaccinated_appointment_or_accept": "fb-survey",
+        "smoothed_wcli": "fb-survey",
+        "smoothed_whh_cmnty_cli": "fb-survey",
+        "sum_anosmia_ageusia_smoothed_search": "google-symptoms",
+        "smoothed_adj_cli": "doctor-visits",
+        "deaths_7dav_incidence_prop": "doctor-visits",
+        "confirmed_7dav_incidence_prop": "jhu-csse",
+        "confirmed_admissions_covid_1d_prop_7dav": "hhs"
+    }
+    params = {
+        "data_source": signal_to_source[signal],
+        "signal": signal,
+        "time_type": time_type,
+        "geo_type": geo_type,
+        "time_values": start_time + "-" + end_time,  # Combine start_time and end_time
+        "as_of": end_time,  # Use the end_time as the 'as_of' date
+        "geo_value": "*",
+    }
+    response = requests.get(BASE_URL, params=params, verify=False) # Disable SSL verification for testing purposes
+    if as_json:
+        response.raise_for_status()
+        return response.json()
+    
 
 @mcp.tool()
 def detect_rising_trend(
