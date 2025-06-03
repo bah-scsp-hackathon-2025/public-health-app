@@ -100,7 +100,7 @@ class PublicHealthDashboardAgent:
                 temperature=1.0,
                 max_tokens=64000,  # Must be greater than thinking.budget_tokens
                 thinking={"type": "enabled", "budget_tokens": 8000},
-                betas=["extended-cache-ttl-2025-04-11"],
+                betas=["extended-cache-ttl-2025-04-11", "files-api-2025-04-14"],
                 api_key=anthropic_key
             )
         else:

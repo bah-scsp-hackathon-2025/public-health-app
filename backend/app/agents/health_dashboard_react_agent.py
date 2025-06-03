@@ -23,6 +23,7 @@ from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from pydantic import BaseModel, Field
+import anthropic
 
 
 # Load configuration from settings
@@ -135,15 +136,18 @@ class PublicHealthReActAgent:
         
         # Initialize with Anthropic/Claude (required for ReAct mode)
         self.llm = None
+        self.anthropic_client = None
         if anthropic_key and anthropic_key.startswith('sk-ant-'):
             self.llm = ChatAnthropic(
                 model="claude-sonnet-4-20250514",
                 temperature=1.0,
                 max_tokens=64000,  # Must be greater than thinking.budget_tokens
                 thinking={"type": "enabled", "budget_tokens": 8000},
-                betas=["extended-cache-ttl-2025-04-11"],
+                betas=["extended-cache-ttl-2025-04-11", "files-api-2025-04-14"],
                 api_key=anthropic_key
             )
+            # Initialize direct Anthropic client for Files API
+            self.anthropic_client = anthropic.Anthropic(api_key=anthropic_key)
         else:
             print("⚠️  Anthropic API key not found or invalid. ReAct agent requires valid Anthropic API key.")
             raise ValueError("ReAct agent requires valid Anthropic API key")
@@ -430,12 +434,14 @@ Respond with either:
         logger.debug("📊 FINAL ANALYSIS: Generating dashboard from structured data")
         
         try:
+            # Get policy document file IDs
+            policy_file_ids = await self._get_policy_file_ids()
+            
             # Build comprehensive prompt using structured data
-            analysis_prompt = self._build_final_analysis_prompt(state)
+            analysis_prompt = self._build_final_analysis_prompt(state, policy_file_ids)
             
             # Generate final dashboard summary
-            messages = [
-                SystemMessage(content="""Generate a comprehensive public health dashboard summary based on the structured epidemiological data collected.
+            system_content = """Generate a comprehensive public health dashboard summary based on the structured epidemiological data collected.
 
 Focus on:
 - Executive situation overview
@@ -443,11 +449,27 @@ Focus on:
 - Risk assessment based on trend analysis
 - Actionable recommendations for public health officials
 
-Use the structured data provided to create specific, evidence-based insights."""),
+IMPORTANT: You have access to policy documents that contain official public health guidelines. Use these policy documents to:
+1. Ensure recommendations align with official public health protocols
+2. Reference specific policy guidelines when making recommendations
+3. Cross-reference epidemiological findings with established policy frameworks
+4. Provide policy-compliant actionable guidance
+
+Use the structured data provided to create specific, evidence-based insights that are grounded in official public health policy."""
+            
+            messages = [
+                SystemMessage(content=system_content),
                 HumanMessage(content=analysis_prompt)
             ]
             
-            response = await self.llm.ainvoke(messages)
+            # Add policy files to the message if available
+            if policy_file_ids:
+                logger.debug(f"📄 Including {len(policy_file_ids)} policy documents in analysis")
+                # Use direct Anthropic client for file-enabled message
+                response = await self._invoke_with_files(messages, policy_file_ids)
+            else:
+                logger.debug("📄 No policy documents found, proceeding without files")
+                response = await self.llm.ainvoke(messages)
             
             # Build structured outputs from state data
             final_state = state.copy()
@@ -482,11 +504,96 @@ Use the structured data provided to create specific, evidence-based insights."""
             error_state["error_message"] = f"Final analysis failed: {str(e)}"
             return error_state
     
-    def _build_final_analysis_prompt(self, state: Dict[str, Any]) -> str:
+    async def _get_policy_file_ids(self) -> List[str]:
+        """Get file IDs for policy documents from Anthropic Files API"""
+        if not self.anthropic_client:
+            logger.warning("⚠️ Anthropic client not initialized, cannot fetch policy files")
+            return []
+        
+        try:
+            logger.debug("📋 Fetching uploaded files from Anthropic...")
+            files_response = self.anthropic_client.beta.files.list()
+            
+            if not hasattr(files_response, 'data') or not files_response.data:
+                logger.debug("📭 No files found in Anthropic account")
+                return []
+            
+            # Filter for policy brief files
+            policy_files = []
+            for file_obj in files_response.data:
+                filename = getattr(file_obj, 'filename', getattr(file_obj, 'id', ''))
+                if filename.startswith('policy-brief_covid-19'):
+                    policy_files.append(file_obj.id)
+                    logger.debug(f"📄 Found policy document: {filename} (ID: {file_obj.id})")
+            
+            logger.debug(f"✅ Found {len(policy_files)} policy documents")
+            return policy_files
+            
+        except Exception as e:
+            logger.error(f"❌ Error fetching policy files: {str(e)}")
+            return []
+    
+    async def _invoke_with_files(self, messages: List[BaseMessage], file_ids: List[str]) -> BaseMessage:
+        """Invoke Claude with file attachments using LangChain ChatAnthropic"""
+        try:
+            logger.debug(f"🤖 Using LangChain ChatAnthropic with {len(file_ids)} policy documents...")
+            
+            # Create a ChatAnthropic instance with files API enabled
+            files_llm = ChatAnthropic(
+                model="claude-sonnet-4-20250514",
+                temperature=1.0,
+                max_tokens=4000,
+                betas=["files-api-2025-04-14"],
+                api_key=self.anthropic_client.api_key
+            )
+            
+            # Convert LangChain messages to the proper format with file attachments
+            converted_messages = []
+            
+            for msg in messages:
+                if isinstance(msg, SystemMessage):
+                    # Keep system messages as-is
+                    converted_messages.append(msg)
+                elif isinstance(msg, HumanMessage):
+                    # Build content list with text and document attachments
+                    content = [{"type": "text", "text": msg.content}]
+                    
+                    # Add each policy document
+                    for file_id in file_ids:
+                        content.append({
+                            "type": "document", 
+                            "source": {"type": "file", "file_id": file_id}
+                        })
+                    
+                    # Create a new HumanMessage with the file content structure
+                    from langchain_core.messages import HumanMessage as LCHumanMessage
+                    file_message = LCHumanMessage(content=content)
+                    converted_messages.append(file_message)
+                else:
+                    converted_messages.append(msg)
+            
+            # Invoke with file attachments
+            response = await files_llm.ainvoke(converted_messages)
+            logger.debug(f"✅ Successfully invoked Claude with {len(file_ids)} policy documents")
+            return response
+            
+        except Exception as e:
+            logger.error(f"❌ Error invoking Claude with files: {str(e)}")
+            # Fallback to regular LangChain call without files
+            logger.debug("🔄 Falling back to regular LangChain call without files")
+            return await self.llm.ainvoke(messages)
+
+    def _build_final_analysis_prompt(self, state: Dict[str, Any], policy_file_ids: Optional[List[str]] = None) -> str:
         """Build comprehensive analysis prompt from structured state data"""
         prompt_parts = [
             "Generate a comprehensive public health dashboard based on the following structured data:\n"
         ]
+        
+        # Add policy document information if available
+        if policy_file_ids:
+            prompt_parts.append(f"POLICY DOCUMENTS AVAILABLE: {len(policy_file_ids)} COVID-19 policy briefs are attached to this message.")
+            prompt_parts.append("Please reference these policy documents to ensure your recommendations align with official public health guidelines.")
+            prompt_parts.append("")
         
         # Epidemiological signals summary
         if state.get("epi_signals"):
