@@ -14,6 +14,7 @@ The agent demonstrates real-world usage of MCP servers with LangGraph.
 import asyncio
 import json
 import os
+import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, TypedDict, Annotated
 from operator import add
@@ -28,6 +29,36 @@ try:
 except ImportError:
     # python-dotenv not installed, skip
     pass
+
+# Configure logging for LangGraph debugging
+def setup_debug_logging():
+    """Setup comprehensive debug logging for LangGraph execution"""
+    # Configure root logger
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        force=True  # Override any existing configuration
+    )
+    
+    # Set up specific loggers for debugging
+    logger = logging.getLogger(__name__)
+    langgraph_logger = logging.getLogger("langgraph")
+    langchain_logger = logging.getLogger("langchain")
+    
+    # Enable debug logging for LangGraph components
+    logger.setLevel(logging.DEBUG)
+    langgraph_logger.setLevel(logging.DEBUG)
+    langchain_logger.setLevel(logging.DEBUG)
+    
+    # Enable debug for other relevant components
+    logging.getLogger("langchain_core").setLevel(logging.DEBUG)
+    logging.getLogger("langchain_mcp_adapters").setLevel(logging.DEBUG)
+    
+    logger.debug("🔧 Debug logging enabled for LangGraph workflow")
+    return logger
+
+# Setup logging and get logger
+logger = setup_debug_logging()
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
@@ -150,11 +181,18 @@ class PublicHealthDashboardAgent:
     
     async def _fetch_health_data_node(self, state: DashboardState) -> DashboardState:
         """Fetch health alerts and trends from MCP server"""
+        logger.debug("🚀 WORKFLOW NODE: Starting _fetch_health_data_node")
+        logger.debug(f"Input state keys: {list(state.keys())}")
+        
         try:
+            logger.debug("Initializing MCP client connection...")
             await self._init_mcp_client()
             
             # Get available tools
+            logger.debug("Fetching available MCP tools...")
             tools = await self.mcp_client.get_tools()
+            logger.debug(f"Available tools: {[t.name for t in tools]}")
+            
             alerts_tool = next((t for t in tools if t.name == "get_public_health_alerts"), None)
             trends_tool = next((t for t in tools if t.name == "get_health_risk_trends"), None)
             
@@ -162,43 +200,59 @@ class PublicHealthDashboardAgent:
                 raise Exception("Required MCP tools not available")
             
             # Fetch recent alerts (temporarily without date filtering due to timezone issue)
-            print("🔍 Fetching public health alerts...")
-            alerts_result = await alerts_tool.ainvoke({
-                "limit": 20
-                # TODO: Re-enable date filtering once timezone comparison is fixed
-                # "start_date": (datetime.now() - timedelta(days=30)).isoformat()
-            })
+            logger.info("🔍 Fetching public health alerts...")
+            alerts_params = {"limit": 20}
+            logger.debug(f"Alerts tool parameters: {alerts_params}")
+            alerts_result = await alerts_tool.ainvoke(alerts_params)
+            logger.debug(f"Alerts result type: {type(alerts_result)}")
             
             # Fetch all available trends
-            print("📈 Fetching health risk trends...")
-            trends_result = await trends_tool.ainvoke({})
+            logger.info("📈 Fetching health risk trends...")
+            trends_params = {}
+            logger.debug(f"Trends tool parameters: {trends_params}")
+            trends_result = await trends_tool.ainvoke(trends_params)
+            logger.debug(f"Trends result type: {type(trends_result)}")
             
             # Parse results (they come as JSON strings)
             alerts_data = json.loads(alerts_result) if isinstance(alerts_result, str) else alerts_result
             trends_data = json.loads(trends_result) if isinstance(trends_result, str) else trends_result
             
+            logger.debug(f"Parsed alerts data - total alerts: {alerts_data.get('total_alerts', 'unknown')}")
+            logger.debug(f"Parsed trends data - trend types: {trends_data.get('metadata', {}).get('total_trend_types', 'unknown')}")
+            
             # Return new state instead of updating in place
-            return {
+            new_state = {
                 **state,
                 "alerts_data": alerts_data,
                 "trends_data": trends_data,
                 "timestamp": datetime.now().isoformat()
             }
+            logger.debug(f"✅ _fetch_health_data_node completed - new state keys: {list(new_state.keys())}")
+            return new_state
             
         except Exception as e:
-            print(f"❌ Error fetching health data: {str(e)}")
-            return {
+            logger.error(f"❌ Error in _fetch_health_data_node: {str(e)}")
+            error_state = {
                 **state,
                 "error_message": f"Failed to fetch health data: {str(e)}"
             }
+            logger.debug(f"Error state keys: {list(error_state.keys())}")
+            return error_state
     
     async def _analyze_data_node(self, state: DashboardState) -> DashboardState:
         """Analyze the fetched health data using LLM or basic analysis"""
+        logger.debug("🚀 WORKFLOW NODE: Starting _analyze_data_node")
+        logger.debug(f"Input state keys: {list(state.keys())}")
+        
         try:
             alerts_data = state.get("alerts_data")
             trends_data = state.get("trends_data")
             
+            logger.debug(f"Alerts data available: {alerts_data is not None}")
+            logger.debug(f"Trends data available: {trends_data is not None}")
+            
             if not alerts_data or not trends_data:
+                logger.error("Missing required data for analysis")
                 return {
                     **state,
                     "error_message": "No data available for analysis"
@@ -206,9 +260,13 @@ class PublicHealthDashboardAgent:
             
             if self.llm:
                 # LLM-powered analysis
-                analysis_prompt = self._create_analysis_prompt(alerts_data, trends_data)
+                logger.info("🧠 Starting LLM-powered analysis...")
+                logger.debug(f"LLM provider: {type(self.llm).__name__}")
                 
-                print("🧠 Analyzing health data with LLM...")
+                analysis_prompt = self._create_analysis_prompt(alerts_data, trends_data)
+                logger.debug(f"Analysis prompt length: {len(analysis_prompt)} characters")
+                
+                logger.info("🧠 Analyzing health data with LLM...")
                 messages = [
                     SystemMessage(content="""You are a public health data analyst expert. 
                     Analyze the provided health alerts and trends data to identify:
@@ -222,12 +280,17 @@ class PublicHealthDashboardAgent:
                     HumanMessage(content=analysis_prompt)
                 ]
                 
+                logger.debug("Sending analysis request to LLM...")
                 response = await self.llm.ainvoke(messages)
+                logger.debug(f"LLM response received - length: {len(response.content)} characters")
                 
                 # Parse the analysis result
                 try:
                     analysis_result = json.loads(response.content)
+                    logger.debug("✅ Successfully parsed LLM response as JSON")
+                    logger.debug(f"Analysis result keys: {list(analysis_result.keys())}")
                 except json.JSONDecodeError:
+                    logger.warning("⚠️ LLM response is not valid JSON, creating structured fallback")
                     # If not valid JSON, create a structured format
                     analysis_result = {
                         "analysis_text": response.content,
@@ -236,30 +299,43 @@ class PublicHealthDashboardAgent:
                     }
             else:
                 # Basic analysis without LLM
-                print("📊 Performing basic data analysis (no LLM)...")
+                logger.info("📊 Performing basic data analysis (no LLM)...")
                 analysis_result = self._basic_data_analysis(alerts_data, trends_data)
+                logger.debug(f"Basic analysis result keys: {list(analysis_result.keys())}")
             
-            print("✅ Data analysis completed")
-            return {
+            logger.info("✅ Data analysis completed")
+            new_state = {
                 **state,
                 "analysis_result": analysis_result
             }
+            logger.debug(f"New state keys: {list(new_state.keys())}")
+            return new_state
             
         except Exception as e:
-            print(f"❌ Error analyzing data: {str(e)}")
-            return {
+            logger.error(f"❌ Error in _analyze_data_node: {str(e)}")
+            error_state = {
                 **state,
                 "error_message": f"Failed to analyze data: {str(e)}"
             }
+            logger.debug(f"Error state keys: {list(error_state.keys())}")
+            return error_state
     
     async def _generate_summary_node(self, state: DashboardState) -> DashboardState:
         """Generate dashboard summary based on analysis"""
+        logger.debug("🚀 WORKFLOW NODE: Starting _generate_summary_node")
+        logger.debug(f"Input state keys: {list(state.keys())}")
+        
         try:
             analysis_result = state.get("analysis_result")
             alerts_data = state.get("alerts_data")
             trends_data = state.get("trends_data")
             
+            logger.debug(f"Analysis result available: {analysis_result is not None}")
+            logger.debug(f"Alerts data available: {alerts_data is not None}")
+            logger.debug(f"Trends data available: {trends_data is not None}")
+            
             if not analysis_result or not alerts_data or not trends_data:
+                logger.error("Missing required data for summary generation")
                 return {
                     **state,
                     "error_message": "Missing data for summary generation"
@@ -267,9 +343,13 @@ class PublicHealthDashboardAgent:
             
             if self.llm:
                 # LLM-powered summary generation
-                summary_prompt = self._create_summary_prompt(analysis_result, alerts_data, trends_data)
+                logger.info("📊 Starting LLM-powered summary generation...")
+                logger.debug(f"LLM provider: {type(self.llm).__name__}")
                 
-                print("📊 Generating dashboard summary with LLM...")
+                summary_prompt = self._create_summary_prompt(analysis_result, alerts_data, trends_data)
+                logger.debug(f"Summary prompt length: {len(summary_prompt)} characters")
+                
+                logger.info("📊 Generating dashboard summary with LLM...")
                 messages = [
                     SystemMessage(content="""You are creating a concise, actionable dashboard summary for public health officials.
                     Create a brief, executive-level summary that includes:
@@ -283,25 +363,32 @@ class PublicHealthDashboardAgent:
                     HumanMessage(content=summary_prompt)
                 ]
                 
+                logger.debug("Sending summary request to LLM...")
                 response = await self.llm.ainvoke(messages)
+                logger.debug(f"LLM summary response received - length: {len(response.content)} characters")
                 dashboard_summary = response.content
             else:
                 # Basic summary generation without LLM
-                print("📊 Generating basic dashboard summary...")
+                logger.info("📊 Generating basic dashboard summary...")
                 dashboard_summary = self._create_basic_summary(analysis_result, alerts_data, trends_data)
+                logger.debug(f"Basic summary length: {len(dashboard_summary)} characters")
             
-            print("✅ Dashboard summary generated")
-            return {
+            logger.info("✅ Dashboard summary generated")
+            new_state = {
                 **state,
                 "dashboard_summary": dashboard_summary
             }
+            logger.debug(f"Final state keys: {list(new_state.keys())}")
+            return new_state
             
         except Exception as e:
-            print(f"❌ Error generating summary: {str(e)}")
-            return {
+            logger.error(f"❌ Error in _generate_summary_node: {str(e)}")
+            error_state = {
                 **state,
                 "error_message": f"Failed to generate summary: {str(e)}"
             }
+            logger.debug(f"Error state keys: {list(error_state.keys())}")
+            return error_state
     
     async def _error_handler_node(self, state: DashboardState) -> DashboardState:
         """Handle errors in the workflow"""
@@ -469,6 +556,10 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
     
     async def generate_dashboard(self, request: str = "Generate comprehensive public health dashboard") -> Dict:
         """Generate a dashboard summary"""
+        logger.info(f"🚀 LANGGRAPH WORKFLOW: Starting dashboard generation")
+        logger.debug(f"Request: {request}")
+        logger.debug(f"Agent configuration - LLM: {type(self.llm).__name__ if self.llm else 'None'}")
+        logger.debug(f"Agent configuration - MCP: {self.mcp_host}:{self.mcp_port}")
         
         # Initialize state
         initial_state = {
@@ -482,24 +573,36 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
             "timestamp": datetime.now().isoformat()
         }
         
-        print(f"🚀 Starting dashboard generation: {request}")
-        print("=" * 60)
+        logger.debug(f"Initial state keys: {list(initial_state.keys())}")
+        logger.info(f"🚀 Starting dashboard generation: {request}")
+        logger.info("=" * 60)
         
         # Run the workflow with proper configuration
         config = {"configurable": {"thread_id": "dashboard_session"}}
-        final_state = await self.workflow.ainvoke(initial_state, config=config)
+        logger.debug(f"Workflow config: {config}")
+        logger.info("🔄 Executing LangGraph workflow...")
+        
+        try:
+            final_state = await self.workflow.ainvoke(initial_state, config=config)
+            logger.debug(f"Final state keys: {list(final_state.keys())}")
+            logger.info("✅ LangGraph workflow completed successfully")
+        except Exception as e:
+            logger.error(f"❌ LangGraph workflow failed: {str(e)}")
+            raise
         
         # Clean up MCP connection
         if self.mcp_client:
             try:
+                logger.debug("Closing MCP client connection...")
                 await self.mcp_client.close()
-            except:
-                pass
+                logger.debug("✅ MCP client closed")
+            except Exception as e:
+                logger.warning(f"⚠️ Error closing MCP client: {str(e)}")
         
         alerts_data = final_state.get("alerts_data") or {}
         trends_data = final_state.get("trends_data") or {}
         
-        return {
+        result = {
             "dashboard_summary": final_state.get("dashboard_summary", "No summary generated"),
             "alerts_count": alerts_data.get("total_alerts", 0),
             "trends_count": len(trends_data.get("trends", {})),
@@ -507,6 +610,11 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
             "success": not bool(final_state.get("error_message")),
             "error": final_state.get("error_message")
         }
+        
+        logger.debug(f"Result summary - Success: {result['success']}, Alerts: {result['alerts_count']}, Trends: {result['trends_count']}")
+        logger.info("🎉 Dashboard generation completed")
+        
+        return result
 
 # Utility functions for testing and CLI usage
 async def test_dashboard_agent():
