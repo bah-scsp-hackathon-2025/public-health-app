@@ -10,11 +10,17 @@ The agent demonstrates modern LLM workflows with tool integration for public hea
 """
 
 import asyncio
-import json
 import os
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from datetime import datetime
+from typing import Dict
+
+from langchain_core.messages import HumanMessage
+from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
+from langgraph.prebuilt import create_react_agent
+from langchain_mcp_adapters.client import MultiServerMCPClient
+
 
 # Load configuration from settings
 try:
@@ -63,13 +69,6 @@ def setup_debug_logging():
 
 # Setup logging and get logger
 logger = setup_debug_logging()
-
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-from langgraph.prebuilt import create_react_agent
-from langchain_core.tools import Tool
-from langchain_mcp_adapters.client import MultiServerMCPClient
 
 
 class PublicHealthReActAgent:
