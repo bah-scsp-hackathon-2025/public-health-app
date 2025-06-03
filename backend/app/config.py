@@ -41,11 +41,17 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     delphi_epidata_key: str = ""
+    
+    # LangSmith Configuration
+    langsmith_api_key: str = ""
+    langsmith_project: str = "public-health-dashboard"
+    langsmith_tracing: bool = True
 
     class Config:
         env_file = [".env", "../.env", "../../.env"]  # Multiple possible locations
         env_file_encoding = 'utf-8'
         case_sensitive = False  # Allow case-insensitive env var names
+        extra = 'ignore'  # Ignore extra fields in .env
 
 
 # Create settings instance after environment is loaded

@@ -126,6 +126,8 @@ class PublicHealthReActAgent:
     """LangGraph ReAct agent for public health dashboard generation using epidemiological data"""
     
     def __init__(self):
+        # Initialize LangSmith tracing if configured
+        self._setup_langsmith_tracing()
         # Load MCP configuration from environment variables
         self.mcp_host = settings.mcp_server_host if hasattr(settings, 'mcp_server_host') else os.getenv("MCP_SERVER_HOST", "localhost")
         self.mcp_port = int(settings.mcp_server_port if hasattr(settings, 'mcp_server_port') else os.getenv("MCP_SERVER_PORT", "8000"))
@@ -158,6 +160,24 @@ class PublicHealthReActAgent:
         
         # Initialize the workflow
         self.workflow = None
+        
+    def _setup_langsmith_tracing(self):
+        """Configure LangSmith tracing for workflow observability"""
+        try:
+            langsmith_api_key = settings.langsmith_api_key if hasattr(settings, 'langsmith_api_key') else os.getenv("LANGSMITH_API_KEY")
+            
+            if langsmith_api_key and settings.langsmith_tracing if hasattr(settings, 'langsmith_tracing') else os.getenv("LANGSMITH_TRACING", "true").lower() == "true":
+                # Set LangSmith environment variables
+                os.environ["LANGCHAIN_TRACING_V2"] = "true"
+                os.environ["LANGCHAIN_API_KEY"] = langsmith_api_key
+                os.environ["LANGCHAIN_PROJECT"] = settings.langsmith_project if hasattr(settings, 'langsmith_project') else "public-health-dashboard"
+                
+                logger.info(f"✅ LangSmith tracing enabled for project: {os.environ['LANGCHAIN_PROJECT']}")
+            else:
+                logger.info("ℹ️  LangSmith tracing disabled (no API key or tracing disabled)")
+                
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to setup LangSmith tracing: {str(e)}")
         
     async def _init_mcp_client_and_workflow(self):
         """Initialize MCP client connection, tools, and workflow"""
@@ -748,8 +768,17 @@ An error occurred while generating the epidemiological dashboard:
             
             logger.info("🔄 Starting LangGraph ReAct workflow...")
             
-            # Run the workflow
-            config = {"configurable": {"thread_id": "react_dashboard_session"}}
+            # Run the workflow with enhanced config for LangSmith tracing
+            config = {
+                "configurable": {"thread_id": "react_dashboard_session"},
+                "tags": ["public-health", "react-agent", "epidemiological-analysis"],
+                "metadata": {
+                    "agent_type": "react",
+                    "date_range": f"{start_date} to {end_date}" if start_date or end_date else "default",
+                    "workflow_version": "v1.0",
+                    "data_sources": ["delphi_epidata", "policy_documents"]
+                }
+            }
             final_state = await self.workflow.ainvoke(initial_state, config=config)
             
             logger.info("✅ LangGraph ReAct workflow completed")
