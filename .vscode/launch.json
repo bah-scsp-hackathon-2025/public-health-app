@@ -179,6 +179,32 @@
             }
         },
         {
+            "name": "Debug FastAPI App",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend:${workspaceFolder}/backend/mcp"
+            },
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "args": [
+                "app.main:app",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8001",
+                "--reload"
+            ],
+            "presentation": {
+                "group": "servers",
+                "order": 4
+            }
+        },
+        {
             "name": "Debug with Args",
             "type": "debugpy",
             "request": "launch",
@@ -216,4 +242,4 @@
             }
         }
     ]
-} 
+}

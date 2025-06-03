@@ -1,5 +1,5 @@
 {
-    "python.defaultInterpreterPath": "./venv/bin/python",
+    "python.defaultInterpreterPath": "./backend/mcp/venv/bin/python",
     "python.terminal.activateEnvironment": true,
     "python.envFile": "${workspaceFolder}/.env",
     "python.linting.enabled": true,
@@ -24,7 +24,9 @@
         "**/venv/lib": true,
         "**/__pycache__": true
     },
-    "editor.rulers": [88],
+    "editor.rulers": [
+        88
+    ],
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
         "source.organizeImports": "explicit"
@@ -44,8 +46,10 @@
     "debug.terminal.clearBeforeReusing": true,
     "MCP.debug": true,
     "python.analysis.extraPaths": [
-        "./venv/lib/python3.13/site-packages"
+        "./backend/mcp/venv/lib/python3.13/site-packages",
+        "./backend",
+        "./backend/mcp"
     ],
     "python.analysis.autoImportCompletions": true,
     "python.analysis.typeCheckingMode": "basic"
-} 
+}
