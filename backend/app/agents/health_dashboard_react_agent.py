@@ -74,10 +74,10 @@ logger = setup_debug_logging()
 class PublicHealthReActAgent:
     """ReAct agent for public health dashboard generation using epidemiological data"""
     
-    def __init__(self, mcp_host: str = None, mcp_port: int = None):
-        # Load MCP configuration
-        self.mcp_host = mcp_host or settings.mcp_server_host if hasattr(settings, 'mcp_server_host') else os.getenv("MCP_SERVER_HOST", "localhost")
-        self.mcp_port = mcp_port or int(settings.mcp_server_port if hasattr(settings, 'mcp_server_port') else os.getenv("MCP_SERVER_PORT", "8000"))
+    def __init__(self):
+        # Load MCP configuration from environment variables
+        self.mcp_host = settings.mcp_server_host if hasattr(settings, 'mcp_server_host') else os.getenv("MCP_SERVER_HOST", "localhost")
+        self.mcp_port = int(settings.mcp_server_port if hasattr(settings, 'mcp_server_port') else os.getenv("MCP_SERVER_PORT", "8000"))
         
         # Get API keys from settings (keep both for future use)
         openai_key = settings.openai_api_key if settings.openai_api_key else None
