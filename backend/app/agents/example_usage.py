@@ -44,8 +44,8 @@ async def main():
             print(result['dashboard_summary'])
             print("="*60)
             print(f"\n📊 Statistics:")
-            print(f"   • Alerts processed: {result.get('alerts_count', 'N/A')}")
-            print(f"   • Trends analyzed: {result.get('trends_count', 'N/A')}")
+            print(f"   • Alerts processed: {len(result.get('alerts', []))}")
+            print(f"   • Trends analyzed: {len(result.get('rising_trends', []))}")
             print(f"   • Generated at: {result.get('timestamp', 'N/A')}")
         else:
             print(f"❌ Error: {result.get('error', 'Unknown error')}")

@@ -4,6 +4,25 @@
 
 The Dashboard API provides endpoints for generating comprehensive public health dashboards using AI-powered analysis. The system uses **Anthropic Claude** for intelligent analysis and integrates with epidemiological data sources through MCP (Model Context Protocol) servers.
 
+### Enhanced Structured Data
+
+All endpoints now return both human-readable dashboard summaries and structured data for programmatic use:
+
+- **`alerts`**: Detailed alert information with priority scoring and risk assessment
+- **`rising_trends`**: Statistical trend analysis with significance indicators  
+- **`epidemiological_signals`**: Real-time health indicators from multiple data sources
+- **`risk_assessment`**: Overall risk evaluation with confidence levels
+- **`recommendations`**: Actionable recommendations with priority and target audience
+
+This dual approach provides both executive-level summaries and machine-readable data for integration into other systems.
+
+**Getting Counts**: Alert and trend counts can be derived from the array lengths:
+```javascript
+const alertsCount = response.alerts.length;
+const trendsCount = response.rising_trends.length;
+const signalsCount = response.epidemiological_signals.length;
+```
+
 ## Base URL
 
 ```
@@ -27,20 +46,54 @@ http://localhost:8000/dashboard
 {
     "success": true,
     "dashboard_summary": "📊 **PUBLIC HEALTH DASHBOARD SUMMARY**...",
-    "alerts_count": 5,
-    "trends_count": 3,
     "timestamp": "2024-01-15T10:30:00Z",
     "error": null,
     "generation_time_seconds": 12.5,
     "agent_type": "standard",
     "tools_used": ["fetch_epi_signal", "detect_rising_trend"],
     
-    // Enhanced structured data
-    "alerts": [...],
-    "rising_trends": [...],
-    "epidemiological_signals": [...], 
-    "risk_assessment": {...},
-    "recommendations": [...]
+    // Enhanced structured data (populated with actual data)
+    "alerts": [
+        {
+            "id": "alert_001",
+            "title": "COVID-19 Outbreak Alert",
+            "severity": "HIGH",
+            "state": "CA",
+            "affected_population": 45000,
+            "analysis": {
+                "priority_score": 85,
+                "risk_level": "high"
+            }
+        }
+    ],
+    "rising_trends": [
+        {
+            "signal_name": "confirmed_7dav_incidence_prop",
+            "trend_direction": "rising",
+            "rising_periods": 3,
+            "risk_level": "medium"
+        }
+    ],
+    "epidemiological_signals": [
+        {
+            "signal_name": "smoothed_wcli",
+            "display_name": "COVID-Like Symptoms",
+            "trend_direction": "rising",
+            "data_source": "delphi_epidata_api"
+        }
+    ],
+    "risk_assessment": {
+        "overall_risk_level": "medium",
+        "confidence_level": "high",
+        "geographic_distribution": "regional"
+    },
+    "recommendations": [
+        {
+            "priority": "high",
+            "action": "Enhance surveillance in affected areas",
+            "target_audience": "Public Health Officials"
+        }
+    ]
 }
 ```
 
@@ -76,11 +129,39 @@ Generate a customized public health dashboard.
 {
     "success": true,
     "dashboard_summary": "📊 **PUBLIC HEALTH DASHBOARD SUMMARY**\n\n🚨 **CURRENT SITUATION**...",
-    "alerts_count": 8,
-    "trends_count": 4,
     "timestamp": "2024-01-15T10:30:00Z",
     "generation_time_seconds": 15.3,
-    "agent_type": "standard"
+    "agent_type": "standard",
+    "alerts": [
+        {
+            "id": "alert_001",
+            "title": "High Severity Health Alert",
+            "severity": "HIGH",
+            "state": "CA",
+            "affected_population": 50000,
+            "analysis": {
+                "priority_score": 90,
+                "risk_level": "critical"
+            }
+        }
+    ],
+    "rising_trends": [
+        {
+            "signal_name": "respiratory_visits",
+            "trend_direction": "rising",
+            "risk_level": "high"
+        }
+    ],
+    "risk_assessment": {
+        "overall_risk_level": "high",
+        "geographic_distribution": "regional"
+    },
+    "recommendations": [
+        {
+            "priority": "urgent",
+            "action": "Deploy additional testing resources"
+        }
+    ]
 }
 ```
 

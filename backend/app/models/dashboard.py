@@ -20,8 +20,6 @@ class DashboardResponse(BaseModel):
     """Response model for dashboard generation"""
     success: bool
     dashboard_summary: Optional[str] = None
-    alerts_count: Optional[int] = None
-    trends_count: Optional[int] = None
     timestamp: Optional[str] = None
     error: Optional[str] = None
     generation_time_seconds: Optional[float] = None

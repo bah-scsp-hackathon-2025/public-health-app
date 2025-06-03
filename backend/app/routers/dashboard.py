@@ -47,17 +47,22 @@ async def generate_dashboard(request: DashboardRequest):
         # Calculate generation time
         generation_time = (datetime.now() - start_time).total_seconds()
         
-        # Return the response
+        # Return the response with enhanced structured data
         return DashboardResponse(
             success=result.get("success", False),
             dashboard_summary=result.get("dashboard_summary"),
-            alerts_count=result.get("alerts_count"),
-            trends_count=result.get("trends_count"),
             timestamp=result.get("timestamp"),
             error=result.get("error"),
             generation_time_seconds=generation_time,
             agent_type=result.get("agent_type", request.agent_type),
-            tools_used=result.get("tools_used")
+            tools_used=result.get("tools_used"),
+            
+            # Enhanced structured data
+            alerts=result.get("alerts"),
+            rising_trends=result.get("rising_trends"),
+            epidemiological_signals=result.get("epidemiological_signals"),
+            risk_assessment=result.get("risk_assessment"),
+            recommendations=result.get("recommendations")
         )
         
     except Exception as e:
@@ -218,17 +223,22 @@ Emphasize real-time data analysis and statistical evidence.
         # Calculate generation time
         generation_time = (datetime.now() - start_time).total_seconds()
         
-        # Return the response
+        # Return the response with enhanced structured data
         return DashboardResponse(
             success=result.get("success", False),
             dashboard_summary=result.get("dashboard_summary"),
-            alerts_count=None,  # ReAct agent doesn't track these separately
-            trends_count=None,
             timestamp=result.get("timestamp"),
             error=result.get("error"),
             generation_time_seconds=generation_time,
             agent_type="ReAct-Epidemiological",
-            tools_used=result.get("tools_used")
+            tools_used=result.get("tools_used"),
+            
+            # Enhanced structured data
+            alerts=result.get("alerts"),
+            rising_trends=result.get("rising_trends"),
+            epidemiological_signals=result.get("epidemiological_signals"),
+            risk_assessment=result.get("risk_assessment"),
+            recommendations=result.get("recommendations")
         )
         
     except Exception as e:

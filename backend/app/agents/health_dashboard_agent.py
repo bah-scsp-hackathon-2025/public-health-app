@@ -864,8 +864,6 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
         
         result = {
             "dashboard_summary": final_state.get("dashboard_summary", "No summary generated"),
-            "alerts_count": alerts_data.get("total_alerts", 0),
-            "trends_count": len(trends_data.get("trends", {})),
             "timestamp": final_state.get("timestamp"),
             "success": not bool(final_state.get("error_message")),
             "error": final_state.get("error_message"),
@@ -879,7 +877,9 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
             "agent_type": "standard"
         }
         
-        logger.debug(f"Result summary - Success: {result['success']}, Alerts: {result['alerts_count']}, Trends: {result['trends_count']}")
+        alerts_count = len(result.get('alerts', []))
+        trends_count = len(result.get('rising_trends', []))
+        logger.debug(f"Result summary - Success: {result['success']}, Alerts: {alerts_count}, Trends: {trends_count}")
         logger.info("🎉 Dashboard generation completed")
         
         return result
@@ -910,7 +910,9 @@ async def test_dashboard_agent():
         print("=" * 60)
         print(result["dashboard_summary"])
         print("\n" + "=" * 60)
-        print(f"📈 Statistics: {result['alerts_count']} alerts, {result['trends_count']} trend categories")
+        alerts_count = len(result.get('alerts', []))
+        trends_count = len(result.get('rising_trends', []))
+        print(f"📈 Statistics: {alerts_count} alerts, {trends_count} trend categories")
         print(f"⏰ Generated: {result['timestamp']}")
         print(f"✅ Success: {result['success']}")
         

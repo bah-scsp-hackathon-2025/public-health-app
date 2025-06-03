@@ -74,6 +74,23 @@ class DashboardAPITester:
                 preview = summary[:100] + "..." if len(summary) > 100 else summary
                 print(f"   {preview}")
             
+            # Check enhanced structured data
+            alerts_count = len(result.get('alerts', []))
+            trends_count = len(result.get('rising_trends', []))
+            epi_signals_count = len(result.get('epidemiological_signals', []))
+            recommendations_count = len(result.get('recommendations', []))
+            
+            print(f"\n📈 Structured Data:")
+            print(f"   Alerts: {alerts_count}")
+            print(f"   Rising Trends: {trends_count}")
+            print(f"   Epi Signals: {epi_signals_count}")
+            print(f"   Risk Assessment: {'Yes' if result.get('risk_assessment') else 'No'}")
+            print(f"   Recommendations: {recommendations_count}")
+            
+            # Show total items for summary
+            total_items = alerts_count + trends_count + epi_signals_count + recommendations_count
+            print(f"   Total Data Items: {total_items}")
+            
             if result.get('error'):
                 print(f"❌ Error: {result.get('error')}")
                 
@@ -139,6 +156,15 @@ class DashboardAPITester:
             print(f"   Success: {result.get('success')}")
             print(f"   Agent Type: {result.get('agent_type')}")
             print(f"   Tools Used: {result.get('tools_used', [])}")
+            
+            # Show enhanced epidemiological data
+            print(f"\n🔬 Epidemiological Data:")
+            print(f"   Rising Trends Detected: {len(result.get('rising_trends', []))}")
+            print(f"   Signals Analyzed: {len(result.get('epidemiological_signals', []))}")
+            if result.get('risk_assessment'):
+                risk = result['risk_assessment']
+                print(f"   Overall Risk: {risk.get('overall_risk_level', 'unknown')}")
+                print(f"   Confidence: {risk.get('confidence_level', 'unknown')}")
             
             return result
             
