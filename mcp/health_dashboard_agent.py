@@ -17,7 +17,6 @@ import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, TypedDict, Annotated
 from operator import add
-from dataclasses import dataclass
 
 # Load environment variables
 try:
@@ -27,12 +26,10 @@ except ImportError:
     # python-dotenv not installed, skip
     pass
 
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from langchain_core.tools import tool
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langgraph.graph import StateGraph, END
-from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
@@ -47,15 +44,7 @@ class DashboardState(TypedDict):
     error_message: Optional[str]
     timestamp: str
 
-@dataclass
-class HealthInsight:
-    """Structured health insight for dashboard display"""
-    category: str
-    severity: str
-    message: str
-    affected_population: int
-    trend: str  # "increasing", "decreasing", "stable"
-    recommendation: str
+
 
 class PublicHealthDashboardAgent:
     """LangGraph agent for public health dashboard generation"""
