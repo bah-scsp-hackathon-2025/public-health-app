@@ -138,19 +138,22 @@ async def test_mcp_tools_direct():
         except Exception as e:
             print(f"   ⚠️ fetch_epi_signal error: {str(e)[:100]}...")
         
-        # Test get_public_health_alerts
-        print("\n   Testing get_public_health_alerts...")
+        # Test detect_rising_trend
+        print("\n   Testing detect_rising_trend...")
         try:
-            alerts_tool = next((t for t in agent.tools if t.name == "get_public_health_alerts"), None)
-            if alerts_tool:
-                result = alerts_tool.func(limit=5)
-                print("   ✅ get_public_health_alerts: Alerts fetched successfully")
-                data = json.loads(result)
-                print(f"   📊 {data.get('total_alerts', 0)} alerts available")
+            trend_tool = next((t for t in agent.tools if t.name == "detect_rising_trend"), None)
+            if trend_tool:
+                result = trend_tool.func(
+                    signal_name="smoothed_wcli",
+                    value_column="value",
+                    window_size=7
+                )
+                print("   ✅ detect_rising_trend: Trend analysis completed")
+                print(f"   📈 Rising periods detected: {result.get('total_periods', 0)}")
             else:
-                print("   ❌ get_public_health_alerts tool not found")
+                print("   ❌ detect_rising_trend tool not found")
         except Exception as e:
-            print(f"   ⚠️ get_public_health_alerts error: {str(e)[:100]}...")
+            print(f"   ⚠️ detect_rising_trend error: {str(e)[:100]}...")
         
         print("\n✅ Direct tools test completed")
         return True

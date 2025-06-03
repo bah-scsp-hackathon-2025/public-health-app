@@ -134,8 +134,8 @@ class MockMCPClient:
     """Mock MCP client for demonstration"""
     async def get_tools(self):
         return [
-            MockMCPTool("get_public_health_alerts", MOCK_ALERTS_DATA),
-            MockMCPTool("get_health_risk_trends", MOCK_TRENDS_DATA)
+            MockMCPTool("fetch_epi_signal", {"message": "Mock epidemiological signal data"}),
+            MockMCPTool("detect_rising_trend", {"rising_periods": [], "total_periods": 0, "status": "success"})
         ]
     
     async def close(self):

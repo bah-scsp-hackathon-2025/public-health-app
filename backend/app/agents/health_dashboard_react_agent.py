@@ -10,11 +10,17 @@ The agent demonstrates modern LLM workflows with tool integration for public hea
 """
 
 import asyncio
-import json
 import os
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from datetime import datetime
+from typing import Dict
+
+from langchain_core.messages import HumanMessage
+from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
+from langgraph.prebuilt import create_react_agent
+from langchain_mcp_adapters.client import MultiServerMCPClient
+
 
 # Load configuration from settings
 try:
@@ -63,13 +69,6 @@ def setup_debug_logging():
 
 # Setup logging and get logger
 logger = setup_debug_logging()
-
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-from langgraph.prebuilt import create_react_agent
-from langchain_core.tools import Tool
-from langchain_mcp_adapters.client import MultiServerMCPClient
 
 
 class PublicHealthReActAgent:
@@ -138,163 +137,9 @@ class PublicHealthReActAgent:
         mcp_tools = await self.mcp_client.get_tools()
         logger.debug(f"Available MCP tools: {[t.name for t in mcp_tools]}")
         
-        # Create LangChain tool wrappers for the epidemiological tools
-        self.tools = []
-        
-        # Wrap fetch_epi_signal tool
-        fetch_epi_tool = next((t for t in mcp_tools if t.name == "fetch_epi_signal"), None)
-        if fetch_epi_tool:
-            def fetch_epi_signal_wrapper(signal: str, time_type: str = "day", geo_type: str = "state", 
-                                       start_time: str = None, end_time: str = None, 
-                                       geo_values: str = None) -> str:
-                """
-                Fetch COVID-19 epidemiological signals from Delphi Epidata API.
-                
-                Args:
-                    signal: Signal to fetch. Options:
-                        - smoothed_wwearing_mask_7d (People Wearing Masks)
-                        - smoothed_wcovid_vaccinated_appointment_or_accept (Vaccine Acceptance)
-                        - sum_anosmia_ageusia_smoothed_search (COVID Symptom Searches)
-                        - smoothed_wcli (COVID-Like Symptoms)
-                        - smoothed_whh_cmnty_cli (COVID-Like Symptoms in Community)
-                        - smoothed_adj_cli (COVID-Related Doctor Visits)
-                        - confirmed_7dav_incidence_prop (COVID Cases)
-                        - confirmed_admissions_covid_1d_prop_7dav (COVID Hospital Admissions)
-                        - deaths_7dav_incidence_prop (COVID Deaths)
-                    time_type: Time granularity - "day", "week", or "month"
-                    geo_type: Geographic granularity - "state", "county", "hrr", or "msa"
-                    start_time: Start time in YYYYMMDD format (optional)
-                    end_time: End time in YYYYMMDD format (optional)
-                    geo_values: Comma-separated geographic values (optional)
-                """
-                try:
-                    # Parse geo_values if provided
-                    geo_list = None
-                    if geo_values:
-                        geo_list = [g.strip() for g in geo_values.split(',') if g.strip()]
-                    
-                    # Call the MCP tool
-                    import asyncio
-                    loop = asyncio.get_event_loop()
-                    result = loop.run_until_complete(fetch_epi_tool.ainvoke({
-                        "signal": signal,
-                        "time_type": time_type,
-                        "geo_type": geo_type,
-                        "start_time": start_time,
-                        "end_time": end_time,
-                        "geo_values": geo_list
-                    }))
-                    
-                    # Parse the result if it's a JSON string
-                    if isinstance(result, str):
-                        import json
-                        parsed_result = json.loads(result)
-                    else:
-                        parsed_result = result
-                    
-                    return json.dumps(parsed_result, indent=2)
-                    
-                except Exception as e:
-                    return f"Error fetching signal {signal}: {str(e)}"
-            
-            self.tools.append(Tool(
-                name="fetch_epi_signal",
-                description="Fetch epidemiological signals like COVID cases, symptoms, vaccinations, etc. from the Delphi Epidata API",
-                func=fetch_epi_signal_wrapper
-            ))
-        
-        # Wrap detect_rising_trend tool
-        detect_trend_tool = next((t for t in mcp_tools if t.name == "detect_rising_trend"), None)
-        if detect_trend_tool:
-            def detect_trend_wrapper(signal_name: str, value_column: str = "value", 
-                                   date_column: str = "time_value", window_size: int = 7,
-                                   min_log_slope: float = 0.01, smooth: bool = True) -> str:
-                """
-                Detect rising trends in time series data using rolling linear regression.
-                Note: fetch_epi_signal must be called first for the signal_name.
-                
-                Args:
-                    signal_name: Name of the signal to analyze (must match a signal fetched with fetch_epi_signal)
-                    value_column: Column name with numeric values to analyze
-                    date_column: Column name with date values
-                    window_size: Size of rolling window for trend detection
-                    min_log_slope: Minimum slope to qualify as rising trend
-                    smooth: Whether to apply smoothing before analysis
-                """
-                try:
-                    import asyncio
-                    loop = asyncio.get_event_loop()
-                    result = loop.run_until_complete(detect_trend_tool.ainvoke({
-                        "signal_name": signal_name,
-                        "value_column": value_column,
-                        "date_column": date_column,
-                        "window_size": window_size,
-                        "min_log_slope": min_log_slope,
-                        "smooth": smooth
-                    }))
-                    
-                    # Parse the result if it's a JSON string
-                    if isinstance(result, str):
-                        import json
-                        parsed_result = json.loads(result)
-                    else:
-                        parsed_result = result
-                    
-                    return json.dumps(parsed_result, indent=2)
-                    
-                except Exception as e:
-                    return f"Error detecting trends for {signal_name}: {str(e)}"
-            
-            self.tools.append(Tool(
-                name="detect_rising_trend",
-                description="Detect rising trends in epidemiological time series data using statistical analysis",
-                func=detect_trend_wrapper
-            ))
-        
-        # Add basic health alerts tool for context
-        alerts_tool = next((t for t in mcp_tools if t.name == "get_public_health_alerts"), None)
-        if alerts_tool:
-            def get_alerts_wrapper(limit: int = 10, severity: str = None, states: str = None) -> str:
-                """
-                Get current public health alerts for context.
-                
-                Args:
-                    limit: Maximum number of alerts to return
-                    severity: Filter by severity - "LOW", "MEDIUM", or "HIGH"
-                    states: Comma-separated state codes to filter by
-                """
-                try:
-                    # Parse states if provided
-                    state_list = None
-                    if states:
-                        state_list = [s.strip().upper() for s in states.split(',') if s.strip()]
-                    
-                    import asyncio
-                    loop = asyncio.get_event_loop()
-                    result = loop.run_until_complete(alerts_tool.ainvoke({
-                        "limit": limit,
-                        "severity": severity,
-                        "states": state_list
-                    }))
-                    
-                    # Parse the result if it's a JSON string
-                    if isinstance(result, str):
-                        import json
-                        parsed_result = json.loads(result)
-                    else:
-                        parsed_result = result
-                    
-                    return json.dumps(parsed_result, indent=2)
-                    
-                except Exception as e:
-                    return f"Error fetching health alerts: {str(e)}"
-            
-            self.tools.append(Tool(
-                name="get_public_health_alerts",
-                description="Get current public health alerts and advisories for situational context",
-                func=get_alerts_wrapper
-            ))
-        
+        # Filter for only fetch_epi_signal and detect_rising_trend tools
+        self.tools = [t for t in mcp_tools if t.name in ["fetch_epi_signal", "detect_rising_trend"]]
+
         logger.debug(f"✅ Initialized {len(self.tools)} LangChain tools: {[t.name for t in self.tools]}")
         
     async def _create_agent(self):
@@ -347,6 +192,12 @@ Provide comprehensive dashboard summaries that include:
 - Risk-based recommendations for public health action
 - Supporting data and confidence levels
 
+**Structured Recommendations Section:**
+Always end your analysis with a clear "RECOMMENDATIONS" section listing 3-5 specific, actionable recommendations for public health officials.
+
+**Data Citation:**
+Reference specific tool outputs, numbers, and statistical findings from your analysis. When you detect rising trends, clearly state which signals are trending upward and provide the statistical evidence.
+
 Always ground your analysis in the real data you fetch. Be specific about numbers, trends, and timeframes. Focus on actionable insights that public health officials can use for decision-making."""
 
             # Create the ReAct agent
@@ -359,6 +210,127 @@ Always ground your analysis in the real data you fetch. Be specific about number
             
             logger.debug("✅ ReAct agent created with system prompt and tools")
     
+    def _extract_structured_data_from_conversation(self, result: Dict) -> Dict:
+        """Extract structured data from ReAct agent conversation"""
+        structured_data = {
+            "alerts": [],
+            "rising_trends": [],
+            "epidemiological_signals": [],
+            "risk_assessment": {},
+            "recommendations": []
+        }
+        
+        try:
+            # Extract conversation messages to analyze tool outputs
+            messages = result.get("messages", [])
+            
+            rising_trends = []
+            epi_signals = []
+            recommendations = []
+            
+            for message in messages:
+                content = str(message.content) if hasattr(message, 'content') else str(message)
+                
+                # Look for detect_rising_trend tool outputs
+                if "rising_periods" in content and "total_periods" in content:
+                    try:
+                        # Try to extract trend information
+                        import re
+                        import json as json_lib
+                        
+                        # Look for JSON-like patterns in the content
+                        json_match = re.search(r'\{[^{}]*"rising_periods"[^{}]*\}', content)
+                        if json_match:
+                            trend_data = json_lib.loads(json_match.group())
+                            if trend_data.get("rising_periods"):
+                                rising_trends.append({
+                                    "signal_name": "epidemiological_signal",
+                                    "trend_direction": "rising",
+                                    "rising_periods": trend_data["rising_periods"],
+                                    "total_periods": trend_data.get("total_periods", 0),
+                                    "risk_level": "high" if trend_data.get("total_periods", 0) > 3 else "medium",
+                                    "detected_via": "detect_rising_trend_tool"
+                                })
+                    except:
+                        # If parsing fails, create a basic trend entry
+                        if "rising_periods" in content:
+                            rising_trends.append({
+                                "signal_name": "epidemiological_data",
+                                "trend_direction": "rising", 
+                                "description": "Rising trend detected in epidemiological analysis",
+                                "risk_level": "medium",
+                                "detected_via": "react_analysis"
+                            })
+                
+                # Look for fetch_epi_signal tool outputs
+                if any(signal in content for signal in ["confirmed_7dav_incidence_prop", "smoothed_wcli", "smoothed_adj_cli"]):
+                    # Extract signal information
+                    for signal in ["confirmed_7dav_incidence_prop", "smoothed_wcli", "smoothed_adj_cli", "deaths_7dav_incidence_prop"]:
+                        if signal in content:
+                            signal_descriptions = {
+                                "confirmed_7dav_incidence_prop": "COVID-19 Case Rates",
+                                "smoothed_wcli": "COVID-Like Symptoms",
+                                "smoothed_adj_cli": "COVID-Related Doctor Visits",
+                                "deaths_7dav_incidence_prop": "COVID-19 Death Rates"
+                            }
+                            
+                            epi_signals.append({
+                                "signal_name": signal,
+                                "description": signal_descriptions.get(signal, signal),
+                                "data_source": "delphi_epidata_api",
+                                "last_analyzed": datetime.now().isoformat(),
+                                "status": "analyzed"
+                            })
+                
+                # Extract recommendations from final summary
+                if any(keyword in content.lower() for keyword in ["recommend", "should", "action", "priority"]):
+                    # Try to extract bullet points or numbered recommendations
+                    import re
+                    rec_patterns = [
+                        r'(?:^|\n)\s*[\d\-\*•]\s*(.+?)(?=\n|$)',  # Numbered or bulleted lists
+                        r'(?:recommend|suggest|should)([^.]+)',  # Recommendation statements
+                    ]
+                    
+                    for pattern in rec_patterns:
+                        matches = re.findall(pattern, content, re.IGNORECASE | re.MULTILINE)
+                        for match in matches[:3]:  # Limit to 3 recommendations per pattern
+                            if len(match.strip()) > 10:  # Only meaningful recommendations
+                                recommendations.append(match.strip())
+            
+            # Build risk assessment based on findings
+            risk_assessment = {
+                "overall_risk_level": "medium",  # Default
+                "epidemiological_signals_analyzed": len(set(s["signal_name"] for s in epi_signals)),
+                "rising_trends_detected": len(rising_trends),
+                "analysis_method": "react_agent_with_epi_tools",
+                "confidence_level": "high" if len(epi_signals) > 2 else "medium"
+            }
+            
+            # Adjust risk level based on findings
+            if len(rising_trends) > 2:
+                risk_assessment["overall_risk_level"] = "high"
+            elif len(rising_trends) == 0 and len(epi_signals) > 0:
+                risk_assessment["overall_risk_level"] = "low"
+            
+            structured_data = {
+                "alerts": [],  # ReAct agent doesn't have access to alerts currently
+                "rising_trends": rising_trends[:5],  # Limit to top 5
+                "epidemiological_signals": epi_signals[:10],  # Limit to top 10
+                "risk_assessment": risk_assessment,
+                "recommendations": list(set(recommendations))[:5]  # Deduplicate and limit
+            }
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Error extracting structured data from conversation: {str(e)}")
+            # Return basic structure with error note
+            structured_data["risk_assessment"] = {
+                "overall_risk_level": "unknown",
+                "analysis_method": "react_agent_with_parsing_error",
+                "error": str(e)
+            }
+        
+        return structured_data
+
     async def generate_dashboard(self, request: str = "Generate comprehensive public health dashboard with current epidemiological analysis") -> Dict:
         """Generate a dashboard summary using ReAct agent"""
         logger.info(f"🚀 REACT AGENT: Starting dashboard generation")
@@ -425,7 +397,10 @@ Focus on recent data (last 30-60 days) and provide specific metrics and trends.
             
             logger.info("✅ ReAct agent completed successfully")
             
-            # Format the response
+            # Extract structured data from the conversation (attempt to parse trends and signals)
+            structured_data = self._extract_structured_data_from_conversation(result)
+            
+            # Format the response with enhanced structured data
             response = {
                 "dashboard_summary": dashboard_summary,
                 "success": True,
@@ -433,7 +408,14 @@ Focus on recent data (last 30-60 days) and provide specific metrics and trends.
                 "agent_type": "ReAct",
                 "llm_provider": type(self.llm).__name__,
                 "tools_used": [t.name for t in self.tools],
-                "error": None
+                "error": None,
+                
+                # Enhanced structured data from ReAct analysis
+                "alerts": structured_data.get("alerts", []),
+                "rising_trends": structured_data.get("rising_trends", []),
+                "epidemiological_signals": structured_data.get("epidemiological_signals", []),
+                "risk_assessment": structured_data.get("risk_assessment", {}),
+                "recommendations": structured_data.get("recommendations", [])
             }
             
             return response
