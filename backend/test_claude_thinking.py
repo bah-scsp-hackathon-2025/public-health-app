@@ -26,14 +26,17 @@ def test_claude_thinking_mode():
                 print(f"   Model: {agent1.llm.model}")
                 print(f"   Temperature: {agent1.llm.temperature}")
                 
-                # Check for thinking mode headers
-                if hasattr(agent1.llm, 'extra_headers') and agent1.llm.extra_headers:
+                # Check for thinking mode configuration
+                if hasattr(agent1.llm, 'thinking') and agent1.llm.thinking:
+                    print(f"   Thinking Mode: ✅ Enabled (Direct)")
+                    print(f"   Thinking Config: {agent1.llm.thinking}")
+                elif hasattr(agent1.llm, 'extra_headers') and agent1.llm.extra_headers:
                     thinking_enabled = "anthropic-beta" in agent1.llm.extra_headers
-                    print(f"   Thinking Mode: {'✅ Enabled' if thinking_enabled else '❌ Disabled'}")
+                    print(f"   Thinking Mode: {'✅ Enabled (Beta)' if thinking_enabled else '❌ Disabled'}")
                     if thinking_enabled:
                         print(f"   Beta Header: {agent1.llm.extra_headers['anthropic-beta']}")
                 else:
-                    print("   Thinking Mode: ❌ No extra headers found")
+                    print("   Thinking Mode: ❌ Not configured")
             else:
                 print("⚠️ No LLM configured (likely missing API key)")
                 
@@ -51,14 +54,17 @@ def test_claude_thinking_mode():
                 print(f"   Model: {agent2.llm.model}")
                 print(f"   Temperature: {agent2.llm.temperature}")
                 
-                # Check for thinking mode headers
-                if hasattr(agent2.llm, 'extra_headers') and agent2.llm.extra_headers:
+                # Check for thinking mode configuration
+                if hasattr(agent2.llm, 'thinking') and agent2.llm.thinking:
+                    print(f"   Thinking Mode: ✅ Enabled (Direct)")
+                    print(f"   Thinking Config: {agent2.llm.thinking}")
+                elif hasattr(agent2.llm, 'extra_headers') and agent2.llm.extra_headers:
                     thinking_enabled = "anthropic-beta" in agent2.llm.extra_headers
-                    print(f"   Thinking Mode: {'✅ Enabled' if thinking_enabled else '❌ Disabled'}")
+                    print(f"   Thinking Mode: {'✅ Enabled (Beta)' if thinking_enabled else '❌ Disabled'}")
                     if thinking_enabled:
                         print(f"   Beta Header: {agent2.llm.extra_headers['anthropic-beta']}")
                 else:
-                    print("   Thinking Mode: ❌ No extra headers found")
+                    print("   Thinking Mode: ❌ Not configured")
             else:
                 print("⚠️ No LLM configured (likely missing API key)")
                 
@@ -81,14 +87,42 @@ def test_claude_thinking_mode():
                 response = agent1.llm.invoke(messages)
                 
                 print(f"✅ LLM Response Received")
-                print(f"   Response Length: {len(response.content)} characters")
-                print(f"   Response Preview: {response.content[:100]}...")
                 
-                # Check if thinking is visible in response
-                if "<thinking>" in response.content or "thinking" in response.content.lower():
-                    print("✅ Thinking mode appears to be working (thinking content detected)")
+                # Handle the new response format with thinking
+                if hasattr(response, 'content') and isinstance(response.content, list):
+                    # New format with separate thinking and text blocks
+                    print(f"   Response Type: Multi-block format")
+                    
+                    thinking_block = None
+                    text_block = None
+                    
+                    for block in response.content:
+                        if isinstance(block, dict) and block.get('type') == 'thinking':
+                            thinking_block = block.get('thinking', '')
+                        elif isinstance(block, dict) and block.get('type') == 'text':
+                            text_block = block.get('text', '')
+                    
+                    if thinking_block:
+                        print(f"✅ Thinking mode is working!")
+                        print(f"   Thinking Length: {len(thinking_block)} characters")
+                        print(f"   Thinking Preview: {thinking_block[:100]}...")
+                    
+                    if text_block:
+                        print(f"   Final Response Length: {len(text_block)} characters")
+                        print(f"   Final Response Preview: {text_block[:100]}...")
+                    
+                elif hasattr(response, 'content') and isinstance(response.content, str):
+                    # Legacy format
+                    print(f"   Response Length: {len(response.content)} characters")
+                    print(f"   Response Preview: {response.content[:100]}...")
+                    
+                    # Check if thinking is visible in response
+                    if "<thinking>" in response.content or "thinking" in response.content:
+                        print("✅ Thinking mode appears to be working (thinking content detected)")
+                    else:
+                        print("⚠️ No obvious thinking content detected in response")
                 else:
-                    print("⚠️ No obvious thinking content detected in response")
+                    print(f"   Unknown response format: {type(response.content)}")
                     
             except Exception as e:
                 print(f"❌ LLM Test Error: {str(e)}")
