@@ -2,8 +2,8 @@ from sqlalchemy import Column, Integer, String, Boolean
 from app.database import Base
 
 
-class Report(Base):
-    __tablename__ = "report"
+class Policy(Base):
+    __tablename__ = "policies"
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String)
