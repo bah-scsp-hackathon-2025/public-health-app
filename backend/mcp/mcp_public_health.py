@@ -372,13 +372,13 @@ def get_health_risk_trends(
 
 @mcp.tool()
 def fetch_epi_signal(
-    signal: List[str],
+    signal: str,
     time_type: Literal["day", "week", "month"] = "day",
     geo_type: Literal["county", "hrr", "msa", "dma", "state"] = "state",
     start_time: Optional[str] = None,
     end_time: Optional[str] = None,
     geo_values: Optional[List[str]] = None
-) -> dict:
+) -> str:
     """
     Fetch a specific COVID-19 signal from the EpiDataContext and save it to a CSV file.
     Args:
@@ -423,35 +423,49 @@ def fetch_epi_signal(
         "confirmed_admissions_covid_1d_prop_7dav": "hhs"
     }
 
-    time_values = EpiRange(start_time, end_time)
-    epidata = EpiDataContext(use_cache=True, cache_max_age_days=7)
-    apicall = epidata.pub_covidcast(
-        data_source=signal_to_source[signal],
-        signals=signal,
-        time_type=time_type,
-        geo_type=geo_type,
-        time_values=time_range,
-        geo_values=geo_values
-    )
-    df = apicall.df()
-    df["signal"] = signal
-    df["source"] = source
-    df["time_type"] = time_type
-    df["geo_type"] = geo_type
-    df["time_values"] = time_values
-    df["geo_values"] = geo_values
-    df.to_csv(f"{tempfile.gettempdir()}/{signal}.csv", index=False)
-    return df.to_json(orient="records")
-     # TO DO: Serialize the df?
-    # def fetch(self):
-    #     all_data = []
-    #     for entry in tqdm(DELTA_SIGNALS, desc="Fetching signals"):
-    #         data = self.fetch_signal(entry["source"], entry["signal"])
-    #         all_data.append(data)
-    #     return pd.concat(all_data, ignore_index=True)
-
-    # def list_signals(self):
-    #     return [entry["signal"] for entry in DELTA_SIGNALS]
+    try:
+        # Validate signal
+        if signal not in signal_to_source:
+            return json.dumps({
+                "error": f"Invalid signal: {signal}",
+                "available_signals": list(signal_to_source.keys())
+            })
+        
+        # Create time range
+        time_values = EpiRange(start_time, end_time) if start_time or end_time else None
+        
+        # Initialize EpiData client
+        epidata = EpiDataContext(use_cache=True, cache_max_age_days=7)
+        
+        # Fetch data
+        apicall = epidata.pub_covidcast(
+            data_source=signal_to_source[signal],
+            signals=[signal],  # signals expects a list
+            time_type=time_type,
+            geo_type=geo_type,
+            time_values=time_values,
+            geo_values=geo_values
+        )
+        
+        df = apicall.df()
+        
+        # Add metadata columns
+        df["signal"] = signal
+        df["source"] = signal_to_source[signal]
+        df["time_type"] = time_type
+        df["geo_type"] = geo_type
+        
+        # Save to temporary CSV for trend analysis
+        df.to_csv(f"{tempfile.gettempdir()}/{signal}.csv", index=False)
+        
+        # Return JSON string
+        return df.to_json(orient="records")
+                
+    except Exception as e:
+        return json.dumps({
+            "error": f"Failed to fetch signal {signal}: {str(e)}",
+            "signal": signal
+        })
 
 
 # Tool to detect rising trends in time series data using rolling linear regression
@@ -492,43 +506,82 @@ def detect_rising_trend(
             "status": "success"
         }
     """
-    df = pd.read_csv(f"{tempfile.gettempdir()}/{signal_name}.csv")
-    df[date_column] = pd.to_datetime(df[date_column])
-    df = df.sort_values(date_column).dropna(subset=[value_column])
+    try:
+        csv_path = f"{tempfile.gettempdir()}/{signal_name}.csv"
+        
+        # Check if CSV file exists
+        if not os.path.exists(csv_path):
+            return {
+                "error": f"CSV file for signal {signal_name} not found. Please fetch the signal first using fetch_epi_signal.",
+                "status": "error"
+            }
+        
+        df = pd.read_csv(csv_path)
+        
+        # Validate columns exist
+        if date_column not in df.columns:
+            return {
+                "error": f"Date column '{date_column}' not found. Available columns: {list(df.columns)}",
+                "status": "error"
+            }
+        
+        if value_column not in df.columns:
+            return {
+                "error": f"Value column '{value_column}' not found. Available columns: {list(df.columns)}",
+                "status": "error"
+            }
+        
+        df[date_column] = pd.to_datetime(df[date_column])
+        df = df.sort_values(date_column).dropna(subset=[value_column])
 
-    # Ensure strictly positive for log transform
-    df = df[df[value_column] > 0]
+        # Ensure strictly positive for log transform
+        df = df[df[value_column] > 0]
+        
+        if len(df) < window_size:
+            return {
+                "error": f"Not enough data points ({len(df)}) for window size ({window_size})",
+                "status": "error"
+            }
 
-    if smooth:
-        df["smoothed"] = df[value_column].rolling(window=3, center=True).mean()
-        series = df["smoothed"]
-    else:
-        series = df[value_column]
+        if smooth:
+            df["smoothed"] = df[value_column].rolling(window=3, center=True).mean()
+            series = df["smoothed"].dropna()
+            dates = df[df["smoothed"].notna()][date_column].tolist()
+        else:
+            series = df[value_column]
+            dates = df[date_column].tolist()
 
-    log_series = np.log(series)
-    dates = df[date_column].tolist()
-    log_slopes = []
-    rising_periods = []
+        log_series = np.log(series)
+        log_slopes = []
+        rising_periods = []
 
-    for i in range(len(log_series) - window_size + 1):
-        y = log_series[i:i + window_size]
-        x = list(range(window_size))
-        if y.isnull().any():
-            continue
-        slope, _, _, _, _ = linregress(x, y)
-        log_slopes.append(slope)
+        for i in range(len(log_series) - window_size + 1):
+            y = log_series.iloc[i:i + window_size] if hasattr(log_series, 'iloc') else log_series[i:i + window_size]
+            x = list(range(window_size))
+            if pd.isna(y).any():
+                continue
+            slope, _, _, _, _ = linregress(x, y)
+            log_slopes.append(slope)
 
-        if slope >= min_log_slope:
-            start = dates[i]
-            end = dates[i + window_size - 1]
-            rising_periods.append((str(start.date()), str(end.date())))
+            if slope >= min_log_slope:
+                start = dates[i]
+                end = dates[i + window_size - 1]
+                rising_periods.append((str(start.date()), str(end.date())))
 
-    return {
-        "status": "success",
-        "rising_periods": rising_periods,
-        "total_periods": len(rising_periods),
-        "sample_log_slopes": log_slopes[:5]
-    }
+        return {
+            "status": "success",
+            "rising_periods": rising_periods,
+            "total_periods": len(rising_periods),
+            "sample_log_slopes": log_slopes[:5],
+            "data_points_analyzed": len(log_series),
+            "window_size": window_size
+        }
+        
+    except Exception as e:
+        return {
+            "error": f"Failed to detect trends for signal {signal_name}: {str(e)}",
+            "status": "error"
+        }
 
 
 @mcp.tool()

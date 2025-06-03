@@ -10,8 +10,9 @@ import asyncio
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))  # Add backend dir
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'mcp'))  # Add mcp dir
 
-# Import the agent using the correct path
+# Import the agents using the correct path
 from app.agents.health_dashboard_agent import PublicHealthDashboardAgent
+from app.agents.health_dashboard_react_agent import PublicHealthReActAgent
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -27,6 +28,11 @@ class DashboardRequest(BaseModel):
         default="auto",
         description="LLM provider to use: 'openai', 'anthropic', or 'auto' for auto-detection",
         example="openai"
+    )
+    agent_type: Optional[str] = Field(
+        default="standard",
+        description="Agent type to use: 'standard' for workflow-based agent or 'react' for ReAct agent with epidemiological tools",
+        example="react"
     )
     mcp_host: Optional[str] = Field(
         default=None,
@@ -49,6 +55,8 @@ class DashboardResponse(BaseModel):
     timestamp: Optional[str] = None
     error: Optional[str] = None
     generation_time_seconds: Optional[float] = None
+    agent_type: Optional[str] = None
+    tools_used: Optional[list] = None
 
 
 class DashboardStatus(BaseModel):
@@ -83,9 +91,13 @@ async def generate_dashboard(request: DashboardRequest):
             agent_kwargs["mcp_host"] = request.mcp_host
         if request.mcp_port:
             agent_kwargs["mcp_port"] = request.mcp_port
-            
-        agent = PublicHealthDashboardAgent(**agent_kwargs)
         
+        # Choose agent type based on request
+        if request.agent_type == "react":
+            agent = PublicHealthReActAgent(**agent_kwargs)
+        else:
+            agent = PublicHealthDashboardAgent(**agent_kwargs)
+            
         # Generate the dashboard
         result = await agent.generate_dashboard(request.query)
         
@@ -100,7 +112,9 @@ async def generate_dashboard(request: DashboardRequest):
             trends_count=result.get("trends_count"),
             timestamp=result.get("timestamp"),
             error=result.get("error"),
-            generation_time_seconds=generation_time
+            generation_time_seconds=generation_time,
+            agent_type=result.get("agent_type", request.agent_type),
+            tools_used=result.get("tools_used")
         )
         
     except Exception as e:
@@ -226,4 +240,76 @@ async def get_trends_summary():
 async def get_emergency_summary():
     """Generate a dashboard for emergency response scenarios"""
     request = DashboardRequest(query="Emergency response dashboard focusing on high-severity alerts and immediate action items")
-    return await generate_dashboard(request) 
+    return await generate_dashboard(request)
+
+
+@router.post("/epidemiological-analysis", response_model=DashboardResponse)
+async def generate_epidemiological_analysis(request: DashboardRequest):
+    """
+    Generate epidemiological analysis using ReAct agent with real-time data from Delphi Epidata API.
+    
+    This endpoint uses the ReAct agent to:
+    1. Fetch real-time epidemiological data (COVID cases, symptoms, doctor visits, etc.)
+    2. Perform statistical trend analysis using rolling regression
+    3. Cross-reference with public health alerts
+    4. Generate comprehensive epidemiological intelligence
+    
+    The ReAct agent uses the fetch_epi_signal and detect_rising_trend tools for data-driven analysis.
+    """
+    start_time = datetime.now()
+    
+    try:
+        # Force ReAct agent for this endpoint
+        agent_kwargs = {
+            "llm_provider": request.llm_provider if request.llm_provider != "auto" else "auto"
+        }
+        if request.mcp_host:
+            agent_kwargs["mcp_host"] = request.mcp_host
+        if request.mcp_port:
+            agent_kwargs["mcp_port"] = request.mcp_port
+            
+        agent = PublicHealthReActAgent(**agent_kwargs)
+        
+        # Create epidemiological-focused request
+        epi_request = f"""
+{request.query}
+
+Focus on epidemiological surveillance and analysis:
+1. Fetch recent COVID-19 case data, symptoms, and healthcare utilization
+2. Analyze statistical trends and patterns using regression analysis
+3. Cross-reference with current public health alerts
+4. Provide data-driven intelligence for epidemiological decision-making
+
+Emphasize real-time data analysis and statistical evidence.
+"""
+        
+        # Generate the analysis
+        result = await agent.generate_dashboard(epi_request)
+        
+        # Calculate generation time
+        generation_time = (datetime.now() - start_time).total_seconds()
+        
+        # Return the response
+        return DashboardResponse(
+            success=result.get("success", False),
+            dashboard_summary=result.get("dashboard_summary"),
+            alerts_count=None,  # ReAct agent doesn't track these separately
+            trends_count=None,
+            timestamp=result.get("timestamp"),
+            error=result.get("error"),
+            generation_time_seconds=generation_time,
+            agent_type="ReAct-Epidemiological",
+            tools_used=result.get("tools_used")
+        )
+        
+    except Exception as e:
+        generation_time = (datetime.now() - start_time).total_seconds()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": f"Epidemiological analysis failed: {str(e)}",
+                "generation_time_seconds": generation_time,
+                "timestamp": datetime.now().isoformat(),
+                "agent_type": "ReAct-Epidemiological"
+            }
+        ) 
