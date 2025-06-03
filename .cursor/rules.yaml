@@ -31,7 +31,7 @@ groups:
 
   - name: "MCP Services"
     match:
-      - path: "mcp/**"
+      - path: "backend/mcp/**"
       - path: "**/mcp/**"
       - path: "**/services/mcp_*.py"
     language: "python"

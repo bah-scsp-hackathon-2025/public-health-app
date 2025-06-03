@@ -38,7 +38,7 @@ graph TD
 
 ```bash
 # Install dependencies
-cd mcp
+cd backend/mcp
 source venv/bin/activate
 pip install -r requirements.txt
 
@@ -113,7 +113,7 @@ python health_dashboard_agent.py interactive
 The project includes comprehensive tests that work with or without LLM API keys:
 
 ```bash
-# Run all tests
+# Run all tests (from backend/mcp directory)
 python test_dashboard_agent.py
 
 # Test specific components

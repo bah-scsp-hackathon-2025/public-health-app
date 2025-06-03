@@ -7,10 +7,10 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/mcp",
-            "python": "${workspaceFolder}/mcp/venv/bin/python",
+            "cwd": "${workspaceFolder}/backend/mcp",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}/mcp"
+                "PYTHONPATH": "${workspaceFolder}/backend/mcp"
             },
             "justMyCode": false,
             "stopOnEntry": false,
@@ -20,12 +20,12 @@
             "name": "Debug FastMCP Server",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/mcp/fastmcp_server.py",
+            "program": "${workspaceFolder}/backend/mcp/fastmcp_server.py",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/mcp",
-            "python": "${workspaceFolder}/mcp/venv/bin/python",
+            "cwd": "${workspaceFolder}/backend/mcp",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}/mcp",
+                "PYTHONPATH": "${workspaceFolder}/backend/mcp",
                 "MCP_DEBUG": "1"
             },
             "justMyCode": false,
@@ -40,12 +40,12 @@
             "name": "Debug Raw MCP Server",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/mcp/mcp_public_health.py",
+            "program": "${workspaceFolder}/backend/mcp/mcp_public_health.py",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/mcp",
-            "python": "${workspaceFolder}/mcp/venv/bin/python",
+            "cwd": "${workspaceFolder}/backend/mcp",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}/mcp",
+                "PYTHONPATH": "${workspaceFolder}/backend/mcp",
                 "MCP_DEBUG": "1"
             },
             "justMyCode": false,
@@ -60,12 +60,12 @@
             "name": "Debug LangChain MCP Test",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/mcp/test_langchain_mcp.py",
+            "program": "${workspaceFolder}/backend/mcp/test_langchain_mcp.py",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/mcp",
-            "python": "${workspaceFolder}/mcp/venv/bin/python",
+            "cwd": "${workspaceFolder}/backend/mcp",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}/mcp"
+                "PYTHONPATH": "${workspaceFolder}/backend/mcp"
             },
             "justMyCode": false,
             "stopOnEntry": false,
@@ -79,12 +79,12 @@
             "name": "Debug Raw MCP Test",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/mcp/test_server.py",
+            "program": "${workspaceFolder}/backend/mcp/test_server.py",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/mcp",
-            "python": "${workspaceFolder}/mcp/venv/bin/python",
+            "cwd": "${workspaceFolder}/backend/mcp",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}/mcp"
+                "PYTHONPATH": "${workspaceFolder}/backend/mcp"
             },
             "justMyCode": false,
             "stopOnEntry": false,
@@ -100,10 +100,10 @@
             "request": "launch",
             "module": "fastmcp",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/mcp",
-            "python": "${workspaceFolder}/mcp/venv/bin/python",
+            "cwd": "${workspaceFolder}/backend/mcp",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}/mcp",
+                "PYTHONPATH": "${workspaceFolder}/backend/mcp",
                 "MCP_DEBUG": "1"
             },
             "justMyCode": false,
@@ -121,12 +121,12 @@
             "name": "Debug FastMCP with Specific Tool",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/mcp/fastmcp_server.py",
+            "program": "${workspaceFolder}/backend/mcp/fastmcp_server.py",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/mcp",
-            "python": "${workspaceFolder}/mcp/venv/bin/python",
+            "cwd": "${workspaceFolder}/backend/mcp",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}/mcp",
+                "PYTHONPATH": "${workspaceFolder}/backend/mcp",
                 "MCP_DEBUG": "1",
                 "MCP_TOOL_BREAKPOINT": "get_public_health_alerts"
             },
@@ -144,10 +144,10 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/mcp",
-            "python": "${workspaceFolder}/mcp/venv/bin/python",
+            "cwd": "${workspaceFolder}/backend/mcp",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}/mcp"
+                "PYTHONPATH": "${workspaceFolder}/backend/mcp"
             },
             "justMyCode": false,
             "stopOnEntry": false,
