@@ -83,9 +83,15 @@ Start dashboard generation as a background task for long-running requests.
 
 ```python
 import requests
+import os
+
+# Get FastAPI URL from environment
+host = os.getenv("FASTAPI_HOST", "localhost")
+port = os.getenv("FASTAPI_PORT", "8001")
+base_url = f"http://{host}:{port}"
 
 # Generate custom dashboard
-response = requests.post("http://localhost:8001/dashboard/generate", json={
+response = requests.post(f"{base_url}/dashboard/generate", json={
     "query": "Focus on respiratory illness trends in California",
     "llm_provider": "openai"
 })
@@ -98,7 +104,12 @@ if result["success"]:
 ### JavaScript/Node.js
 
 ```javascript
-const response = await fetch('http://localhost:8001/dashboard/generate', {
+// Get FastAPI URL from environment
+const host = process.env.FASTAPI_HOST || 'localhost';
+const port = process.env.FASTAPI_PORT || '8001';
+const baseUrl = `http://${host}:${port}`;
+
+const response = await fetch(`${baseUrl}/dashboard/generate`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -114,7 +125,11 @@ console.log(result.dashboard_summary);
 ### cURL
 
 ```bash
-curl -X POST "http://localhost:8001/dashboard/generate" \
+# Using environment variables (recommended)
+FASTAPI_HOST=${FASTAPI_HOST:-localhost}
+FASTAPI_PORT=${FASTAPI_PORT:-8001}
+
+curl -X POST "http://${FASTAPI_HOST}:${FASTAPI_PORT}/dashboard/generate" \
   -H "Content-Type: application/json" \
   -d '{
     "query": "Generate dashboard for high-severity alerts only",
@@ -129,6 +144,10 @@ curl -X POST "http://localhost:8001/dashboard/generate" \
 The dashboard API uses these environment variables:
 
 ```bash
+# FastAPI Server Configuration
+FASTAPI_HOST=0.0.0.0
+FASTAPI_PORT=8001
+
 # MCP Server Configuration
 MCP_SERVER_HOST=localhost
 MCP_SERVER_PORT=8000
@@ -169,14 +188,18 @@ python3 test_dashboard_api.py
 Or test individual endpoints:
 
 ```bash
+# Set environment variables
+FASTAPI_HOST=${FASTAPI_HOST:-localhost}
+FASTAPI_PORT=${FASTAPI_PORT:-8001}
+
 # Check status
-curl http://localhost:8001/dashboard/status
+curl http://${FASTAPI_HOST}:${FASTAPI_PORT}/dashboard/status
 
 # Quick alerts summary
-curl http://localhost:8001/dashboard/alerts-summary
+curl http://${FASTAPI_HOST}:${FASTAPI_PORT}/dashboard/alerts-summary
 
 # Custom dashboard
-curl -X POST http://localhost:8001/dashboard/generate \
+curl -X POST http://${FASTAPI_HOST}:${FASTAPI_PORT}/dashboard/generate \
   -H "Content-Type: application/json" \
   -d '{"query": "Focus on COVID-19 trends"}'
 ```
@@ -188,6 +211,7 @@ curl -X POST http://localhost:8001/dashboard/generate \
 ```python
 from fastapi import FastAPI
 import httpx
+import os
 
 app = FastAPI()
 
@@ -195,8 +219,13 @@ app = FastAPI()
 async def get_health_dashboard(region: str = None):
     query = f"Generate health dashboard for {region}" if region else "Generate comprehensive health dashboard"
     
+    # Get FastAPI URL from environment
+    host = os.getenv("FASTAPI_HOST", "localhost")
+    port = os.getenv("FASTAPI_PORT", "8001")
+    dashboard_url = f"http://{host}:{port}/dashboard/generate"
+    
     async with httpx.AsyncClient() as client:
-        response = await client.post("http://localhost:8001/dashboard/generate", json={
+        response = await client.post(dashboard_url, json={
             "query": query
         })
         return response.json()
@@ -207,9 +236,15 @@ async def get_health_dashboard(region: str = None):
 ```python
 import asyncio
 import httpx
+import os
 from datetime import datetime
 
 async def daily_dashboard_report():
+    # Get FastAPI URL from environment
+    host = os.getenv("FASTAPI_HOST", "localhost")
+    port = os.getenv("FASTAPI_PORT", "8001")
+    base_url = f"http://{host}:{port}"
+    
     async with httpx.AsyncClient() as client:
         # Generate different types of reports
         reports = [
@@ -219,7 +254,7 @@ async def daily_dashboard_report():
         ]
         
         for report_name, endpoint in reports:
-            response = await client.get(f"http://localhost:8001{endpoint}")
+            response = await client.get(f"{base_url}{endpoint}")
             result = response.json()
             
             if result["success"]:

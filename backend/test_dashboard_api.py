@@ -10,13 +10,18 @@ import requests
 import json
 import time
 import asyncio
+import os
 from typing import Dict, Any
 
 
 class DashboardAPITester:
     """Test client for dashboard API endpoints"""
     
-    def __init__(self, base_url: str = "http://localhost:8001"):
+    def __init__(self, base_url: str = None):
+        if base_url is None:
+            host = os.getenv("FASTAPI_HOST", "localhost")
+            port = os.getenv("FASTAPI_PORT", "8001")
+            base_url = f"http://{host}:{port}"
         self.base_url = base_url.rstrip('/')
         
     def test_status(self) -> Dict[str, Any]:
@@ -190,7 +195,11 @@ def main():
     
     # Check if FastAPI server is running
     try:
-        response = requests.get("http://localhost:8001/health", timeout=5)
+        host = os.getenv("FASTAPI_HOST", "localhost")
+        port = os.getenv("FASTAPI_PORT", "8001")
+        health_url = f"http://{host}:{port}/health"
+        
+        response = requests.get(health_url, timeout=5)
         if response.status_code == 200:
             print("✅ FastAPI server is running\n")
         else:
@@ -198,7 +207,8 @@ def main():
     except requests.exceptions.RequestException:
         print("❌ FastAPI server is not running!")
         print("   Please start it with:")
-        print("   cd backend && PYTHONPATH=mcp:. python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8001")
+        print("   cd backend && python3 start_fastapi.py")
+        print("   (or use the VS Code task 'Start FastAPI App')")
         return
     
     # Run all tests

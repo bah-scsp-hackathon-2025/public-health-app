@@ -182,7 +182,7 @@
             "name": "Debug FastAPI App",
             "type": "debugpy",
             "request": "launch",
-            "module": "uvicorn",
+            "program": "${workspaceFolder}/backend/start_fastapi.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}/backend",
             "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
@@ -191,14 +191,7 @@
             },
             "justMyCode": false,
             "stopOnEntry": false,
-            "args": [
-                "app.main:app",
-                "--host",
-                "0.0.0.0",
-                "--port",
-                "8001",
-                "--reload"
-            ],
+            "args": [],
             "presentation": {
                 "group": "servers",
                 "order": 4

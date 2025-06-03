@@ -63,7 +63,7 @@ python3 -m uvicorn fastmcp_server:app --host 0.0.0.0 --port 8000
 # Start FastAPI app (terminal 2) 
 cd backend
 source mcp/venv/bin/activate
-python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+python3 start_fastapi.py
 ```
 
 ### 3. Test the Agents
@@ -128,7 +128,7 @@ python3 fastmcp_server.py
 ```bash
 cd backend
 source mcp/venv/bin/activate
-python3 -m uvicorn app.main:app --reload
+python3 start_fastapi.py
 ```
 
 ## 📚 Key Components
@@ -157,7 +157,7 @@ Web application providing REST APIs:
   - SSE endpoint: `http://localhost:8000/sse`
   - Health check: `http://localhost:8000/health`
 
-- **FastAPI App**: `http://localhost:8001`
+- **FastAPI App**: `http://localhost:8001` (configurable via `FASTAPI_HOST` and `FASTAPI_PORT`)
   - API docs: `http://localhost:8001/docs`
   - Health check: `http://localhost:8001/health`
   - **Dashboard endpoints**:
