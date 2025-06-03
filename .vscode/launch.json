@@ -1,0 +1,238 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend/mcp",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend/mcp"
+            },
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "args": []
+        },
+        {
+            "name": "Debug FastMCP Server",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/mcp/fastmcp_server.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend/mcp",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend/mcp",
+                "MCP_DEBUG": "1"
+            },
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "args": [],
+            "presentation": {
+                "group": "servers",
+                "order": 1
+            }
+        },
+        {
+            "name": "Debug Raw MCP Server",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/mcp/mcp_public_health.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend/mcp",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend/mcp",
+                "MCP_DEBUG": "1"
+            },
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "args": [],
+            "presentation": {
+                "group": "servers",
+                "order": 2
+            }
+        },
+        {
+            "name": "Debug LangChain MCP Test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/mcp/test_langchain_mcp.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend/mcp",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend/mcp"
+            },
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "args": [],
+            "presentation": {
+                "group": "tests",
+                "order": 1
+            }
+        },
+        {
+            "name": "Debug Raw MCP Test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/mcp/test_server.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend/mcp",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend/mcp"
+            },
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "args": [],
+            "presentation": {
+                "group": "tests",
+                "order": 2
+            }
+        },
+        {
+            "name": "Debug FastMCP with Development Mode",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "fastmcp",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend/mcp",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend/mcp",
+                "MCP_DEBUG": "1"
+            },
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "args": [
+                "dev",
+                "fastmcp_server.py"
+            ],
+            "presentation": {
+                "group": "servers",
+                "order": 3
+            }
+        },
+        {
+            "name": "Debug FastMCP with Specific Tool",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/mcp/fastmcp_server.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend/mcp",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend/mcp",
+                "MCP_DEBUG": "1",
+                "MCP_TOOL_BREAKPOINT": "get_public_health_alerts"
+            },
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "args": [],
+            "presentation": {
+                "group": "advanced",
+                "order": 1
+            }
+        },
+        {
+            "name": "Debug Dashboard Agent",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/app/agents/health_dashboard_agent.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend/app/agents",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend:${workspaceFolder}/backend/mcp"
+            },
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "args": [
+                "interactive"
+            ],
+            "presentation": {
+                "group": "agents",
+                "order": 1
+            }
+        },
+        {
+            "name": "Debug Dashboard Agent Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/app/agents/test_dashboard_agent.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend/app/agents",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend:${workspaceFolder}/backend/mcp"
+            },
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "args": [],
+            "presentation": {
+                "group": "agents",
+                "order": 2
+            }
+        },
+        {
+            "name": "Debug FastAPI App",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/start_fastapi.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend:${workspaceFolder}/backend/mcp"
+            },
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "args": [],
+            "presentation": {
+                "group": "servers",
+                "order": 4
+            }
+        },
+        {
+            "name": "Debug with Args",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend/mcp",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend/mcp"
+            },
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "args": [
+                "--debug",
+                "--port",
+                "8001"
+            ],
+            "presentation": {
+                "group": "advanced",
+                "order": 2
+            }
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Debug FastMCP Server + Test",
+            "configurations": [
+                "Debug FastMCP Server",
+                "Debug LangChain MCP Test"
+            ],
+            "stopAll": true,
+            "presentation": {
+                "group": "compounds",
+                "order": 1
+            }
+        }
+    ]
+}

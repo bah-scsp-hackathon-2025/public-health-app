@@ -1,0 +1,270 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start FastMCP Server",
+            "type": "shell",
+            "command": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "args": [
+                "-m",
+                "uvicorn",
+                "fastmcp_server:app",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8000"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "group": "servers"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/backend/mcp"
+            },
+            "problemMatcher": [],
+            "isBackground": true,
+            "runOptions": {
+                "instanceLimit": 1
+            }
+        },
+        {
+            "label": "Start FastAPI App",
+            "type": "shell",
+            "command": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "args": [
+                "start_fastapi.py"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "group": "servers"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
+            },
+            "problemMatcher": [],
+            "isBackground": true,
+            "runOptions": {
+                "instanceLimit": 1
+            }
+        },
+        {
+            "label": "Start Raw MCP Server",
+            "type": "shell",
+            "command": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "args": [
+                "mcp_public_health.py"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "group": "servers"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/backend/mcp"
+            },
+            "problemMatcher": [],
+            "isBackground": true,
+            "runOptions": {
+                "instanceLimit": 1
+            }
+        },
+        {
+            "label": "Run LangChain MCP Test",
+            "type": "shell",
+            "command": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "args": [
+                "test_langchain_mcp.py"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new",
+                "group": "tests"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/backend/mcp"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Raw MCP Test",
+            "type": "shell",
+            "command": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "args": [
+                "test_server.py"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new",
+                "group": "tests"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/backend/mcp"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Setup MCP Environment",
+            "type": "shell",
+            "command": "./setup.sh",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/backend/mcp"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Install Dependencies",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/pip",
+            "args": [
+                "install",
+                "-r",
+                "requirements.txt"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/backend/mcp"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "FastMCP Development Mode",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/fastmcp",
+            "args": [
+                "dev",
+                "fastmcp_server.py"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "group": "servers"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/backend/mcp"
+            },
+            "problemMatcher": [],
+            "isBackground": true,
+            "runOptions": {
+                "instanceLimit": 1
+            }
+        },
+        {
+            "label": "Check MCP Server Health",
+            "type": "shell",
+            "command": "curl",
+            "args": [
+                "-s",
+                "http://localhost:8000/sse"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/backend/mcp"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Format Python Code",
+            "type": "shell",
+            "command": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "args": [
+                "-m",
+                "black",
+                "*.py"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/backend/mcp"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Lint Python Code",
+            "type": "shell",
+            "command": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "args": [
+                "-m",
+                "flake8",
+                "*.py"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/backend/mcp"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Test Dashboard API",
+            "type": "shell",
+            "command": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "args": [
+                "test_dashboard_api.py"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new",
+                "group": "tests"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/backend",
+                "env": {
+                    "PYTHONPATH": "${workspaceFolder}/backend/mcp:${workspaceFolder}/backend"
+                }
+            },
+            "problemMatcher": []
+        }
+    ]
+}
