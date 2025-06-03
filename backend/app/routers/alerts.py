@@ -22,7 +22,7 @@ async def create_alert(alert: AlertCreate, db: Session = Depends(get_db)):
         risk_score=alert.risk_score,
         risk_reason=alert.risk_reason,
         location=alert.location,
-        latitde=alert.latitude,
+        latitude=alert.latitude,
         longitude=alert.longitude,
         created=current_time,
         updated=current_time,
@@ -34,13 +34,21 @@ async def create_alert(alert: AlertCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=List[AlertResponse])
-async def get_alerts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+async def get_alerts(db: Session = Depends(get_db)):
+    return get_all_alerts(db=db)
+
+
+def get_all_alerts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     alerts = db.query(Alert).offset(skip).limit(limit).all()
     return alerts
 
 
 @router.get("/{alert_id}", response_model=AlertResponse)
 async def get_alert(alert_id: int, db: Session = Depends(get_db)):
+    return get_alert_by_id(alert_id, db)
+
+
+def get_alert_by_id(alert_id: int, db: Session = Depends(get_db)):
     alert = db.query(Alert).filter(Alert.id == alert_id).first()
     if alert is None:
         raise HTTPException(status_code=404, detail="Alert not found")

@@ -1,0 +1,42 @@
+.two-column-container {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  padding: 20px;
+}
+
+.column {
+  flex: 1;
+  max-width: 400px;
+}
+
+.data-card {
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  background-color: #fff;
+  margin-bottom: 16px;
+  transition: transform 0.2s ease;
+  color: black;
+}
+
+.data-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background: lightgrey;
+  cursor: pointer;
+}
+
+
+.column h2 {
+  color: #191970;
+  border-bottom: 1px solid black; /* solid border */
+  text-align: center;
+  margin-bottom: 16px; /* space after heading */
+  font-size: 30px;
+  margin-bottom: 50px;
+  margin-left: 0px;
+  width: 100%;
+}
+

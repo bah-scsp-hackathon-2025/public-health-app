@@ -12,13 +12,17 @@ from app.models.policy import (
     StrategyCreate,
     StrategyResponse,
 )
-from app.routers.alerts import get_alert
+from app.routers.alerts import get_alert_by_id
 
 router = APIRouter(prefix="/policies", tags=["policies"])
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_policy(policy: PolicyCreate, db: Session = Depends(get_db)):
+    return add_policy_to_db(policy, db)
+
+
+def add_policy_to_db(policy: PolicyCreate, db: Session = Depends(get_db)):
     # Check if policy already exists
     db_policy = db.query(Policy).filter(Policy.title == policy.title).first()
     if db_policy:
@@ -32,6 +36,7 @@ async def create_policy(policy: PolicyCreate, db: Session = Depends(get_db)):
         approved=policy.approved,
         created=current_time,
         updated=current_time,
+        alert_id=policy.alert_id,
     )
     db.add(db_policy)
     db.commit()
@@ -69,6 +74,8 @@ async def update_policy(
         policy.author = policy_update.author
     if policy_update.approved:
         policy.approved = policy_update.approved
+    if policy_update.alert_id:
+        policy.alert_id = policy_update.alert_id
     policy.updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     db.add(policy)
@@ -90,17 +97,39 @@ async def delete_policy(policy_id: int, db: Session = Depends(get_db)):
 
 @router.post("/generate/{alert_id}", response_model=List[StrategyResponse])
 async def generate_strategies(alert_id: int, db: Session = Depends(get_db)):
-    alert = get_alert(alert_id, db)
+    alert = get_alert_by_id(alert_id, db)
     # logic to generate strategy
     #
-    strategies = []
 
-    db_strategies = [_create_strategy(strategy, alert_id) for strategy in strategies]
+    # dummy data
+    strategies = [
+        StrategyCreate(
+            short_description=alert.name + " 1",
+            full_description=alert.description,
+            alert_id=alert_id,
+        ),
+        StrategyCreate(
+            short_description=alert.name + " 2",
+            full_description=alert.description,
+            alert_id=alert_id,
+        ),
+        StrategyCreate(
+            short_description=alert.name + " 3",
+            full_description=alert.description,
+            alert_id=alert_id,
+        ),
+    ]
+
+    db_strategies = [_create_strategy(strategy, alert_id, db) for strategy in strategies]
     return db_strategies
 
 
 @router.get("/strategy/{strategy_id}", response_model=StrategyResponse)
 async def get_strategy(strategy_id: int, db: Session = Depends(get_db)):
+    return get_strategy_by_id(strategy_id, db)
+
+
+def get_strategy_by_id(strategy_id: int, db: Session = Depends(get_db)):
     strategy = db.query(Strategy).filter(Strategy.id == strategy_id).first()
     if strategy is None:
         raise HTTPException(status_code=404, detail="Strategy not found")
@@ -121,12 +150,20 @@ def _create_strategy(strategy: StrategyCreate, alert_id: int, db: Session = Depe
 
 @router.post("/draft/{strategy_id}", status_code=status.HTTP_201_CREATED)
 async def draft_policy(strategy_id: int, db: Session = Depends(get_db)):
-    strategy = get_strategy(strategy_id, db)
+    db_strategy = get_strategy_by_id(strategy_id, db)
     # logic to generate policy
     #
-    policy = {}
 
-    db_policy = create_policy(policy, db)
+    # dummy data
+    policy = PolicyCreate(
+        title=db_strategy.short_description,
+        content=db_strategy.full_description,
+        author="bri",
+        alert_id="1",
+        approved=False,
+    )
+
+    db_policy = add_policy_to_db(policy, db)
     return db_policy
 
 
