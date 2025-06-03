@@ -79,6 +79,14 @@ PYTHONPATH=../../mcp:../.. python3 test_dashboard_agent.py
 PYTHONPATH=../../mcp:../.. python3 example_usage.py
 ```
 
+### 4. Test the Dashboard API
+
+```bash
+# Test the dashboard endpoints (requires both servers running)
+cd backend
+python3 test_dashboard_api.py
+```
+
 ## 🔧 VS Code Integration
 
 The workspace includes comprehensive VS Code configurations:
@@ -152,6 +160,13 @@ Web application providing REST APIs:
 - **FastAPI App**: `http://localhost:8001`
   - API docs: `http://localhost:8001/docs`
   - Health check: `http://localhost:8001/health`
+  - **Dashboard endpoints**:
+    - `POST /dashboard/generate` - Generate custom dashboard
+    - `GET /dashboard/status` - Check agent status
+    - `GET /dashboard/alerts-summary` - Alerts-focused dashboard
+    - `GET /dashboard/trends-summary` - Trends-focused dashboard
+    - `GET /dashboard/emergency-summary` - Emergency response dashboard
+    - `POST /dashboard/generate/async` - Async dashboard generation
 
 ## 🌟 Features
 
@@ -164,6 +179,7 @@ Web application providing REST APIs:
 ## 📖 Documentation
 
 - [LangGraph Agent Documentation](backend/app/agents/README_LANGGRAPH_AGENT.md)
+- [Dashboard API Documentation](backend/app/routers/README_DASHBOARD_API.md)
 - [FastMCP Server Documentation](backend/mcp/README_FastMCP.md)
 - [MCP Protocol Documentation](backend/mcp/README.md)
 

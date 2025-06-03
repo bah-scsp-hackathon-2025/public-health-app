@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import users, alerts
+from app.routers import users, alerts, dashboard
 from app.database import engine, Base
 from app.config import settings
 
@@ -25,6 +25,7 @@ app.add_middleware(
 # Include routers
 app.include_router(users.router)
 app.include_router(alerts.router)
+app.include_router(dashboard.router)
 
 
 @app.get("/")
