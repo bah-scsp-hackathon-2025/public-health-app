@@ -33,10 +33,9 @@ async def test_tool():
                 break
         
         if alerts_tool:
-            print('🧪 Testing with agent parameters...')
+            print('🧪 Testing without start_date first...')
             result = await alerts_tool.ainvoke({
-                'limit': 20,
-                'start_date': '2025-05-03T22:13:24.174018'
+                'limit': 20
             })
             print(f'✅ Tool success: {type(result)}')
             print(f'Result preview: {str(result)[:500]}...')

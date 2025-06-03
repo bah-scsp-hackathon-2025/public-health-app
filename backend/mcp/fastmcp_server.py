@@ -242,43 +242,56 @@ def get_public_health_alerts(
     if alert_type:
         filtered_alerts = [alert for alert in filtered_alerts if alert["alert_type"] == alert_type]
     
-    # Filter by date range if provided
+    # Filter by date range if provided - robust datetime handling
     if start_date:
         try:
-            # Parse start_date and ensure it's timezone-naive
-            if 'T' in start_date:
-                if start_date.endswith('Z'):
-                    start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00')).replace(tzinfo=None)
+            # Convert all timestamps to naive datetime for comparison
+            def parse_datetime_naive(dt_str):
+                """Parse datetime string and ensure it's timezone-naive"""
+                if dt_str.endswith('Z'):
+                    # UTC timezone
+                    return datetime.fromisoformat(dt_str.replace('Z', '+00:00')).replace(tzinfo=None)
+                elif 'T' in dt_str and dt_str.find('+') == -1 and dt_str.find('Z') == -1:
+                    # Naive datetime with T separator
+                    return datetime.fromisoformat(dt_str)
                 else:
-                    start_dt = datetime.fromisoformat(start_date)
-            else:
-                start_dt = datetime.fromisoformat(start_date)
-                
+                    # Try to parse as-is and make naive
+                    dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+                    return dt.replace(tzinfo=None) if dt.tzinfo else dt
+            
+            start_dt = parse_datetime_naive(start_date)
             filtered_alerts = [
                 alert for alert in filtered_alerts 
-                if datetime.fromisoformat(alert["timestamp"].replace('Z', '+00:00')).replace(tzinfo=None) >= start_dt
+                if parse_datetime_naive(alert["timestamp"]) >= start_dt
             ]
-        except ValueError:
-            # Invalid date format, return error in metadata
+        except (ValueError, TypeError) as e:
+            # Invalid date format, skip filtering
+            print(f"Warning: Could not parse start_date '{start_date}': {e}")
             pass
     
     if end_date:
         try:
-            # Parse end_date and ensure it's timezone-naive
-            if 'T' in end_date:
-                if end_date.endswith('Z'):
-                    end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00')).replace(tzinfo=None)
+            def parse_datetime_naive(dt_str):
+                """Parse datetime string and ensure it's timezone-naive"""
+                if dt_str.endswith('Z'):
+                    # UTC timezone
+                    return datetime.fromisoformat(dt_str.replace('Z', '+00:00')).replace(tzinfo=None)
+                elif 'T' in dt_str and dt_str.find('+') == -1 and dt_str.find('Z') == -1:
+                    # Naive datetime with T separator
+                    return datetime.fromisoformat(dt_str)
                 else:
-                    end_dt = datetime.fromisoformat(end_date)
-            else:
-                end_dt = datetime.fromisoformat(end_date)
-                
+                    # Try to parse as-is and make naive
+                    dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+                    return dt.replace(tzinfo=None) if dt.tzinfo else dt
+            
+            end_dt = parse_datetime_naive(end_date)
             filtered_alerts = [
                 alert for alert in filtered_alerts 
-                if datetime.fromisoformat(alert["timestamp"].replace('Z', '+00:00')).replace(tzinfo=None) <= end_dt
+                if parse_datetime_naive(alert["timestamp"]) <= end_dt
             ]
-        except ValueError:
-            # Invalid date format, return error in metadata
+        except (ValueError, TypeError) as e:
+            # Invalid date format, skip filtering
+            print(f"Warning: Could not parse end_date '{end_date}': {e}")
             pass
     
     # Sort by timestamp descending (most recent first)

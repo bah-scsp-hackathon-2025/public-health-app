@@ -50,37 +50,44 @@ class PublicHealthDashboardAgent:
     """LangGraph agent for public health dashboard generation"""
     
     def __init__(self, llm_provider: str = "auto", mcp_host: str = None, mcp_port: int = None):
-        # Load MCP configuration from environment variables
-        self.mcp_host = mcp_host or os.getenv("MCP_SERVER_HOST", "localhost")
-        self.mcp_port = mcp_port or int(os.getenv("MCP_SERVER_PORT", "8000"))
+        # Load configuration from settings
+        from ..config import settings
+        
+        # Load MCP configuration
+        self.mcp_host = mcp_host or settings.mcp_server_host if hasattr(settings, 'mcp_server_host') else os.getenv("MCP_SERVER_HOST", "localhost")
+        self.mcp_port = mcp_port or int(settings.mcp_server_port if hasattr(settings, 'mcp_server_port') else os.getenv("MCP_SERVER_PORT", "8000"))
         self.llm_provider = llm_provider
+        
+        # Get API keys from settings
+        openai_key = settings.openai_api_key if settings.openai_api_key else None
+        anthropic_key = settings.anthropic_api_key if settings.anthropic_api_key else None
         
         # Initialize LLM with error handling
         self.llm = None
         if llm_provider == "auto":
             # Auto-detect available provider
-            if os.getenv("OPENAI_API_KEY"):
+            if openai_key and openai_key.startswith('sk-'):
                 llm_provider = "openai"
-            elif os.getenv("ANTHROPIC_API_KEY"):
+            elif anthropic_key and anthropic_key.startswith('sk-ant-'):
                 llm_provider = "anthropic"
             else:
-                print("⚠️  No LLM API keys found. Agent will work in MCP-only mode.")
+                print("⚠️  No valid LLM API keys found. Agent will work in MCP-only mode.")
                 llm_provider = None
         
-        if llm_provider == "openai" and os.getenv("OPENAI_API_KEY"):
+        if llm_provider == "openai" and openai_key and openai_key.startswith('sk-'):
             self.llm = ChatOpenAI(
                 model="gpt-4o-mini",
                 temperature=0.1,
-                api_key=os.getenv("OPENAI_API_KEY")
+                api_key=openai_key
             )
-        elif llm_provider == "anthropic" and os.getenv("ANTHROPIC_API_KEY"):
+        elif llm_provider == "anthropic" and anthropic_key and anthropic_key.startswith('sk-ant-'):
             self.llm = ChatAnthropic(
                 model="claude-3-5-sonnet-20241022",
                 temperature=0.1,
-                api_key=os.getenv("ANTHROPIC_API_KEY")
+                api_key=anthropic_key
             )
         elif llm_provider and llm_provider not in ["auto", None]:
-            print(f"⚠️  {llm_provider} API key not found. Agent will work in MCP-only mode.")
+            print(f"⚠️  {llm_provider} API key not found or invalid. Agent will work in MCP-only mode.")
         
         # Initialize MCP client
         self.mcp_client = None
@@ -154,11 +161,12 @@ class PublicHealthDashboardAgent:
             if not alerts_tool or not trends_tool:
                 raise Exception("Required MCP tools not available")
             
-            # Fetch recent alerts (last 30 days)
+            # Fetch recent alerts (temporarily without date filtering due to timezone issue)
             print("🔍 Fetching public health alerts...")
             alerts_result = await alerts_tool.ainvoke({
-                "limit": 20,
-                "start_date": (datetime.now() - timedelta(days=30)).isoformat()
+                "limit": 20
+                # TODO: Re-enable date filtering once timezone comparison is fixed
+                # "start_date": (datetime.now() - timedelta(days=30)).isoformat()
             })
             
             # Fetch all available trends

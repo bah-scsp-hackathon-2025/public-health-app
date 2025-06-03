@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     fastapi_host: str = "0.0.0.0"
     fastapi_port: int = 8001
     
+    # MCP Server Configuration
+    mcp_server_host: str = "localhost"
+    mcp_server_port: int = 8000
+    
     # API Keys
     openai_api_key: str = ""
     anthropic_api_key: str = ""
