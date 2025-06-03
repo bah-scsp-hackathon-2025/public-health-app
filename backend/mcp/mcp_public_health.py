@@ -21,6 +21,31 @@ from scipy.stats import linregress
 from epidatpy import EpiDataContext, EpiRange
 import os
 import tempfile
+import logging
+import json
+
+def setup_debug_logging():
+    """Setup comprehensive debug logging for MCP server"""
+    # Configure root logger
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        force=True  # Override any existing configuration
+    )
+    
+    # Set up specific loggers for debugging
+    logger = logging.getLogger(__name__)
+    fastmcp_logger = logging.getLogger("fastmcp")
+    
+    # Enable debug logging
+    logger.setLevel(logging.DEBUG)
+    fastmcp_logger.setLevel(logging.DEBUG)
+    
+    logger.debug("🔧 Debug logging enabled for MCP server")
+    return logger
+
+# Setup logging and get logger
+logger = setup_debug_logging()
 
 # Create the MCP server with SSE transport
 mcp = FastMCP("Public Health FastMCP")
@@ -411,6 +436,11 @@ def fetch_epi_signal(
         json: A JSON converted DataFrame containing the fetched signal data, with additional metadata columns. 
     """
 
+    logger.debug(f"🔍 Fetching epidemiological signal: {signal}")
+    logger.debug(f"Parameters: time_type={time_type}, geo_type={geo_type}, start_time={start_time}, end_time={end_time}")
+    if geo_values:
+        logger.debug(f"Geographic values: {geo_values}")
+
     signal_to_source = {
         "smoothed_wwearing_mask_7d": "fb-survey",
         "smoothed_wcovid_vaccinated_appointment_or_accept": "fb-survey",
@@ -426,18 +456,25 @@ def fetch_epi_signal(
     try:
         # Validate signal
         if signal not in signal_to_source:
+            logger.warning(f"❌ Invalid signal requested: {signal}")
             return json.dumps({
                 "error": f"Invalid signal: {signal}",
                 "available_signals": list(signal_to_source.keys())
             })
         
+        logger.debug(f"✅ Signal validated: {signal} -> {signal_to_source[signal]}")
+        
         # Create time range
         time_values = EpiRange(start_time, end_time) if start_time or end_time else None
+        if time_values:
+            logger.debug(f"⏰ Time range: {time_values}")
         
         # Initialize EpiData client
+        logger.debug("🔄 Initializing EpiData client with cache")
         epidata = EpiDataContext(use_cache=True, cache_max_age_days=7)
         
         # Fetch data
+        logger.debug(f"📊 Fetching data for signal: {signal}")
         apicall = epidata.pub_covidcast(
             data_source=signal_to_source[signal],
             signals=[signal],  # signals expects a list
@@ -448,6 +485,7 @@ def fetch_epi_signal(
         )
         
         df = apicall.df()
+        logger.debug(f"✅ Retrieved {len(df)} data points")
         
         # Add metadata columns
         df["signal"] = signal
@@ -456,12 +494,17 @@ def fetch_epi_signal(
         df["geo_type"] = geo_type
         
         # Save to temporary CSV for trend analysis
-        df.to_csv(f"{tempfile.gettempdir()}/{signal}.csv", index=False)
+        csv_path = f"{tempfile.gettempdir()}/{signal}.csv"
+        df.to_csv(csv_path, index=False)
+        logger.debug(f"💾 Saved data to temporary CSV: {csv_path}")
         
         # Return JSON string
-        return df.to_json(orient="records")
+        result = df.to_json(orient="records")
+        logger.debug("✅ Successfully converted data to JSON")
+        return result
                 
     except Exception as e:
+        logger.error(f"❌ Error fetching signal {signal}: {str(e)}", exc_info=True)
         return json.dumps({
             "error": f"Failed to fetch signal {signal}: {str(e)}",
             "signal": signal
