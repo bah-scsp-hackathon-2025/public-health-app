@@ -10,7 +10,6 @@ router = APIRouter(prefix="/alerts", tags=["alerts"])
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_alert(alert: AlertCreate, db: Session = Depends(get_db)):
-    # Check if alert already exists
     db_alert = db.query(Alert).filter(Alert.name == alert.name).first()
     if db_alert:
         raise HTTPException(status_code=400, detail="Alert already exists")
@@ -44,11 +43,11 @@ def get_all_alerts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db
 
 
 @router.get("/{alert_id}", response_model=AlertResponse)
-async def get_alert(alert_id: int, db: Session = Depends(get_db)):
+async def get_alert(alert_id: str, db: Session = Depends(get_db)):
     return get_alert_by_id(alert_id, db)
 
 
-def get_alert_by_id(alert_id: int, db: Session = Depends(get_db)):
+def get_alert_by_id(alert_id: str, db: Session = Depends(get_db)):
     alert = db.query(Alert).filter(Alert.id == alert_id).first()
     if alert is None:
         raise HTTPException(status_code=404, detail="Alert not found")
@@ -56,7 +55,7 @@ def get_alert_by_id(alert_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{alert_id}", response_model=AlertResponse)
-async def update_alert(alert_id: int, alert_update: AlertUpdate, db: Session = Depends(get_db)):
+async def update_alert(alert_id: str, alert_update: AlertUpdate, db: Session = Depends(get_db)):
     alert = db.query(Alert).filter(Alert.id == alert_id).first()
     if alert is None:
         raise HTTPException(status_code=404, detail="Alert not found")
@@ -84,7 +83,7 @@ async def update_alert(alert_id: int, alert_update: AlertUpdate, db: Session = D
 
 
 @router.delete("/{alert_id}", response_model=AlertResponse)
-async def delete_alert(alert_id: int, db: Session = Depends(get_db)):
+async def delete_alert(alert_id: str, db: Session = Depends(get_db)):
     alert = db.query(Alert).filter(Alert.id == alert_id).first()
     if alert is None:
         raise HTTPException(status_code=404, detail="Alert not found")

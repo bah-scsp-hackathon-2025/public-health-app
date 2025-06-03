@@ -22,12 +22,8 @@ function AdminAlert() {
   const [strategies, setStrategies] = useState([]);
   useEffect(() => {
     const getStrategies = async () => {
-      try {
-        const result = await fetchStrategiesByAlert(id);
-        setStrategies(result);
-      } catch (error) {
-        console.error("Error getting alerts:", error);
-      }
+      const result = await fetchStrategiesByAlert(id);
+      setStrategies(result);
     };
     getStrategies();
   }, []);
@@ -35,12 +31,8 @@ function AdminAlert() {
   const [alert, setAlert] = useState([]);
   useEffect(() => {
     const getAlert = async () => {
-      try {
-        const result = await fetchAlert(id);
-        setAlert(result);
-      } catch (error) {
-        console.error("Error getting alerts:", error);
-      }
+      const result = await fetchAlert(id);
+      setAlert(result);
     };
     getAlert();
   }, []);
@@ -68,7 +60,7 @@ function AdminAlert() {
           <div className={styles.button}>
               <div
               className={styles.logout}
-              onClick={() => goToLogin()}
+              onClick={() => goToDashboard()}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -105,7 +97,7 @@ function AdminAlert() {
           minHeight: "80px" ,
            background: "white"
         }}>
-          Details
+          {alert.description}
         </div>
       </div>
 

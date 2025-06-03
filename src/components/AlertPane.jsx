@@ -23,13 +23,9 @@ function AlertPane() {
   const [alerts, setAlerts] = useState([]);
   useEffect(() => {
     const getAlerts = async () => {
-      try {
-        const result = await fetchAlerts();
-        // set alerts to be just the first 4 for now
-        setAlerts(result.slice(0, 4));
-      } catch (error) {
-        console.error("Error getting alerts:", error);
-      }
+      const result = await fetchAlerts();
+      // set alerts to be just the first 4 for now
+      setAlerts(result.slice(0, 4));
     };
     getAlerts();
   }, []);

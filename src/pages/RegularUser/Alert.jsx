@@ -3,8 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useState, useEffect } from "react";
 import RegularNav from "../../components/RegularNav";
 import styles from './Alert.module.css';
-import { fetchAlerts } from "../../common/api";
-
+import { fetchAlert, fetchApprovedPoliciesByAlert } from "../../common/api";
+import PolicyCard from "../../components/PolicyCard";
 
 function Alert() {
   const { id } = useParams();
@@ -14,6 +14,24 @@ function Alert() {
   const goToDashboard = () => {
     navigate('/dashboard')
   }
+
+    const [policies, setPolicies] = useState([]);
+    useEffect(() => {
+      const getPolicies = async () => {
+        const result = await fetchApprovedPoliciesByAlert(id);
+        setPolicies(result);
+      };
+      getPolicies();
+    }, []);
+  
+    const [alert, setAlert] = useState([]);
+    useEffect(() => {
+      const getAlert = async () => {
+        const result = await fetchAlert(id);
+        setAlert(result);
+      };
+      getAlert();
+    }, []);
 
 
   return (
@@ -62,7 +80,7 @@ function Alert() {
           minHeight: "80px" ,
            background: "white"
         }}>
-          Details
+          {alert.description}
         </div>
       </div>
 
@@ -75,7 +93,7 @@ function Alert() {
           minHeight: "80px",
           background: "white"
         }}>
-          Risk Score
+          {alert.risk_score}
         </div>
         <div style={{ 
           border: "1px solid black", 
@@ -85,7 +103,7 @@ function Alert() {
           minHeight: "80px" ,
            background: "white"
         }}>
-          Score Explanation
+          {alert.risk_reason}
         </div>
       </div>
       </div>
@@ -95,6 +113,11 @@ function Alert() {
 
     <div style={{display: "flex", justifyContent: "center", marginTop: "20px"}}>
     <div style={{fontSize: "30px", fontWeight: "bold", borderBottom: "1px solid black"}}>Policy Document</div>
+      <div>
+        {policies.map((item) => (
+          <PolicyCard policy={item}></PolicyCard>
+        ))}
+      </div>
     </div>
 
     </div>

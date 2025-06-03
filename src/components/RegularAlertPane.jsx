@@ -1,10 +1,13 @@
+import { useState, useEffect } from "react";
 import styles from './Alerts.module.css';
+import { fetchAlerts } from "../common/api";
+
 
 function AlertCard({alert, onClick}) {
     return (
         <div onClick={onClick} className={styles.alertCard}>
-            <strong>{alert.city}</strong>
-            <div>{alert.details}</div>
+            <strong>{alert.name}</strong>
+            <div>{alert.description}</div>
         </div>
     )
 }
@@ -19,13 +22,15 @@ function RegularAlertPane () {
      navigate(`/alert/${id}`);
   };
 
-    // Sample data with details
-    const timeSeriesData = [
-    { time: 1, lat: 40.7128, lon: -74.0060, city: 'New York', details: 'High hospitalization rate' },
-    { time: 2, lat: 34.0522, lon: -118.2437, city: 'Los Angeles', details: 'Moderate COVID cases' },
-    { time: 3, lat: 41.8781, lon: -87.6298, city: 'Chicago', details: 'Vaccination drive ongoing' },
-    { time: 4, lat: 29.7604, lon: -95.3698, city: 'Houston', details: 'New variant detected' },
-    ];
+    const [alerts, setAlerts] = useState([]);
+    useEffect(() => {
+      const getAlerts = async () => {
+        const result = await fetchAlerts();
+        // set alerts to be just the first 4 for now
+        setAlerts(result.slice(0, 4));
+      };
+      getAlerts();
+    }, []);
 
     return (
         <div style={{height: "550px", width: "600px", backgroundColor: '#f0f0f0', border: "1px solid black"}}>
@@ -34,8 +39,8 @@ function RegularAlertPane () {
                
             </div>
             <div style={{display: "flex", alignItems: "center", flexDirection: "column", gap: "20px"}}>
-            {timeSeriesData.map((data) => (
-                <AlertCard onClick={() => goToAlert(data.time)} key={data.time} alert={data} />
+            {alerts.map((data) => (
+                <AlertCard onClick={() => goToAlert(data.id)} key={data.id} alert={data} />
             ))}
             </div>
         </div>
