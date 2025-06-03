@@ -227,9 +227,13 @@ class PublicHealthReActAgent:
         
         try:
             # Create system message for reasoning
-            system_msg = SystemMessage(content="""You are a Public Health Data Analyst AI Agent specializing in epidemiological surveillance.
+            system_msg = SystemMessage(content="""You are a Public Health Data Analyst AI Agent specializing in epidemiological surveillance and dashboard generation.
 
-Your task is to analyze the current situation and decide what tools to use or whether to provide final analysis.
+Your mission is to generate a comprehensive public health dashboard with current epidemiological analysis, including:
+- Executive situation overview with key metrics and trends
+- Risk assessment based on epidemiological data and trend analysis  
+- Evidence-based recommendations for public health officials
+- Policy-compliant guidance aligned with official guidelines
 
 Available tools:
 - fetch_epi_signal: Get epidemiological data (COVID cases, symptoms, doctor visits, etc.)
@@ -238,7 +242,7 @@ Available tools:
 Analysis approach:
 1. Start by fetching key epidemiological signals (COVID cases, symptoms, healthcare utilization)
 2. Analyze trends using detect_rising_trend for concerning patterns
-3. Once you have sufficient data, provide final analysis
+3. Once you have sufficient data, provide comprehensive final dashboard analysis
 
 Current state analysis:
 - Epidemiological signals collected: {signal_count}
@@ -703,12 +707,24 @@ An error occurred while generating the epidemiological dashboard:
         
         return error_state
 
-    async def generate_dashboard(self, request: str = "Generate comprehensive public health dashboard with current epidemiological analysis") -> Dict:
+    async def generate_dashboard(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict:
         """Generate a dashboard summary using LangGraph ReAct workflow with typed data storage"""
         logger.info(f"🚀 LANGGRAPH REACT WORKFLOW: Starting epidemiological dashboard generation")
-        logger.debug(f"Request: {request}")
+        logger.debug(f"Date range: {start_date} to {end_date}")
         logger.debug(f"Agent configuration - LLM: {type(self.llm).__name__ if self.llm else 'None'}")
         logger.debug(f"Agent configuration - MCP: {self.mcp_host}:{self.mcp_port}")
+        
+        # Build the dashboard generation request with date context
+        dashboard_request = "Generate comprehensive public health dashboard with current epidemiological analysis"
+        if start_date or end_date:
+            date_context = f" focusing on data"
+            if start_date:
+                date_context += f" from {start_date}"
+            if end_date:
+                date_context += f" through {end_date}"
+            else:
+                date_context += " through current date"
+            dashboard_request += date_context
         
         try:
             # Initialize MCP client and workflow
@@ -716,8 +732,8 @@ An error occurred while generating the epidemiological dashboard:
             
             # Create initial state
             initial_state = {
-                "messages": [HumanMessage(content=request)],
-                "current_request": request,
+                "messages": [HumanMessage(content=dashboard_request)],
+                "current_request": dashboard_request,
                 "epi_signals": [],
                 "trend_analyses": [],
                 "reasoning_steps": [],

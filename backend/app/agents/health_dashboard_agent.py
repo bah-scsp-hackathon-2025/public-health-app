@@ -797,17 +797,29 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
         
         return recommendations[:5]  # Limit to 5 recommendations
 
-    async def generate_dashboard(self, request: str = "Generate comprehensive public health dashboard") -> Dict:
+    async def generate_dashboard(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict:
         """Generate a dashboard summary"""
         logger.info(f"🚀 LANGGRAPH WORKFLOW: Starting dashboard generation")
-        logger.debug(f"Request: {request}")
+        logger.debug(f"Date range: {start_date} to {end_date}")
         logger.debug(f"Agent configuration - LLM: {type(self.llm).__name__ if self.llm else 'None'}")
         logger.debug(f"Agent configuration - MCP: {self.mcp_host}:{self.mcp_port}")
         
+        # Build the dashboard generation request with date context
+        dashboard_request = "Generate comprehensive public health dashboard"
+        if start_date or end_date:
+            date_context = f" focusing on data"
+            if start_date:
+                date_context += f" from {start_date}"
+            if end_date:
+                date_context += f" through {end_date}"
+            else:
+                date_context += " through current date"
+            dashboard_request += date_context
+        
         # Initialize state
         initial_state = {
-            "messages": [HumanMessage(content=request)],
-            "current_request": request,
+            "messages": [HumanMessage(content=dashboard_request)],
+            "current_request": dashboard_request,
             "alerts_data": None,
             "trends_data": None,
             "analysis_result": None,
@@ -817,7 +829,7 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
         }
         
         logger.debug(f"Initial state keys: {list(initial_state.keys())}")
-        logger.info(f"🚀 Starting dashboard generation: {request}")
+        logger.info(f"🚀 Starting dashboard generation: {dashboard_request}")
         logger.info("=" * 60)
         
         # Run the workflow with proper configuration

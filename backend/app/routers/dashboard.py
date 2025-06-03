@@ -41,8 +41,11 @@ async def generate_dashboard(request: DashboardRequest):
         else:
             agent = PublicHealthDashboardAgent()
             
-        # Generate the dashboard
-        result = await agent.generate_dashboard(request.query)
+        # Generate the dashboard with date parameters
+        result = await agent.generate_dashboard(
+            start_date=request.start_date,
+            end_date=request.end_date
+        )
         
         # Calculate generation time
         generation_time = (datetime.now() - start_time).total_seconds()
@@ -145,7 +148,10 @@ async def generate_dashboard_async(request: DashboardRequest, background_tasks: 
             else:
                 agent = PublicHealthDashboardAgent()
             
-            result = await agent.generate_dashboard(request.query)
+            result = await agent.generate_dashboard(
+                start_date=request.start_date,
+                end_date=request.end_date
+            )
             
             # In production, you'd store this result in a database or cache
             print(f"Background task {task_id} completed: {result.get('success', False)}")
@@ -166,21 +172,21 @@ async def generate_dashboard_async(request: DashboardRequest, background_tasks: 
 @router.get("/alerts-summary", response_model=DashboardResponse)
 async def get_alerts_summary():
     """Generate a dashboard focused on current alerts only"""
-    request = DashboardRequest(query="Focus on current public health alerts with high priority items")
+    request = DashboardRequest()
     return await generate_dashboard(request)
 
 
 @router.get("/trends-summary", response_model=DashboardResponse) 
 async def get_trends_summary():
     """Generate a dashboard focused on health risk trends only"""
-    request = DashboardRequest(query="Analyze health risk trends and patterns over time")
+    request = DashboardRequest()
     return await generate_dashboard(request)
 
 
 @router.get("/emergency-summary", response_model=DashboardResponse)
 async def get_emergency_summary():
     """Generate a dashboard for emergency response scenarios"""
-    request = DashboardRequest(query="Emergency response dashboard focusing on high-severity alerts and immediate action items")
+    request = DashboardRequest()
     return await generate_dashboard(request)
 
 

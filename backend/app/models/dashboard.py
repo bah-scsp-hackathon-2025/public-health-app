@@ -4,10 +4,15 @@ from pydantic import BaseModel, Field
 
 class DashboardRequest(BaseModel):
     """Request model for dashboard generation"""
-    query: str = Field(
-        default="Generate comprehensive public health dashboard for current situation",
-        description="Natural language description of the dashboard requirements",
-        example="Focus on high severity alerts in California"
+    start_date: Optional[str] = Field(
+        default=None,
+        description="Start date for data analysis in YYYY-MM-DD format. If not provided, uses appropriate default period.",
+        example="2024-01-01"
+    )
+    end_date: Optional[str] = Field(
+        default=None,
+        description="End date for data analysis in YYYY-MM-DD format. If not provided, uses current date.",
+        example="2024-01-31"
     )
     agent_type: Optional[str] = Field(
         default="react",
