@@ -17,9 +17,7 @@ http://localhost:8000/dashboard
 ```json
 {
     "query": "Generate comprehensive public health dashboard for current situation",
-    "agent_type": "standard",  // optional: "standard" or "react"
-    "mcp_host": "localhost",   // optional: MCP server host
-    "mcp_port": 8000          // optional: MCP server port
+    "agent_type": "standard"  // optional: "standard" or "react"
 }
 ```
 
@@ -194,14 +192,14 @@ Start dashboard generation as a background task.
 # Required for AI analysis
 ANTHROPIC_API_KEY=sk-ant-...
 
-# MCP Server Configuration (optional)
-MCP_SERVER_HOST=localhost
-MCP_SERVER_PORT=8000
+# MCP Server Configuration
+MCP_SERVER_HOST=localhost  # Default: localhost
+MCP_SERVER_PORT=8000      # Default: 8000
 ```
 
 ### Agent Configuration
 
-Both agents now use **Anthropic Claude Sonnet 4.0** with thinking mode for enhanced reasoning capabilities.
+Both agents now use **Anthropic Claude Sonnet 4.0** with thinking mode for enhanced reasoning capabilities. MCP server connection settings are configured through environment variables only.
 
 ## Error Handling
 

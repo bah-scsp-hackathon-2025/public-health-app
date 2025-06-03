@@ -14,16 +14,6 @@ class DashboardRequest(BaseModel):
         description="Agent type to use: 'standard' for workflow-based agent or 'react' for ReAct agent with epidemiological tools",
         example="react"
     )
-    mcp_host: Optional[str] = Field(
-        default=None,
-        description="MCP server host (defaults to environment variable or localhost)",
-        example="localhost"
-    )
-    mcp_port: Optional[int] = Field(
-        default=None,
-        description="MCP server port (defaults to environment variable or 8000)",
-        example=8000
-    )
 
 
 class DashboardResponse(BaseModel):
