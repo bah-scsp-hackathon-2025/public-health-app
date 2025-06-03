@@ -1,33 +1,10 @@
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List, Optional
-from pydantic import BaseModel, EmailStr
 from app.database import get_db
-from app.models.user import User
+from app.models.user import User, UserCreate, UserUpdate, UserResponse
 
 router = APIRouter(prefix="/users", tags=["users"])
-
-
-class UserBase(BaseModel):
-    email: str
-    username: str
-
-
-class UserCreate(UserBase):
-    password: str
-
-
-class UserUpdate(BaseModel):
-    email: Optional[str] = None
-    username: Optional[str] = None
-    password: Optional[str] = None
-
-
-class UserResponse(UserBase):
-    id: int
-
-    class Config:
-        from_attributes = True
 
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
