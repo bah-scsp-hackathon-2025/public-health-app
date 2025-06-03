@@ -349,12 +349,11 @@ Provide comprehensive dashboard summaries that include:
 
 Always ground your analysis in the real data you fetch. Be specific about numbers, trends, and timeframes. Focus on actionable insights that public health officials can use for decision-making."""
 
-            # Create the ReAct agent with version="v2" and debug=True
+            # Create the ReAct agent
             self.agent = create_react_agent(
                 model=self.llm,
                 tools=self.tools,
-                state_modifier=system_prompt,
-                version="v2",
+                prompt=system_prompt,
                 debug=True
             )
             
