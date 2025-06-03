@@ -1,45 +1,83 @@
-import styles from './Alerts.module.css';
+import styles from "./Alerts.module.css";
 
-function AlertCard({alert, onClick}) {
-    return (
-        <div onClick={onClick} className={styles.alertCard}>
-            <strong>{alert.city}</strong>
-            <div>{alert.details}</div>
-        </div>
-    )
+function AlertCard({ alert, onClick }) {
+  return (
+    <div onClick={onClick} className={styles.alertCard}>
+      <strong>{alert.name}</strong>
+      <div>{alert.description}</div>
+    </div>
+  );
 }
 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { fetchAlerts } from "../common/api";
 
-function AlertPane () {
-
+function AlertPane() {
   const navigate = useNavigate();
 
   const goToAlert = (id) => {
-     navigate(`/admin/alert/${id}`);
+    navigate(`/admin/alert/${id}`);
   };
 
-    // Sample data with details
-    const timeSeriesData = [
-    { time: 1, lat: 40.7128, lon: -74.0060, city: 'New York', details: 'High hospitalization rate' },
-    { time: 2, lat: 34.0522, lon: -118.2437, city: 'Los Angeles', details: 'Moderate COVID cases' },
-    { time: 3, lat: 41.8781, lon: -87.6298, city: 'Chicago', details: 'Vaccination drive ongoing' },
-    { time: 4, lat: 29.7604, lon: -95.3698, city: 'Houston', details: 'New variant detected' },
-    ];
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const getAlerts = async () => {
+      try {
+        const result = await fetchAlerts();
+        // set alerts to be just the first 4 for now
+        setAlerts(result.slice(0, 4));
+      } catch (error) {
+        console.error("Error getting alerts:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    getAlerts();
+  }, []);
 
-    return (
-        <div style={{height: "550px", width: "600px", backgroundColor: '#f0f0f0', border: "1px solid black"}}>
-            <div style={{display: "flex", justifyContent: "center"}}>
-                <h2 style={{color: "#191970", borderBottom: "1px solid black", textAlign: "center", width: "100%"}}>Alerts</h2>
-               
-            </div>
-            <div style={{display: "flex", alignItems: "center", flexDirection: "column", gap: "20px"}}>
-            {timeSeriesData.map((data) => (
-                <AlertCard onClick={() => goToAlert(data.time)} key={data.time} alert={data} />
-            ))}
-            </div>
-        </div>
-    )
+  if (loading) return <div>Loading...</div>;
+
+  return (
+    <div
+      style={{
+        height: "550px",
+        width: "600px",
+        backgroundColor: "#f0f0f0",
+        border: "1px solid black",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <h2
+          style={{
+            color: "#191970",
+            borderBottom: "1px solid black",
+            textAlign: "center",
+            width: "100%",
+          }}
+        >
+          Alerts
+        </h2>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexDirection: "column",
+          gap: "20px",
+        }}
+      >
+        {alerts.map((data) => (
+          <AlertCard
+            onClick={() => goToAlert(data.id)}
+            key={data.id}
+            alert={data}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
-export default AlertPane
+export default AlertPane;
