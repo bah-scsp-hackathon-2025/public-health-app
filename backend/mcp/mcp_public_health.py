@@ -10,7 +10,6 @@ This server provides three tools:
 Uses FastMCP framework with SSE transport for improved developer experience.
 """
 
-from typing import List, Optional, Literal
 from datetime import datetime
 from fastmcp import FastMCP
 import pandas as pd
@@ -334,4 +333,4 @@ def get_server_info() -> dict:
     }
 
 if __name__ == "__main__":
-    mcp.run() 
+    mcp.run(transport="sse")

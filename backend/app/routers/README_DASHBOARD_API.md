@@ -36,7 +36,7 @@ http://localhost:8000/dashboard
 ```json
 {
     "query": "Generate comprehensive public health dashboard for current situation",
-    "agent_type": "standard"  // optional: "standard" or "react"
+    "agent_type": "react"  // optional: "standard" or "react"
 }
 ```
 
@@ -49,7 +49,7 @@ http://localhost:8000/dashboard
     "timestamp": "2024-01-15T10:30:00Z",
     "error": null,
     "generation_time_seconds": 12.5,
-    "agent_type": "standard",
+    "agent_type": "react",
     "tools_used": ["fetch_epi_signal", "detect_rising_trend"],
     
     // Enhanced structured data (populated with actual data)
@@ -120,7 +120,7 @@ Generate a customized public health dashboard.
 ```json
 {
     "query": "Focus on high severity alerts in California and trending health metrics",
-    "agent_type": "standard"
+    "agent_type": "react"
 }
 ```
 
@@ -131,7 +131,7 @@ Generate a customized public health dashboard.
     "dashboard_summary": "📊 **PUBLIC HEALTH DASHBOARD SUMMARY**\n\n🚨 **CURRENT SITUATION**...",
     "timestamp": "2024-01-15T10:30:00Z",
     "generation_time_seconds": 15.3,
-    "agent_type": "standard",
+    "agent_type": "react",
     "alerts": [
         {
             "id": "alert_001",
@@ -307,7 +307,7 @@ response = requests.post(
     "http://localhost:8000/dashboard/generate",
     json={
         "query": "Emergency response dashboard for wildfire areas",
-        "agent_type": "standard"
+        "agent_type": "react"
     }
 )
 

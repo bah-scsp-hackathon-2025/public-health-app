@@ -1,6 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel
 from sqlalchemy import Column, Integer, String, Boolean
+from pydantic import BaseModel
 from app.database import Base
 
 

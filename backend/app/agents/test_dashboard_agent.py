@@ -70,9 +70,7 @@ async def test_mcp_data_fetching():
                 latest_point = trend_data.get("data_points", [])[-1] if trend_data.get("data_points") else {}
                 print(f"   {trend_data.get('name', trend_name)}: {latest_point.get('value', 'N/A')} {trend_data.get('unit', '')}")
         
-        # Clean up
-        if agent.mcp_client:
-            await agent.mcp_client.close()
+        # MCP client will auto-cleanup when async loop exits
         
         return True
         

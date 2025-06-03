@@ -39,7 +39,7 @@ async def test_mcp_connection():
             result = await tools[0].ainvoke({"limit": 3})
             print(f'✅ Tool test successful: {type(result)}')
         
-        await client.close()
+        # MCP client will auto-cleanup when async loop exits
         print('✅ Connection test successful!')
         
     except Exception as e:

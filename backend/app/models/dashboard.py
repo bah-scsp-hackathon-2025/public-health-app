@@ -10,7 +10,7 @@ class DashboardRequest(BaseModel):
         example="Focus on high severity alerts in California"
     )
     agent_type: Optional[str] = Field(
-        default="standard",
+        default="react",
         description="Agent type to use: 'standard' for workflow-based agent or 'react' for ReAct agent with epidemiological tools",
         example="react"
     )
