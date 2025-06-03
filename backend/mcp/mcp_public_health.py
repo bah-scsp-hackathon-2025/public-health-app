@@ -2,9 +2,12 @@
 """
 FastMCP Public Health Server with SSE Transport
 
-This server provides two tools:
+This server provides five tools:
 1. get_public_health_alerts - Retrieves public health alerts with filtering options
 2. get_health_risk_trends - Returns time series data for public health risk trends
+3. fetch_epi_signal - Fetch specific COVID-19 signals from Delphi Epidata API
+4. detect_rising_trend - Detect rising trends in time series data using rolling regression
+5. get_server_info - Server information and capabilities
 
 Uses FastMCP framework with SSE transport for improved developer experience.
 """
@@ -12,6 +15,11 @@ Uses FastMCP framework with SSE transport for improved developer experience.
 from typing import List, Optional, Literal
 from datetime import datetime
 from fastmcp import FastMCP
+import pandas as pd
+import numpy as np
+from scipy.stats import linregress
+from epidatpy import EpiDataContext, EpiRange
+import os
 
 # Create the MCP server with SSE transport
 mcp = FastMCP("Public Health FastMCP")
@@ -362,6 +370,234 @@ def get_health_risk_trends(
     }
 
 @mcp.tool()
+def fetch_epi_signal(
+    data_source: str,
+    signal: List[str],
+    time_type: Literal["day", "week", "month"] = "day",
+    geo_type: Literal["county", "hrr", "msa", "dma", "state"] = "state",
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+    geo_values: Optional[List[str]] = None
+) -> dict:
+    """
+    Fetch a specific COVID-19 signal from the EpiDataContext and save it to a CSV file.
+    Args:
+        data_source (str): The data source to use (e.g., 'fb-survey', 'google-symptoms', 'doctor-visits', 'jhu-csse', 'hhs')
+        signal (List[str]): The specific signals to fetch. The options include: 
+        - smoothed_wwearing_mask_7d -> Description: People Wearing Masks
+        - smoothed_wcovid_vaccinated_appointment_or_accept -> Description: Vaccine Acceptance
+        - sum_anosmia_ageusia_smoothed_search -> Description: COVID Symptom Searches on Google
+        - smoothed_wcli -> COVID-Like Symptoms
+        - smoothed_whh_cmnty_cli -> Description: COVID-Like Symptoms in Community
+        - smoothed_adj_cli -> Description: COVID-Related Doctor Visits
+        - confirmed_7dav_incidence_prop -> Description: COVID Cases
+        - confirmed_admissions_covid_1d_prop_7dav -> Description: COVID Hospital Admissions
+        - deaths_7dav_incidence_prop -> Description: COVID Deaths
+
+        time_type (Literal["day", "week", "month"]): The time granularity of the data.
+        geo_type (Literal["state", "county", "hrr", "msa", "dma"]): The geographic granularity of the data.
+        start_time (Optional[str]): The start time for the data query. Format: YYYYMMDD
+        end_time (Optional[str]): The end time for the data query. Format: YYYYMMDD
+        geo_values (List[str], optional): Geographic locations to fetch data for.
+        Accepted values depend on geo_type:
+        - "county": 5-digit FIPS codes (e.g., "06037" for Los Angeles County).
+        - "hrr": Hospital Referral Region numbers (1-457).
+        - "hhs": HHS region numbers (1-10).
+        - "msa": Metropolitan Statistical Area codes (CBSA ID).
+        - "dma": Nielsen Designated Market Area codes.
+        - "state": 2-letter state codes (e.g., "ny", "ca", "dc", "pr").
+        - "nation": ISO country code ("us" only).
+
+    Returns:
+        dict: A JSON representation of the DataFrame containing the fetched signal data, with additional metadata columns. 
+    """
+    try:
+        # Logic to map signal to data source
+        ALLOWED_SIGNALS = {
+            "fb-survey": [
+                "smoothed_wwearing_mask_7d",
+                "smoothed_wcovid_vaccinated_appointment_or_accept",
+                "smoothed_wcli",
+                "smoothed_whh_cmnty_cli"
+            ],
+            "google-symptoms": [
+                "sum_anosmia_ageusia_smoothed_search"
+            ],
+            "doctor-visits": [
+                "smoothed_adj_cli",
+                "deaths_7dav_incidence_prop"
+            ],
+            "jhu-csse": [
+                "confirmed_7dav_incidence_prop"
+            ],
+            "hhs": [
+                "confirmed_admissions_covid_1d_prop_7dav"
+            ]
+        }
+
+        # Validate signals against data source
+        for sig in signal:
+            if sig not in ALLOWED_SIGNALS.get(data_source, []):
+                return {
+                    "error": f"Signal '{sig}' not available for data source '{data_source}'",
+                    "available_signals": ALLOWED_SIGNALS.get(data_source, []),
+                    "status": "error"
+                }
+
+        time_values = EpiRange(start_time, end_time) if start_time or end_time else None
+        epidata = EpiDataContext(use_cache=True, cache_max_age_days=7)
+        
+        apicall = epidata.pub_covidcast(
+            data_source=data_source,
+            signals=signal,
+            time_type=time_type,
+            geo_type=geo_type,
+            time_values=time_values,
+            geo_values=geo_values
+        )
+        
+        df = apicall.df()
+        
+        # Add metadata columns
+        df["signal"] = str(signal)
+        df["source"] = data_source
+        df["time_type"] = time_type
+        df["geo_type"] = geo_type
+        
+        # Create cache directory if it doesn't exist
+        cache_dir = "/tmp/mcp_epidata_cache"
+        os.makedirs(cache_dir, exist_ok=True)
+        
+        # Save to CSV
+        signal_name = "_".join(signal) if isinstance(signal, list) else str(signal)
+        csv_path = f"{cache_dir}/{signal_name}.csv"
+        df.to_csv(csv_path, index=False)
+        
+        return {
+            "status": "success",
+            "data": df.to_dict(orient="records"),
+            "metadata": {
+                "data_source": data_source,
+                "signals": signal,
+                "time_type": time_type,
+                "geo_type": geo_type,
+                "rows_retrieved": len(df),
+                "csv_saved_to": csv_path
+            }
+        }
+        
+    except Exception as e:
+        return {
+            "error": str(e),
+            "status": "error"
+        }
+
+@mcp.tool()
+def detect_rising_trend(
+    csv_path: str,
+    value_column: str,
+    date_column: str = "time_value",
+    window_size: int = 7,
+    min_log_slope: float = 0.01,
+    smooth: bool = True
+) -> dict:
+    """
+    Detects rising trends in a time series using rolling linear regression on the log-transformed values.
+
+    Args:
+        csv_path (str): Path to the time series CSV file.
+        value_column (str): Column with numeric values to analyze.
+        date_column (str): Column with date values (default: "time_value").
+        window_size (int): Size of the rolling window (in time steps).
+        min_log_slope (float): Minimum slope (on log scale) to qualify as rising trend.
+        smooth (bool): Whether to apply a 3-day rolling average before log transform.
+
+    Returns:
+        dict: {
+            "rising_periods": List of (start_date, end_date),
+            "total_periods": int,
+            "sample_log_slopes": List[float],
+            "status": "success"
+        }
+    """
+    try:
+        df = pd.read_csv(csv_path)
+        
+        # Validate columns exist
+        if date_column not in df.columns:
+            return {
+                "error": f"Date column '{date_column}' not found in CSV",
+                "available_columns": list(df.columns),
+                "status": "error"
+            }
+        
+        if value_column not in df.columns:
+            return {
+                "error": f"Value column '{value_column}' not found in CSV",
+                "available_columns": list(df.columns),
+                "status": "error"
+            }
+        
+        df[date_column] = pd.to_datetime(df[date_column])
+        df = df.sort_values(date_column).dropna(subset=[value_column])
+
+        # Ensure strictly positive for log transform
+        df = df[df[value_column] > 0]
+        
+        if len(df) < window_size:
+            return {
+                "error": f"Not enough data points ({len(df)}) for window size ({window_size})",
+                "status": "error"
+            }
+
+        if smooth:
+            df["smoothed"] = df[value_column].rolling(window=3, center=True).mean()
+            series = df["smoothed"].dropna()
+            dates = df[df["smoothed"].notna()][date_column].tolist()
+        else:
+            series = df[value_column]
+            dates = df[date_column].tolist()
+
+        log_series = np.log(series)
+        log_slopes = []
+        rising_periods = []
+
+        for i in range(len(log_series) - window_size + 1):
+            y = log_series.iloc[i:i + window_size]
+            x = list(range(window_size))
+            
+            if y.isnull().any():
+                continue
+                
+            slope, _, _, _, _ = linregress(x, y)
+            log_slopes.append(slope)
+
+            if slope >= min_log_slope:
+                start = dates[i]
+                end = dates[i + window_size - 1]
+                rising_periods.append((str(start.date()), str(end.date())))
+
+        return {
+            "status": "success",
+            "rising_periods": rising_periods,
+            "total_periods": len(rising_periods),
+            "sample_log_slopes": log_slopes[:5],
+            "analysis_parameters": {
+                "window_size": window_size,
+                "min_log_slope": min_log_slope,
+                "smooth": smooth,
+                "total_data_points": len(df),
+                "analyzed_data_points": len(log_series)
+            }
+        }
+        
+    except Exception as e:
+        return {
+            "error": str(e),
+            "status": "error"
+        }
+
+@mcp.tool()
 def get_server_info() -> dict:
     """
     Get information about the MCP server and available capabilities.
@@ -375,7 +611,7 @@ def get_server_info() -> dict:
         "framework": "FastMCP",
         "transport": "SSE (Server-Sent Events)",
         "capabilities": {
-            "tools": ["get_public_health_alerts", "get_health_risk_trends", "get_server_info"],
+            "tools": ["get_public_health_alerts", "get_health_risk_trends", "fetch_epi_signal", "detect_rising_trend", "get_server_info"],
             "resources": [],
             "prompts": []
         },

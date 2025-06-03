@@ -19,6 +19,3 @@ langchain-mcp-adapters>=0.1.4
 
 # Environment and utility dependencies
 python-dotenv>=1.0.0
-
-# Delphi Epidata API for health surveillance data
-git+https://github.com/cmu-delphi/epidatpy.git#egg=epidatpy

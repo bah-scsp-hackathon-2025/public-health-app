@@ -8,7 +8,7 @@
             "args": [
                 "-m",
                 "uvicorn",
-                "fastmcp_server:app",
+                "mcp_public_health:app",
                 "--host",
                 "0.0.0.0",
                 "--port",
@@ -162,7 +162,7 @@
             "command": "${workspaceFolder}/venv/bin/fastmcp",
             "args": [
                 "dev",
-                "fastmcp_server.py"
+                "mcp_public_health.py"
             ],
             "group": "build",
             "presentation": {

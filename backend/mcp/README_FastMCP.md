@@ -62,7 +62,7 @@ fastmcp dev mcp_public_health_fastmcp.py
 
 **Comprehensive Test Suite:**
 ```bash
-python test_fastmcp_server.py
+python test_server.py
 ```
 
 **Quick Test via curl:**
@@ -307,7 +307,7 @@ The server includes comprehensive test coverage:
 
 ```bash
 # Run all tests
-python test_fastmcp_server.py
+python test_server.py
 
 # Individual test commands available in the test file
 ```

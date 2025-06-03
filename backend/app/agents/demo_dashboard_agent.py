@@ -244,7 +244,7 @@ if __name__ == "__main__":
     print("🎉 Demo Complete!")
     print("=" * 80)
     print("To use with real data:")
-    print("1. Start the FastMCP server: python3 -m uvicorn fastmcp_server:app --port 8000")
+    print("1. Start the FastMCP server: python3 -m uvicorn mcp_public_health:app --port 8000")
     print("2. Set API keys: export OPENAI_API_KEY=your-key")
     print("3. Run: python health_dashboard_agent.py")
     print("4. Or interactive mode: python health_dashboard_agent.py interactive") 

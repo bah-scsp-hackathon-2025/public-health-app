@@ -4,6 +4,10 @@ uvicorn>=0.30.0
 aiohttp>=3.9.0
 langchain-mcp-adapters>=0.1.4
 langgraph>=0.4.7
-langchain-openai>=0.3.19
-langchain-anthropic>=0.3.14
-python-dotenv>=1.0.0 
+python-dotenv>=1.0.0
+pandas>=2.0.0
+numpy>=1.24.0
+scipy>=1.10.0
+
+# Delphi Epidata API for health surveillance data
+git+https://github.com/cmu-delphi/epidatpy.git#egg=epidatpy

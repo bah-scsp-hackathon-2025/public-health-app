@@ -28,7 +28,7 @@ async def main():
     
     print("💡 Note: Make sure the FastMCP server is running:")
     print("   cd ../../mcp")
-    print("   python3 -m uvicorn fastmcp_server:app --host 0.0.0.0 --port 8000")
+    print("   python3 -m uvicorn mcp_public_health:app --host 0.0.0.0 --port 8000")
     print()
     
     try:

@@ -55,7 +55,7 @@ cp ../.env-template ../.env
 
 # Required: Start the FastMCP server (from the mcp directory)
 cd ../../mcp
-python3 -m uvicorn fastmcp_server:app --host 0.0.0.0 --port 8000
+python3 -m uvicorn mcp_public_health:app --host 0.0.0.0 --port 8000
 cd ../app/agents  # Return to agents directory
 
 # Optional: Set API keys for LLM providers

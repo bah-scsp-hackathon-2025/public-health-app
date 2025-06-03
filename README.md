@@ -22,7 +22,7 @@ public-health-app/
 │   │   ├── models/           # Data models
 │   │   └── main.py           # FastAPI application entry point
 │   └── mcp/                   # MCP servers and infrastructure
-│       ├── fastmcp_server.py  # FastMCP public health server
+│       ├── mcp_public_health.py  # FastMCP public health server
 │       ├── venv/              # Python virtual environment
 │       └── requirements.txt   # Python dependencies
 ├── .env-template              # Environment variables template
@@ -58,7 +58,7 @@ source venv/bin/activate
 # Start FastMCP server (terminal 1)
 cd backend/mcp
 source venv/bin/activate
-python3 -m uvicorn fastmcp_server:app --host 0.0.0.0 --port 8000
+python3 -m uvicorn mcp_public_health:app --host 0.0.0.0 --port 8000
 
 # Start FastAPI app (terminal 2) 
 cd backend
@@ -121,7 +121,7 @@ PYTHONPATH=../../mcp:../.. python3 health_dashboard_agent.py interactive
 ```bash
 cd backend/mcp
 source venv/bin/activate
-python3 fastmcp_server.py
+python3 mcp_public_health.py
 ```
 
 ### 3. Web API Development

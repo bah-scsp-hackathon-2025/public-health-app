@@ -20,7 +20,7 @@
             "name": "Debug FastMCP Server",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/backend/mcp/fastmcp_server.py",
+            "program": "${workspaceFolder}/backend/mcp/mcp_public_health.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}/backend/mcp",
             "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
@@ -110,7 +110,7 @@
             "stopOnEntry": false,
             "args": [
                 "dev",
-                "fastmcp_server.py"
+                "mcp_public_health.py"
             ],
             "presentation": {
                 "group": "servers",
@@ -121,7 +121,7 @@
             "name": "Debug FastMCP with Specific Tool",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/backend/mcp/fastmcp_server.py",
+            "program": "${workspaceFolder}/backend/mcp/mcp_public_health.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}/backend/mcp",
             "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
