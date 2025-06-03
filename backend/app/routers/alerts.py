@@ -40,13 +40,13 @@ async def create_alert(alert: AlertModel, db: Session = Depends(get_db)):
     return db_alert
 
 
-@router.get("/", response_model=List[AlertModel])
+@router.get("/", response_model=List[AlertResponse])
 async def get_alerts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     alerts = db.query(Alert).offset(skip).limit(limit).all()
     return alerts
 
 
-@router.get("/{alert_id}", response_model=AlertModel)
+@router.get("/{alert_id}", response_model=AlertResponse)
 async def get_alert(alert_id: int, db: Session = Depends(get_db)):
     alert = db.query(Alert).filter(Alert.id == alert_id).first()
     if alert is None:
