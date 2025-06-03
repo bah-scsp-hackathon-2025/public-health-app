@@ -19,6 +19,14 @@ from typing import Dict, List, Optional, TypedDict, Annotated
 from operator import add
 from dataclasses import dataclass
 
+# Load environment variables
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # python-dotenv not installed, skip
+    pass
+
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
@@ -52,9 +60,10 @@ class HealthInsight:
 class PublicHealthDashboardAgent:
     """LangGraph agent for public health dashboard generation"""
     
-    def __init__(self, llm_provider: str = "auto", mcp_host: str = "localhost", mcp_port: int = 8000):
-        self.mcp_host = mcp_host
-        self.mcp_port = mcp_port
+    def __init__(self, llm_provider: str = "auto", mcp_host: str = None, mcp_port: int = None):
+        # Load MCP configuration from environment variables
+        self.mcp_host = mcp_host or os.getenv("MCP_SERVER_HOST", "localhost")
+        self.mcp_port = mcp_port or int(os.getenv("MCP_SERVER_PORT", "8000"))
         self.llm_provider = llm_provider
         
         # Initialize LLM with error handling

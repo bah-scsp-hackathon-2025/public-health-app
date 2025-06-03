@@ -32,6 +32,7 @@ graph TD
 - **Dashboard Ready**: Generates summaries optimized for executive dashboards
 - **Error Resilience**: Graceful error handling with diagnostic information
 - **Interactive Mode**: CLI interface for testing and demonstration
+- **Environment Configuration**: Uses .env files for easy configuration
 
 ## 📦 Installation
 
@@ -41,8 +42,16 @@ cd mcp
 source venv/bin/activate
 pip install -r requirements.txt
 
+# Configure environment variables
+cp ../.env-template ../.env
+# Edit .env file with your configuration:
+# - MCP_SERVER_HOST=localhost (or your server host)
+# - MCP_SERVER_PORT=8000 (or your server port)
+# - OPENAI_API_KEY=your-key (optional)
+# - ANTHROPIC_API_KEY=your-key (optional)
+
 # Required: Start the FastMCP server
-python3 -m uvicorn mcp_public_health_fastmcp:app --host 0.0.0.0 --port 8000
+python3 -m uvicorn fastmcp_server:app --host 0.0.0.0 --port 8000
 
 # Optional: Set API keys for LLM providers
 export OPENAI_API_KEY="your-openai-api-key"
@@ -57,8 +66,14 @@ export ANTHROPIC_API_KEY="your-anthropic-api-key"
 ```python
 from health_dashboard_agent import PublicHealthDashboardAgent
 
-# Create agent (auto-detects available LLM provider)
+# Create agent (auto-detects available LLM provider and uses .env config)
 agent = PublicHealthDashboardAgent()
+
+# Or override configuration
+agent = PublicHealthDashboardAgent(
+    mcp_host="production-server.com",
+    mcp_port=8080
+)
 
 # Generate dashboard
 result = await agent.generate_dashboard(
@@ -223,6 +238,48 @@ async def post_health_update(channel_id: str):
 ```
 
 ## 🎛️ Configuration
+
+### Environment Variables
+
+The agent uses the following environment variables for configuration:
+
+```bash
+# MCP Server Configuration
+MCP_SERVER_HOST=localhost          # Default: localhost
+MCP_SERVER_PORT=8000              # Default: 8000
+
+# LLM API Keys (optional - agent works without them in basic mode)
+OPENAI_API_KEY=your-openai-key
+ANTHROPIC_API_KEY=your-anthropic-key
+```
+
+### Setting Up Configuration
+
+1. **Copy the template**:
+   ```bash
+   cp .env-template .env
+   ```
+
+2. **Edit your .env file**:
+   ```bash
+   # For local development
+   MCP_SERVER_HOST=localhost
+   MCP_SERVER_PORT=8000
+   OPENAI_API_KEY=sk-your-key-here
+   
+   # For production
+   MCP_SERVER_HOST=mcp.yourcompany.com
+   MCP_SERVER_PORT=443
+   ```
+
+3. **Load environment variables** (if using python-dotenv):
+   ```python
+   from dotenv import load_dotenv
+   load_dotenv()
+   
+   from health_dashboard_agent import PublicHealthDashboardAgent
+   agent = PublicHealthDashboardAgent()  # Uses .env config
+   ```
 
 ### LLM Provider Selection
 
