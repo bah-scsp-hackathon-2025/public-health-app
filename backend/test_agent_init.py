@@ -7,6 +7,13 @@ import asyncio
 import sys
 import os
 
+# Load environment variables
+try:
+    from dotenv import load_dotenv
+    load_dotenv('../.env')  # Load from parent directory
+except ImportError:
+    print("Warning: python-dotenv not installed")
+
 # Add necessary paths for imports
 sys.path.insert(0, '.')
 sys.path.insert(0, 'mcp')

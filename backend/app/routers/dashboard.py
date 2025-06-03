@@ -6,15 +6,12 @@ import os
 from datetime import datetime
 import asyncio
 
-# Add the agents directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'agents'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'mcp'))
+# Add the necessary paths for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))  # Add backend dir
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'mcp'))  # Add mcp dir
 
-try:
-    from agents.health_dashboard_agent import PublicHealthDashboardAgent
-except ImportError:
-    # Fallback import path
-    from health_dashboard_agent import PublicHealthDashboardAgent
+# Import the agent using the correct path
+from app.agents.health_dashboard_agent import PublicHealthDashboardAgent
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -147,10 +144,11 @@ async def get_dashboard_status():
             except Exception:
                 mcp_server_accessible = False
         
-        # Check available LLM providers
+        # Check available LLM providers through settings
+        from app.config import settings
         llm_providers = {
-            "openai": bool(os.getenv("OPENAI_API_KEY")),
-            "anthropic": bool(os.getenv("ANTHROPIC_API_KEY"))
+            "openai": bool(settings.openai_api_key and settings.openai_api_key.startswith('sk-')),
+            "anthropic": bool(settings.anthropic_api_key and settings.anthropic_api_key.startswith('sk-ant-'))
         }
         
         return DashboardStatus(

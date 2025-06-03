@@ -18,6 +18,9 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, TypedDict, Annotated
 from operator import add
 
+# Load configuration from settings
+from ..config import settings
+
 # Load environment variables
 try:
     from dotenv import load_dotenv
@@ -49,10 +52,7 @@ class DashboardState(TypedDict):
 class PublicHealthDashboardAgent:
     """LangGraph agent for public health dashboard generation"""
     
-    def __init__(self, llm_provider: str = "auto", mcp_host: str = None, mcp_port: int = None):
-        # Load configuration from settings
-        from ..config import settings
-        
+    def __init__(self, llm_provider: str = "auto", mcp_host: str = None, mcp_port: int = None):        
         # Load MCP configuration
         self.mcp_host = mcp_host or settings.mcp_server_host if hasattr(settings, 'mcp_server_host') else os.getenv("MCP_SERVER_HOST", "localhost")
         self.mcp_port = mcp_port or int(settings.mcp_server_port if hasattr(settings, 'mcp_server_port') else os.getenv("MCP_SERVER_PORT", "8000"))

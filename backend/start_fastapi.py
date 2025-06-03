@@ -15,8 +15,8 @@ import sys
 import os
 
 # Add necessary paths for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'mcp'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
+sys.path.insert(0, os.path.dirname(__file__))  # Add backend directory
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'mcp'))  # Add mcp directory
 
 from app.config import settings
 
