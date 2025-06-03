@@ -4,7 +4,6 @@ API_URL = "http://localhost:8000"
 
 
 # Create some alerts
-
 alert_data = [
     {
         "name": "Alert for New York",
@@ -43,7 +42,29 @@ alert_data = [
         "longitude": "-95.3698",
     },
 ]
-
 for alert in alert_data:
     result = requests.post(f"{API_URL}/alerts/", json=alert)
+    print(result.json())
+
+
+# create strategies for LA alert
+strategies = [
+    {
+        "short_description": "Activate Emergency Operations Center",
+        "full_description": "Mobilize the emergency operations center to coordinate the public health response.\n\nPriority: High\nResponsible Agency: Public Health Department\nExpected Outcome: Streamlined communication and resource allocation during the event.\nEstimated Duration: 7 days.",
+        "alert_id": 2
+    },
+    {
+        "short_description": "Issue Public Health Advisory",
+        "full_description": "Inform the public about the health risks and recommended preventive measures.\n\nPriority: High\nResponsible Agency: CDC\nExpectedOutcome: Increased public awareness and compliance with health guidelines.\nEstimated Duration: 3 days.\n",
+        "alert_id": 2,
+    },
+    {
+        "short_description": "Implement Travel Restrictions",
+        "full_description": "Restrict travel to and from affected areas to limit disease spread.\n\nPriority: Medium\nResponsible Agency: Department of Transportation\nExpected Outcome: Reduced transmission across regions.\nEstimated Duration: 14 days.\n",
+        "alert_id": 2
+    },
+]
+for strategy in strategies:
+    result = requests.post(f"{API_URL}/policies/strategy/", json=strategy)
     print(result.json())

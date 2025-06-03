@@ -136,8 +136,8 @@ def get_strategy_by_id(strategy_id: int, db: Session = Depends(get_db)):
     return strategy
 
 
-@router.get("/strategy/alert/{alert_id}", response_model=List[StrategyResponse])
-async def get_strategy_by_alert(alert_id: int, db: Session = Depends(get_db)):
+@router.get("/strategies/alert/{alert_id}", response_model=List[StrategyResponse])
+async def get_strategies_by_alert(alert_id: int, db: Session = Depends(get_db)):
     strategies = db.query(Strategy).filter(Strategy.alert_id == alert_id).all()
     if strategies is None:
         raise HTTPException(status_code=404, detail="Strategy not found")

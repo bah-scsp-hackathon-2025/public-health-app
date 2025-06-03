@@ -1,18 +1,20 @@
 import { ArrowBigLeftDash } from "lucide-react";
 import { useNavigate, useParams } from 'react-router-dom';
+import { useState, useEffect } from "react";
 import RegularNav from "../../components/RegularNav";
 import styles from './Alert.module.css';
+import { fetchAlerts } from "../../common/api";
 
 
 function Alert() {
   const { id } = useParams();
-
 
   const navigate = useNavigate()
 
   const goToDashboard = () => {
     navigate('/dashboard')
   }
+
 
   return (
     <div style={{display: "flex", flexDirection: "column", height: "100vh", marginTop: "20px"}}>
