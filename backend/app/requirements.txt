@@ -13,9 +13,11 @@ httpx
 # LangGraph and LangChain dependencies for agents
 langgraph>=0.4.7
 langchain-core
+langchain>=0.3.25
 langchain-openai>=0.3.19
 langchain-anthropic>=0.3.14
 langchain-mcp-adapters>=0.1.4
+langfuse>=2.0.0
 
 # Anthropic API for file uploads
 anthropic>=0.40.0
