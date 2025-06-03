@@ -156,6 +156,31 @@ async def test_with_real_llm():
         print(f"❌ Real LLM test failed: {str(e)}")
         return False
 
+async def test_basic_workflow():
+    """Test basic workflow functionality"""
+    print("🧪 Testing Basic Agent Workflow")
+    print("=" * 50)
+    
+    try:
+        agent = PublicHealthDashboardAgent()
+        
+        result = await agent.generate_dashboard(
+            "Generate a basic public health dashboard with current health alerts"
+        )
+        
+        print("✅ Basic workflow test completed")
+        print(f"Success: {result.get('success', False)}")
+        print(f"Summary length: {len(result.get('dashboard_summary', ''))}")
+        
+        if result.get('error'):
+            print(f"❌ Error: {result['error']}")
+        
+        return result.get('success', False)
+        
+    except Exception as e:
+        print(f"❌ Basic workflow test failed: {str(e)}")
+        return False
+
 async def run_comprehensive_test():
     """Run all tests"""
     print("🏥 Comprehensive Public Health Dashboard Agent Test Suite")
@@ -177,6 +202,11 @@ async def run_comprehensive_test():
     print("\n" + "🧠 TEST 3: Real LLM Integration")
     result3 = await test_with_real_llm()
     test_results.append(("Real LLM Integration", result3))
+    
+    # Test 4: Basic Workflow
+    print("\n" + "🧪 TEST 4: Basic Agent Workflow")
+    result4 = await test_basic_workflow()
+    test_results.append(("Basic Agent Workflow", result4))
     
     # Summary
     print("\n" + "=" * 80)
@@ -219,7 +249,7 @@ async def demo_interactive_features():
     from health_dashboard_agent import PublicHealthDashboardAgent
     
     # Create agent
-    agent = PublicHealthDashboardAgent(llm_provider="openai")
+            agent = PublicHealthDashboardAgent()
     
     # Generate dashboard
     result = await agent.generate_dashboard(

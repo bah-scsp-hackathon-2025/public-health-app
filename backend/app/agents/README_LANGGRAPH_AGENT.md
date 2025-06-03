@@ -71,14 +71,8 @@ export ANTHROPIC_API_KEY="your-anthropic-api-key"
 ```python
 from health_dashboard_agent import PublicHealthDashboardAgent
 
-# Create agent (auto-detects available LLM provider and uses .env config)
+# Create agent (uses environment variables for configuration)
 agent = PublicHealthDashboardAgent()
-
-# Or override configuration
-agent = PublicHealthDashboardAgent(
-    mcp_host="production-server.com",
-    mcp_port=8080
-)
 
 # Generate dashboard
 result = await agent.generate_dashboard(

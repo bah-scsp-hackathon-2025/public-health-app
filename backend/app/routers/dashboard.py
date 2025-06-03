@@ -29,25 +29,17 @@ async def generate_dashboard(request: DashboardRequest):
     3. Generate comprehensive dashboard summaries
     4. Provide actionable insights for public health officials
     
-    The agent supports multiple LLM providers and graceful degradation.
+    The agent uses Anthropic Claude for enhanced reasoning and analysis.
+    MCP server configuration is handled through environment variables.
     """
     start_time = datetime.now()
     
     try:
-        # Create the dashboard agent with provided configuration
-        agent_kwargs = {}
-        if request.llm_provider and request.llm_provider != "auto":
-            agent_kwargs["llm_provider"] = request.llm_provider
-        if request.mcp_host:
-            agent_kwargs["mcp_host"] = request.mcp_host
-        if request.mcp_port:
-            agent_kwargs["mcp_port"] = request.mcp_port
-        
         # Choose agent type based on request
         if request.agent_type == "react":
-            agent = PublicHealthReActAgent(**agent_kwargs)
+            agent = PublicHealthReActAgent()
         else:
-            agent = PublicHealthDashboardAgent(**agent_kwargs)
+            agent = PublicHealthDashboardAgent()
             
         # Generate the dashboard
         result = await agent.generate_dashboard(request.query)
@@ -88,7 +80,7 @@ async def get_dashboard_status():
     Returns information about:
     - Agent availability
     - MCP server accessibility  
-    - Available LLM providers
+    - Anthropic API availability
     - System timestamp
     """
     try:
@@ -109,17 +101,14 @@ async def get_dashboard_status():
             except Exception:
                 mcp_server_accessible = False
         
-        # Check available LLM providers through settings
+        # Check Anthropic API availability
         from app.config import settings
-        llm_providers = {
-            "openai": bool(settings.openai_api_key and settings.openai_api_key.startswith('sk-')),
-            "anthropic": bool(settings.anthropic_api_key and settings.anthropic_api_key.startswith('sk-ant-'))
-        }
+        anthropic_api_available = bool(settings.anthropic_api_key and settings.anthropic_api_key.startswith('sk-ant-'))
         
         return DashboardStatus(
             agent_available=agent_available,
             mcp_server_accessible=mcp_server_accessible,
-            llm_providers=llm_providers,
+            anthropic_api_available=anthropic_api_available,
             timestamp=datetime.now().isoformat()
         )
         
@@ -146,15 +135,11 @@ async def generate_dashboard_async(request: DashboardRequest, background_tasks: 
     async def generate_in_background():
         """Background task to generate dashboard"""
         try:
-            agent_kwargs = {}
-            if request.llm_provider and request.llm_provider != "auto":
-                agent_kwargs["llm_provider"] = request.llm_provider
-            if request.mcp_host:
-                agent_kwargs["mcp_host"] = request.mcp_host
-            if request.mcp_port:
-                agent_kwargs["mcp_port"] = request.mcp_port
-                
-            agent = PublicHealthDashboardAgent(**agent_kwargs)
+            if request.agent_type == "react":
+                agent = PublicHealthReActAgent()
+            else:
+                agent = PublicHealthDashboardAgent()
+            
             result = await agent.generate_dashboard(request.query)
             
             # In production, you'd store this result in a database or cache
@@ -206,20 +191,13 @@ async def generate_epidemiological_analysis(request: DashboardRequest):
     4. Generate comprehensive epidemiological intelligence
     
     The ReAct agent uses the fetch_epi_signal and detect_rising_trend tools for data-driven analysis.
+    MCP server configuration is handled through environment variables.
     """
     start_time = datetime.now()
     
     try:
         # Force ReAct agent for this endpoint
-        agent_kwargs = {
-            "llm_provider": request.llm_provider if request.llm_provider != "auto" else "auto"
-        }
-        if request.mcp_host:
-            agent_kwargs["mcp_host"] = request.mcp_host
-        if request.mcp_port:
-            agent_kwargs["mcp_port"] = request.mcp_port
-            
-        agent = PublicHealthReActAgent(**agent_kwargs)
+        agent = PublicHealthReActAgent()
         
         # Create epidemiological-focused request
         epi_request = f"""

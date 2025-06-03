@@ -9,25 +9,10 @@ class DashboardRequest(BaseModel):
         description="Natural language description of the dashboard requirements",
         example="Focus on high severity alerts in California"
     )
-    llm_provider: Optional[str] = Field(
-        default="auto",
-        description="LLM provider to use: 'openai', 'anthropic', or 'auto' for auto-detection",
-        example="openai"
-    )
     agent_type: Optional[str] = Field(
         default="standard",
         description="Agent type to use: 'standard' for workflow-based agent or 'react' for ReAct agent with epidemiological tools",
         example="react"
-    )
-    mcp_host: Optional[str] = Field(
-        default=None,
-        description="MCP server host (defaults to environment variable or localhost)",
-        example="localhost"
-    )
-    mcp_port: Optional[int] = Field(
-        default=None,
-        description="MCP server port (defaults to environment variable or 8000)",
-        example=8000
     )
 
 
@@ -70,5 +55,5 @@ class DashboardStatus(BaseModel):
     """Status model for checking dashboard generation status"""
     agent_available: bool
     mcp_server_accessible: bool
-    llm_providers: dict
+    anthropic_api_available: bool
     timestamp: str 

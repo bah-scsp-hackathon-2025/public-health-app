@@ -25,7 +25,7 @@ async def test_enhanced_standard_agent():
     print("=" * 60)
     
     try:
-        agent = PublicHealthDashboardAgent(llm_provider='auto')
+        agent = PublicHealthDashboardAgent()
         result = await agent.generate_dashboard(
             'Generate comprehensive health dashboard with detailed trend analysis and alert prioritization'
         )
@@ -82,7 +82,7 @@ async def test_enhanced_react_agent():
     print("=" * 60)
     
     try:
-        agent = PublicHealthReActAgent(llm_provider='auto')
+        agent = PublicHealthReActAgent()
         result = await agent.generate_dashboard(
             'Analyze epidemiological trends and generate dashboard with rising trend detection'
         )
