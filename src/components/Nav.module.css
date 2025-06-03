@@ -1,53 +1,54 @@
+/* Nav.module.css */
+
 .navbar {
-  background: #dee2e6;
-  width: 200px;
-  height: 100vh; /* Full height of viewport */
-  position: fixed; /* Optional: keeps it always visible */
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #191970;
+  padding: 0 20px;
+  height: 60px;
+  position: fixed;
   top: 0;
   left: 0;
-  border-right: 1px solid #ddd;
-
-  & ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
+  right: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .logoContainer {
-  background: lightblue;
-  height: 10%;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-}
-
-
-.listItemContainer {
-  border: 1px solid gray;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-}
-
-.listItemContainer:hover {
-  background: white;
-  cursor: pointer
-}
-
-.listItem {
-  margin-left: 20px
-}
-
-.navbar a {
-  text-decoration: none;
-  color: #333;
   font-weight: bold;
+  font-size: 18px;
+  width: 15%;
 }
 
-.navbar a:hover {
-  color: #007BFF;
+.logoutContainer {
+  font-weight: bold;
+  font-size: 18px;
+  text-align: right;
+  width: 15%;
+}
+
+.logoutContainer:hover {
+  background: grey;
+  cursor: pointer;  
+}
+
+.listItemContainer:hover{
+  background: gray;
+  cursor: pointer;
+}
+
+ul {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.selected {
+  background: grey;
 }

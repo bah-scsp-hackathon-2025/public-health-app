@@ -1,0 +1,49 @@
+.headerContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;       /* horizontal centering */
+  height: 100vh;   
+}
+
+.headerContainer h1 {
+  border-bottom: 2px solid #191970; /* Midnight Blue */
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 0px rgba(25, 25, 112, 0.3); /* shadow with same hue */
+}
+
+.userTypeContainer {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.userType {
+    display: flex;
+    flex-direction: row;
+    padding: 20px;
+    width: 50%;
+    justify-content: space-between; 
+}
+
+.userType span{
+    font-size: 30px;
+    font-weight: bold;
+}
+
+h2{
+    margin-bottom: 60px;
+    margin-left: 20px;
+    width: 75%;
+    border-bottom: 1px dashed black;
+}
+
+.icon {
+    background: white;
+    border: 1px solid black;
+}
+
+.icon:hover {
+    background: gray;
+    cursor: pointer;
+}

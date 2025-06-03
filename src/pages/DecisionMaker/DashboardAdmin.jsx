@@ -1,13 +1,16 @@
-import Map from '../components/Map';
-import AlertPane from '../components/AlertPane';
-import Chart from '../components/Chart';
+import AdminNav from '../../components/AdminNav';
+import AlertPane from '../../components/AlertPane';
+import Chart from '../../components/Chart';
+import Map from '../../components/Map';
 
-function Dashboard() {
+function AdminDashboard() {
   return (
-    <div style={{display: "flex", flexDirection: "column", gap: "50px"}}>
-        <div style={{display: "flex", justifyContent: "center"}}>
-        <h1 style={{borderBottom: "1px solid black"}}>Central Dashboard</h1>
-        </div>
+    <div style={{display: "flex", flexDirection: "column", marginTop: "0%"}}>
+      <AdminNav></AdminNav>
+
+<div style={{display: "flex", justifyContent: "center", marginBottom: "20px"}}>
+      <h1>Central Dashboard</h1>
+      </div>
 
       <div style={{ display: "flex", width: "100%", marginLeft: "50px", justifyContent: "center", gap: "50px" }}>
         <Map style={{width: "50%", marginRight: "50px"}} /> 
@@ -27,4 +30,4 @@ function Dashboard() {
   );
 }
 
-export default Dashboard;
+export default AdminDashboard;

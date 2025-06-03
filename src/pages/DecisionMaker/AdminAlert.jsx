@@ -1,10 +1,9 @@
-import { useParams } from 'react-router-dom';
-import React, { useEffect, useRef } from 'react';
-import ScenarioCard from '../components/ScenarioCard'
+import { useNavigate, useParams } from 'react-router-dom';
+import AdminNav from '../../components/AdminNav';
+import ScenarioCard from '../../components/ScenarioCard';
 
 
-
-function Alert() {
+function AdminAlert() {
   const { id } = useParams();
   const scenarios = [
   {
@@ -36,17 +35,31 @@ function Alert() {
   },
 ];
 
+  const navigate = useNavigate()
+
+  const goToDashboard = () => {
+    navigate('/admin/dashboard')
+  }
 
   return (
-    <div style={{display: "flex", flexDirection: "column", height: "100vh",}}>
-    <div style={{display: "flex", justifyContent: "center"}}>
-    <div style={{ width: "80%", padding: "20px", height: '100%'}}>
-      <div style={{ textAlign: "center", marginBottom: "20px" }}>
-        <h1 style={{ borderBottom: "1px solid black", padding: "10px" }}>
-          Alert for ID: {id}
-        </h1>
+    <div style={{display: "flex", flexDirection: "column", height: "100vh", marginTop: "20px"}}>
+      <AdminNav></AdminNav>
+      <div style={{display: "flex", justifyContent: "center", flexDirection: "column", textAlign: "center"}}>
+        <div onClick={() => goToDashboard()} style={{display: "flex", justifyContent: "start"}}>
+        <div>Back to dashboard</div>
+        </div>
+    <h1>Alert Response Planner</h1>
+    <p style={{color: "#191970"}}>View insights on public health alerts. Then, generate response strategies and draft policy documents.</p>
       </div>
-<div style={{backgroundColor: "rgba(173, 216, 230, 0.5)", padding: "40px", border: "1px solid black"}}>
+      
+   
+
+    <div style={{display: "flex", justifyContent: "center"}}>
+     
+    <div style={{ width: "80%", padding: "20px", height: '100%'}}>
+      
+   
+<div style={{backgroundColor: "#191970", padding: "40px", border: "1px solid black"}}>
       <div style={{ marginBottom: "20px" }}>
         <div style={{ 
           border: "1px solid black", 
@@ -107,4 +120,4 @@ function Alert() {
   );
 }
 
-export default Alert;
+export default AdminAlert;

@@ -1,4 +1,4 @@
-import styles from './Alerts.module.css'
+import styles from './Alerts.module.css';
 
 function AlertCard({alert, onClick}) {
     return (
@@ -16,7 +16,7 @@ function AlertPane () {
   const navigate = useNavigate();
 
   const goToAlert = (id) => {
-     navigate(`/alert/${id}`);
+     navigate(`/admin/alert/${id}`);
   };
 
     // Sample data with details
@@ -30,7 +30,7 @@ function AlertPane () {
     return (
         <div style={{height: "550px", width: "600px", backgroundColor: '#f0f0f0', border: "1px solid black"}}>
             <div style={{display: "flex", justifyContent: "center"}}>
-                <h2>Alerts</h2>
+                <h2 style={{color: "#191970", borderBottom: "1px solid black", textAlign: "center", width: "100%"}}>Alerts</h2>
                
             </div>
             <div style={{display: "flex", alignItems: "center", flexDirection: "column", gap: "20px"}}>

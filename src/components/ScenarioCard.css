@@ -1,0 +1,13 @@
+button {
+    background: lightblue;
+    height: 50%; 
+    margin-left: 10px;
+    background: lightblue;
+    border-radius: 5px;
+}
+
+button:hover{
+    cursor: pointer;
+    background: white;
+}
+

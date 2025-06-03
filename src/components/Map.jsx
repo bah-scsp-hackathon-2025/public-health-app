@@ -1,7 +1,7 @@
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { useEffect, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
+import { useEffect, useState } from 'react';
+import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 
 // Sample data with details
 const timeSeriesData = [
@@ -31,7 +31,7 @@ export default function USMapWithDots() {
     <MapContainer
       center={[37.8, -96]}
       zoom={4}
-      style={{ height: '550px', width: '600px' }}
+      style={{ height: '550px', width: '600px', border: "1px solid black" }}
       scrollWheelZoom={false}
     >
       <TileLayer

@@ -3,10 +3,18 @@
     width: 80%;
     min-height: 50px;
     background: white;
-    padding: 10px
+    padding: 10px;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+    transition: transform 0.2s ease;
 }
 
 .alertCard:hover {
     background: grey;
     cursor: pointer;
+    transform: translateY(-4px);
+}
+
+h2{
+    margin-left: 0px;
+    text-align: center;
 }
