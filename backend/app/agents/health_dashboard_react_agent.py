@@ -192,6 +192,12 @@ Provide comprehensive dashboard summaries that include:
 - Risk-based recommendations for public health action
 - Supporting data and confidence levels
 
+**Structured Recommendations Section:**
+Always end your analysis with a clear "RECOMMENDATIONS" section listing 3-5 specific, actionable recommendations for public health officials.
+
+**Data Citation:**
+Reference specific tool outputs, numbers, and statistical findings from your analysis. When you detect rising trends, clearly state which signals are trending upward and provide the statistical evidence.
+
 Always ground your analysis in the real data you fetch. Be specific about numbers, trends, and timeframes. Focus on actionable insights that public health officials can use for decision-making."""
 
             # Create the ReAct agent
@@ -204,6 +210,127 @@ Always ground your analysis in the real data you fetch. Be specific about number
             
             logger.debug("✅ ReAct agent created with system prompt and tools")
     
+    def _extract_structured_data_from_conversation(self, result: Dict) -> Dict:
+        """Extract structured data from ReAct agent conversation"""
+        structured_data = {
+            "alerts": [],
+            "rising_trends": [],
+            "epidemiological_signals": [],
+            "risk_assessment": {},
+            "recommendations": []
+        }
+        
+        try:
+            # Extract conversation messages to analyze tool outputs
+            messages = result.get("messages", [])
+            
+            rising_trends = []
+            epi_signals = []
+            recommendations = []
+            
+            for message in messages:
+                content = str(message.content) if hasattr(message, 'content') else str(message)
+                
+                # Look for detect_rising_trend tool outputs
+                if "rising_periods" in content and "total_periods" in content:
+                    try:
+                        # Try to extract trend information
+                        import re
+                        import json as json_lib
+                        
+                        # Look for JSON-like patterns in the content
+                        json_match = re.search(r'\{[^{}]*"rising_periods"[^{}]*\}', content)
+                        if json_match:
+                            trend_data = json_lib.loads(json_match.group())
+                            if trend_data.get("rising_periods"):
+                                rising_trends.append({
+                                    "signal_name": "epidemiological_signal",
+                                    "trend_direction": "rising",
+                                    "rising_periods": trend_data["rising_periods"],
+                                    "total_periods": trend_data.get("total_periods", 0),
+                                    "risk_level": "high" if trend_data.get("total_periods", 0) > 3 else "medium",
+                                    "detected_via": "detect_rising_trend_tool"
+                                })
+                    except:
+                        # If parsing fails, create a basic trend entry
+                        if "rising_periods" in content:
+                            rising_trends.append({
+                                "signal_name": "epidemiological_data",
+                                "trend_direction": "rising", 
+                                "description": "Rising trend detected in epidemiological analysis",
+                                "risk_level": "medium",
+                                "detected_via": "react_analysis"
+                            })
+                
+                # Look for fetch_epi_signal tool outputs
+                if any(signal in content for signal in ["confirmed_7dav_incidence_prop", "smoothed_wcli", "smoothed_adj_cli"]):
+                    # Extract signal information
+                    for signal in ["confirmed_7dav_incidence_prop", "smoothed_wcli", "smoothed_adj_cli", "deaths_7dav_incidence_prop"]:
+                        if signal in content:
+                            signal_descriptions = {
+                                "confirmed_7dav_incidence_prop": "COVID-19 Case Rates",
+                                "smoothed_wcli": "COVID-Like Symptoms",
+                                "smoothed_adj_cli": "COVID-Related Doctor Visits",
+                                "deaths_7dav_incidence_prop": "COVID-19 Death Rates"
+                            }
+                            
+                            epi_signals.append({
+                                "signal_name": signal,
+                                "description": signal_descriptions.get(signal, signal),
+                                "data_source": "delphi_epidata_api",
+                                "last_analyzed": datetime.now().isoformat(),
+                                "status": "analyzed"
+                            })
+                
+                # Extract recommendations from final summary
+                if any(keyword in content.lower() for keyword in ["recommend", "should", "action", "priority"]):
+                    # Try to extract bullet points or numbered recommendations
+                    import re
+                    rec_patterns = [
+                        r'(?:^|\n)\s*[\d\-\*•]\s*(.+?)(?=\n|$)',  # Numbered or bulleted lists
+                        r'(?:recommend|suggest|should)([^.]+)',  # Recommendation statements
+                    ]
+                    
+                    for pattern in rec_patterns:
+                        matches = re.findall(pattern, content, re.IGNORECASE | re.MULTILINE)
+                        for match in matches[:3]:  # Limit to 3 recommendations per pattern
+                            if len(match.strip()) > 10:  # Only meaningful recommendations
+                                recommendations.append(match.strip())
+            
+            # Build risk assessment based on findings
+            risk_assessment = {
+                "overall_risk_level": "medium",  # Default
+                "epidemiological_signals_analyzed": len(set(s["signal_name"] for s in epi_signals)),
+                "rising_trends_detected": len(rising_trends),
+                "analysis_method": "react_agent_with_epi_tools",
+                "confidence_level": "high" if len(epi_signals) > 2 else "medium"
+            }
+            
+            # Adjust risk level based on findings
+            if len(rising_trends) > 2:
+                risk_assessment["overall_risk_level"] = "high"
+            elif len(rising_trends) == 0 and len(epi_signals) > 0:
+                risk_assessment["overall_risk_level"] = "low"
+            
+            structured_data = {
+                "alerts": [],  # ReAct agent doesn't have access to alerts currently
+                "rising_trends": rising_trends[:5],  # Limit to top 5
+                "epidemiological_signals": epi_signals[:10],  # Limit to top 10
+                "risk_assessment": risk_assessment,
+                "recommendations": list(set(recommendations))[:5]  # Deduplicate and limit
+            }
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Error extracting structured data from conversation: {str(e)}")
+            # Return basic structure with error note
+            structured_data["risk_assessment"] = {
+                "overall_risk_level": "unknown",
+                "analysis_method": "react_agent_with_parsing_error",
+                "error": str(e)
+            }
+        
+        return structured_data
+
     async def generate_dashboard(self, request: str = "Generate comprehensive public health dashboard with current epidemiological analysis") -> Dict:
         """Generate a dashboard summary using ReAct agent"""
         logger.info(f"🚀 REACT AGENT: Starting dashboard generation")
@@ -270,7 +397,10 @@ Focus on recent data (last 30-60 days) and provide specific metrics and trends.
             
             logger.info("✅ ReAct agent completed successfully")
             
-            # Format the response
+            # Extract structured data from the conversation (attempt to parse trends and signals)
+            structured_data = self._extract_structured_data_from_conversation(result)
+            
+            # Format the response with enhanced structured data
             response = {
                 "dashboard_summary": dashboard_summary,
                 "success": True,
@@ -278,7 +408,14 @@ Focus on recent data (last 30-60 days) and provide specific metrics and trends.
                 "agent_type": "ReAct",
                 "llm_provider": type(self.llm).__name__,
                 "tools_used": [t.name for t in self.tools],
-                "error": None
+                "error": None,
+                
+                # Enhanced structured data from ReAct analysis
+                "alerts": structured_data.get("alerts", []),
+                "rising_trends": structured_data.get("rising_trends", []),
+                "epidemiological_signals": structured_data.get("epidemiological_signals", []),
+                "risk_assessment": structured_data.get("risk_assessment", {}),
+                "recommendations": structured_data.get("recommendations", [])
             }
             
             return response

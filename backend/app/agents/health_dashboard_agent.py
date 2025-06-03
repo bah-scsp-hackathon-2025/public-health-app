@@ -271,15 +271,36 @@ class PublicHealthDashboardAgent:
                 
                 logger.info("🧠 Analyzing health data with LLM...")
                 messages = [
-                    SystemMessage(content="""You are a public health data analyst expert. 
-                    Analyze the provided health alerts and trends data to identify:
-                    1. Critical patterns and correlations
-                    2. Emerging health threats
-                    3. Population groups at risk
-                    4. Trend analysis (increasing/decreasing risks)
-                    5. Actionable insights for public health officials
+                    SystemMessage(content="""You are a public health data analyst expert specialized in epidemiological surveillance and trend analysis.
                     
-                    Provide your analysis in JSON format with clear categories and severity levels."""),
+                    Analyze the provided health alerts and trends data to identify:
+                    1. Critical patterns and correlations between alerts and trend data
+                    2. Emerging health threats and risk escalation patterns
+                    3. Population groups and geographic areas at highest risk
+                    4. Detailed trend analysis focusing on:
+                       - Increasing/decreasing risk patterns
+                       - Statistical significance of changes
+                       - Rate of change and acceleration
+                       - Geographic distribution of trends
+                    5. Actionable insights and priority recommendations for public health officials
+                    
+                    Return your analysis in JSON format with these specific sections:
+                    {
+                        "critical_findings": ["list of most urgent findings"],
+                        "risk_assessment": {
+                            "overall_risk_level": "low|medium|high|critical",
+                            "trending_up": ["metrics showing increasing risk"],
+                            "trending_down": ["metrics showing decreasing risk"],
+                            "states_affected": ["list of states with significant activity"],
+                            "geographic_spread": "localized|regional|widespread"
+                        },
+                        "trend_analysis": {
+                            "concerning_trends": ["specific trends requiring attention"],
+                            "positive_trends": ["improving health indicators"],
+                            "statistical_evidence": ["quantitative findings with numbers"]
+                        },
+                        "recommendations": ["5 specific actionable recommendations"]
+                    }"""),
                     HumanMessage(content=analysis_prompt)
                 ]
                 
@@ -557,6 +578,193 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
         
         return summary
     
+    def _process_alerts_for_dashboard(self, alerts_data: Dict, analysis_result: Dict) -> List[Dict]:
+        """Process alerts with analysis for dashboard response"""
+        if not alerts_data or not alerts_data.get("alerts"):
+            return []
+        
+        processed_alerts = []
+        raw_alerts = alerts_data.get("alerts", [])
+        
+        # Get analysis insights if available
+        critical_findings = analysis_result.get("critical_findings", [])
+        
+        for i, alert in enumerate(raw_alerts[:10]):  # Limit to top 10 alerts
+            processed_alert = {
+                "id": alert.get("id", f"alert_{i}"),
+                "title": alert.get("title", "Unknown Alert"),
+                "description": alert.get("description", ""),
+                "severity": alert.get("severity", "UNKNOWN"),
+                "state": alert.get("state", ""),
+                "county": alert.get("county", ""),
+                "alert_type": alert.get("alert_type", ""),
+                "affected_population": alert.get("affected_population", 0),
+                "timestamp": alert.get("timestamp", ""),
+                "source": alert.get("source", ""),
+                
+                # Analysis enhancement
+                "analysis": {
+                    "priority_score": self._calculate_priority_score(alert),
+                    "risk_level": self._assess_alert_risk(alert),
+                    "related_findings": [f for f in critical_findings if alert.get("state", "").lower() in f.lower() or alert.get("alert_type", "").lower() in f.lower()][:2]
+                }
+            }
+            processed_alerts.append(processed_alert)
+        
+        # Sort by priority score (highest first)
+        processed_alerts.sort(key=lambda x: x["analysis"]["priority_score"], reverse=True)
+        return processed_alerts
+    
+    def _extract_trend_analysis(self, trends_data: Dict, analysis_result: Dict) -> Dict:
+        """Extract trend analysis for dashboard"""
+        trend_analysis = {
+            "rising_trends": [],
+            "signals": []
+        }
+        
+        if not trends_data or not trends_data.get("trends"):
+            return trend_analysis
+        
+        trends = trends_data.get("trends", {})
+        
+        # Process each trend category
+        for trend_name, trend_info in trends.items():
+            if not trend_info.get("data_points"):
+                continue
+                
+            data_points = trend_info["data_points"]
+            if len(data_points) < 2:
+                continue
+            
+            # Calculate trend direction
+            recent_values = [point["value"] for point in data_points[-3:]]
+            if len(recent_values) >= 2:
+                trend_direction = "rising" if recent_values[-1] > recent_values[0] else "declining"
+                change_percent = data_points[-1].get("change_percent", 0)
+                
+                trend_item = {
+                    "signal_name": trend_name,
+                    "description": trend_info.get("description", ""),
+                    "current_value": data_points[-1]["value"],
+                    "unit": trend_info.get("unit", ""),
+                    "trend_direction": trend_direction,
+                    "change_percent": change_percent,
+                    "data_points": len(data_points),
+                    "last_updated": data_points[-1]["date"],
+                    "risk_level": "high" if abs(change_percent) > 15 else "medium" if abs(change_percent) > 5 else "low"
+                }
+                
+                # Add to rising trends if significant increase
+                if trend_direction == "rising" and change_percent > 5:
+                    trend_analysis["rising_trends"].append(trend_item)
+                
+                # Add to signals regardless
+                trend_analysis["signals"].append(trend_item)
+        
+        return trend_analysis
+    
+    def _calculate_priority_score(self, alert: Dict) -> int:
+        """Calculate priority score for an alert (0-100)"""
+        score = 0
+        
+        # Severity scoring
+        severity_scores = {"HIGH": 40, "MEDIUM": 25, "LOW": 10}
+        score += severity_scores.get(alert.get("severity"), 5)
+        
+        # Population impact scoring
+        affected = alert.get("affected_population", 0)
+        if affected > 100000:
+            score += 30
+        elif affected > 50000:
+            score += 20
+        elif affected > 10000:
+            score += 15
+        elif affected > 1000:
+            score += 10
+        else:
+            score += 5
+        
+        # Alert type scoring
+        type_scores = {"OUTBREAK": 20, "ENVIRONMENTAL": 15, "FOOD_SAFETY": 15, "SEASONAL": 10}
+        score += type_scores.get(alert.get("alert_type"), 5)
+        
+        # Recency scoring (newer alerts get higher scores)
+        try:
+            alert_time = datetime.fromisoformat(alert.get("timestamp", "").replace('Z', '+00:00'))
+            days_old = (datetime.now(alert_time.tzinfo) - alert_time).days
+            if days_old < 1:
+                score += 10
+            elif days_old < 3:
+                score += 5
+        except:
+            pass
+        
+        return min(score, 100)
+    
+    def _assess_alert_risk(self, alert: Dict) -> str:
+        """Assess overall risk level for an alert"""
+        priority_score = self._calculate_priority_score(alert)
+        
+        if priority_score >= 70:
+            return "critical"
+        elif priority_score >= 50:
+            return "high"
+        elif priority_score >= 30:
+            return "medium"
+        else:
+            return "low"
+    
+    def _build_basic_risk_assessment(self, alerts_data: Dict, trends_data: Dict) -> Dict:
+        """Build basic risk assessment when analysis is not available"""
+        alerts = alerts_data.get("alerts", [])
+        
+        high_severity_count = len([a for a in alerts if a.get("severity") == "HIGH"])
+        total_affected = sum(a.get("affected_population", 0) for a in alerts)
+        states_affected = list(set(a.get("state") for a in alerts if a.get("state")))
+        
+        # Determine overall risk level
+        if high_severity_count >= 3 or total_affected > 500000:
+            overall_risk = "high"
+        elif high_severity_count >= 1 or total_affected > 100000:
+            overall_risk = "medium"
+        else:
+            overall_risk = "low"
+        
+        return {
+            "overall_risk_level": overall_risk,
+            "high_severity_alerts": high_severity_count,
+            "total_population_affected": total_affected,
+            "states_with_alerts": len(states_affected),
+            "geographic_spread": "widespread" if len(states_affected) > 5 else "localized",
+            "key_concerns": [a.get("alert_type") for a in alerts if a.get("severity") == "HIGH"][:3]
+        }
+    
+    def _generate_basic_recommendations(self, alerts_data: Dict, trends_data: Dict) -> List[str]:
+        """Generate basic recommendations when analysis is not available"""
+        recommendations = []
+        alerts = alerts_data.get("alerts", [])
+        
+        high_severity_alerts = [a for a in alerts if a.get("severity") == "HIGH"]
+        
+        if high_severity_alerts:
+            recommendations.append("Immediate attention required for high-severity alerts")
+            recommendations.append("Activate emergency response protocols for affected areas")
+        
+        if any(a.get("alert_type") == "OUTBREAK" for a in alerts):
+            recommendations.append("Implement enhanced surveillance and contact tracing")
+        
+        if any(a.get("alert_type") == "ENVIRONMENTAL" for a in alerts):
+            recommendations.append("Monitor environmental conditions and issue public advisories")
+        
+        total_affected = sum(a.get("affected_population", 0) for a in alerts)
+        if total_affected > 100000:
+            recommendations.append("Coordinate regional response efforts")
+        
+        if not recommendations:
+            recommendations.append("Continue routine monitoring and surveillance")
+        
+        return recommendations[:5]  # Limit to 5 recommendations
+
     async def generate_dashboard(self, request: str = "Generate comprehensive public health dashboard") -> Dict:
         """Generate a dashboard summary"""
         logger.info(f"🚀 LANGGRAPH WORKFLOW: Starting dashboard generation")
@@ -604,6 +812,23 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
         
         alerts_data = final_state.get("alerts_data") or {}
         trends_data = final_state.get("trends_data") or {}
+        analysis_result = final_state.get("analysis_result") or {}
+        
+        # Process alerts with analysis
+        processed_alerts = self._process_alerts_for_dashboard(alerts_data, analysis_result)
+        
+        # Extract trend analysis (basic for now, will be enhanced with MCP trends later)
+        trend_analysis = self._extract_trend_analysis(trends_data, analysis_result)
+        
+        # Build risk assessment
+        risk_assessment = analysis_result.get("risk_assessment", {})
+        if not risk_assessment and alerts_data:
+            risk_assessment = self._build_basic_risk_assessment(alerts_data, trends_data)
+        
+        # Extract recommendations
+        recommendations = analysis_result.get("recommendations", [])
+        if not recommendations:
+            recommendations = self._generate_basic_recommendations(alerts_data, trends_data)
         
         result = {
             "dashboard_summary": final_state.get("dashboard_summary", "No summary generated"),
@@ -611,7 +836,15 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
             "trends_count": len(trends_data.get("trends", {})),
             "timestamp": final_state.get("timestamp"),
             "success": not bool(final_state.get("error_message")),
-            "error": final_state.get("error_message")
+            "error": final_state.get("error_message"),
+            
+            # Enhanced structured data
+            "alerts": processed_alerts,
+            "rising_trends": trend_analysis.get("rising_trends", []),
+            "epidemiological_signals": trend_analysis.get("signals", []),
+            "risk_assessment": risk_assessment,
+            "recommendations": recommendations,
+            "agent_type": "standard"
         }
         
         logger.debug(f"Result summary - Success: {result['success']}, Alerts: {result['alerts_count']}, Trends: {result['trends_count']}")
