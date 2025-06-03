@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from pydantic_settings import BaseSettings
 
@@ -11,7 +10,7 @@ try:
         Path("../.env"),  # Parent directory
         Path("../../.env"),  # Two levels up (for nested structures)
     ]
-    
+
     for env_path in env_locations:
         if env_path.exists():
             load_dotenv(env_path)
@@ -19,7 +18,7 @@ try:
             break
     else:
         print("No .env file found in standard locations")
-        
+
 except ImportError:
     print("python-dotenv not installed, loading from system environment only")
 
@@ -29,15 +28,15 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./app.db"
     secret_key: str = "go-bah-team"
     access_token_expire_minutes: int = 60
-    
+
     # FastAPI Server Configuration
     fastapi_host: str = "0.0.0.0"
     fastapi_port: int = 8001
-    
+
     # MCP Server Configuration
     mcp_server_host: str = "localhost"
     mcp_server_port: int = 8000
-    
+
     # API Keys - Pydantic will automatically load these from environment
     openai_api_key: str = ""
     anthropic_api_key: str = ""

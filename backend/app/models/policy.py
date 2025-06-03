@@ -13,6 +13,7 @@ class Policy(Base):
     approved = Column(Boolean)
     created = Column(String)
     updated = Column(String)
+    alert_id = Column(Integer)
 
 
 class PolicyCreate(BaseModel):
@@ -20,6 +21,7 @@ class PolicyCreate(BaseModel):
     content: str
     author: str
     approved: bool
+    alert_id: int
 
 
 class PolicyUpdate(BaseModel):
@@ -27,6 +29,7 @@ class PolicyUpdate(BaseModel):
     content: Optional[str] = None
     author: Optional[str] = None
     approved: Optional[bool] = None
+    alert_id: Optional[int] = None
 
 
 class PolicyResponse(PolicyCreate):
@@ -39,11 +42,13 @@ class Strategy(Base):
     id = Column(Integer, primary_key=True, index=True)
     short_description = Column(String)
     full_description = Column(String)
+    alert_id = Column(int)
 
 
 class StrategyCreate(BaseModel):
     short_description: str
     full_description: str
+    alert_id: int
 
 
 class StrategyResponse(StrategyCreate):

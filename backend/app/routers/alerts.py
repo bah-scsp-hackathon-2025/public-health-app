@@ -22,6 +22,8 @@ async def create_alert(alert: AlertCreate, db: Session = Depends(get_db)):
         risk_score=alert.risk_score,
         risk_reason=alert.risk_reason,
         location=alert.location,
+        latitde=alert.latitude,
+        longitude=alert.longitude,
         created=current_time,
         updated=current_time,
     )
@@ -61,6 +63,10 @@ async def update_alert(alert_id: int, alert_update: AlertUpdate, db: Session = D
         alert.risk_reason = alert_update.risk_reason
     if alert_update.location:
         alert.location = alert_update.location
+    if alert_update.latitude:
+        alert.latitude = alert_update.latitude
+    if alert_update.longitude:
+        alert.longitude = alert_update.longitude
     alert.updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     db.add(alert)

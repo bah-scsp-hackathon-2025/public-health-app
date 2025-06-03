@@ -1,8 +1,7 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import users, alerts, dashboard, reports, policies, summary
+from app.routers import users, alerts, dashboard, policies, summary
 from app.database import engine, Base
-from app.config import settings
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -26,7 +25,6 @@ app.add_middleware(
 app.include_router(users.router)
 app.include_router(alerts.router)
 app.include_router(dashboard.router)
-app.include_router(reports.router)
 app.include_router(policies.router)
 app.include_router(summary.router)
 

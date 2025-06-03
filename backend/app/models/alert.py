@@ -13,6 +13,8 @@ class Alert(Base):
     risk_score = Column(Integer)
     risk_reason = Column(String)
     location = Column(String)
+    latitude = Column(String)
+    longitude = Column(String)
     created = Column(String)
     updated = Column(String)
 
@@ -23,6 +25,8 @@ class AlertCreate(BaseModel):
     risk_score: int
     risk_reason: str
     location: str
+    latitude: str
+    longitude: str
 
 
 class AlertUpdate(BaseModel):
@@ -31,6 +35,8 @@ class AlertUpdate(BaseModel):
     risk_score: Optional[int] = None
     risk_reason: Optional[str] = None
     location: Optional[str] = None
+    latitude: Optional[str] = None
+    longitude: Optional[str] = None
 
 
 class AlertResponse(AlertCreate):
