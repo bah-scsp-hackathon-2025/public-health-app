@@ -1,9 +1,10 @@
 import { MapPin } from "lucide-react";
-import React from "react";
+import { React, useState, useEffect } from "react";
 import Chart from '../../components/Chart';
 import Map from '../../components/Map';
 import RegularAlertPane from "../../components/RegularAlertPane";
 import RegularNav from "../../components/RegularNav";
+import { fetchAlerts, fetchSummary } from "../../common/api";
 
 const US_STATE_AND_TERRITORY_NAMES = [
   "Alabama",
@@ -65,10 +66,36 @@ const US_STATE_AND_TERRITORY_NAMES = [
 ];
 
 
-
-
 function Dashboard() {
-    const [selectedState, setSelectedState] = React.useState("")
+    const [selectedState, setSelectedState] = useState("");
+
+    const [alerts, setAlerts] = useState([]);
+    useEffect(() => {
+      const getAlerts = async () => {
+        try {
+          const result = await fetchAlerts();
+          // set alerts to be just the first 4 for now
+          setAlerts(result.slice(0, 4));
+        } catch (error) {
+          console.error("Error getting alerts:", error);
+        }
+      };
+      getAlerts();
+    }, []);
+
+    const [summary, setSummary] = useState([]);
+      useEffect(() => {
+        const getSummary = async () => {
+          try {
+            const result = await fetchSummary();
+            setSummary(result);
+          } catch (error) {
+            console.error("Error getting approved policies:", error);
+          }
+        };
+        getSummary();
+      }, []);
+
   return (
     <div style={{display: "flex", flexDirection: "column", marginTop: "0%"}}>
       <RegularNav></RegularNav>
@@ -107,7 +134,7 @@ function Dashboard() {
         <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: "50px"}}>
         <div style={{ background: "lightgrey", width: "80%", border: "1px solid black",  padding: "20px",
         boxSizing: "border-box", height: "80%"}}>
-            Summary
+            {summary.description}
         </div>
         </div>
 
