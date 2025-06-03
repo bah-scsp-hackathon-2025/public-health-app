@@ -17,5 +17,8 @@ langchain-openai>=0.3.19
 langchain-anthropic>=0.3.14
 langchain-mcp-adapters>=0.1.4
 
+# Anthropic API for file uploads
+anthropic>=0.40.0
+
 # Environment and utility dependencies
 python-dotenv>=1.0.0
