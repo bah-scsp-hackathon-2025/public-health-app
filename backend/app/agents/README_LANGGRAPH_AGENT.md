@@ -42,6 +42,9 @@ cd backend/mcp
 source venv/bin/activate
 pip install -r requirements.txt
 
+# Navigate to agents directory
+cd ../app/agents
+
 # Configure environment variables
 cp ../.env-template ../.env
 # Edit .env file with your configuration:
@@ -50,8 +53,10 @@ cp ../.env-template ../.env
 # - OPENAI_API_KEY=your-key (optional)
 # - ANTHROPIC_API_KEY=your-key (optional)
 
-# Required: Start the FastMCP server
+# Required: Start the FastMCP server (from the mcp directory)
+cd ../../mcp
 python3 -m uvicorn fastmcp_server:app --host 0.0.0.0 --port 8000
+cd ../app/agents  # Return to agents directory
 
 # Optional: Set API keys for LLM providers
 export OPENAI_API_KEY="your-openai-api-key"
@@ -113,7 +118,7 @@ python health_dashboard_agent.py interactive
 The project includes comprehensive tests that work with or without LLM API keys:
 
 ```bash
-# Run all tests (from backend/mcp directory)
+# Run all tests (from backend/app/agents directory)
 python test_dashboard_agent.py
 
 # Test specific components

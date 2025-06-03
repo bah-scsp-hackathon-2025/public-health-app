@@ -26,6 +26,7 @@ groups:
       - path: "**/workflows/**"
       - path: "**/langgraph/**"
       - path: "**/*_workflow.py"
+      - path: "backend/app/agents/**"
     language: "python"
     description: "LangGraph orchestration flows and state management logic"
 

@@ -139,6 +139,46 @@
             }
         },
         {
+            "name": "Debug Dashboard Agent",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/app/agents/health_dashboard_agent.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend/app/agents",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend:${workspaceFolder}/backend/mcp"
+            },
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "args": [
+                "interactive"
+            ],
+            "presentation": {
+                "group": "agents",
+                "order": 1
+            }
+        },
+        {
+            "name": "Debug Dashboard Agent Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/app/agents/test_dashboard_agent.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend/app/agents",
+            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend:${workspaceFolder}/backend/mcp"
+            },
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "args": [],
+            "presentation": {
+                "group": "agents",
+                "order": 2
+            }
+        },
+        {
             "name": "Debug with Args",
             "type": "debugpy",
             "request": "launch",
