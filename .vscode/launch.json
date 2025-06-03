@@ -145,9 +145,9 @@
             "program": "${workspaceFolder}/backend/app/agents/health_dashboard_agent.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}/backend/app/agents",
-            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "python": "${workspaceFolder}/backend/app/venv/bin/python",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}/backend:${workspaceFolder}/backend/mcp"
+                "PYTHONPATH": "${workspaceFolder}/backend/app:${workspaceFolder}/backend/mcp"
             },
             "justMyCode": false,
             "stopOnEntry": false,
@@ -166,9 +166,9 @@
             "program": "${workspaceFolder}/backend/app/agents/test_dashboard_agent.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}/backend/app/agents",
-            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "python": "${workspaceFolder}/backend/app/venv/bin/python",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}/backend:${workspaceFolder}/backend/mcp"
+                "PYTHONPATH": "${workspaceFolder}/backend/app:${workspaceFolder}/backend/mcp"
             },
             "justMyCode": false,
             "stopOnEntry": false,
@@ -185,9 +185,9 @@
             "program": "${workspaceFolder}/backend/start_fastapi.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}/backend",
-            "python": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "python": "${workspaceFolder}/backend/app/venv/bin/python",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}/backend:${workspaceFolder}/backend/mcp"
+                "PYTHONPATH": "${workspaceFolder}/backend/app:${workspaceFolder}/backend/mcp"
             },
             "justMyCode": false,
             "stopOnEntry": false,

@@ -34,7 +34,7 @@
         {
             "label": "Start FastAPI App",
             "type": "shell",
-            "command": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "command": "${workspaceFolder}/backend/app/venv/bin/python",
             "args": [
                 "start_fastapi.py"
             ],
@@ -246,7 +246,7 @@
         {
             "label": "Test Dashboard API",
             "type": "shell",
-            "command": "${workspaceFolder}/backend/mcp/venv/bin/python",
+            "command": "${workspaceFolder}/backend/app/venv/bin/python",
             "args": [
                 "test_dashboard_api.py"
             ],
@@ -261,7 +261,7 @@
             "options": {
                 "cwd": "${workspaceFolder}/backend",
                 "env": {
-                    "PYTHONPATH": "${workspaceFolder}/backend/mcp:${workspaceFolder}/backend"
+                    "PYTHONPATH": "${workspaceFolder}/backend/mcp:${workspaceFolder}/backend/app"
                 }
             },
             "problemMatcher": []

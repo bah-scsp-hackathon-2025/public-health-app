@@ -9,6 +9,11 @@ class Settings(BaseSettings):
     # FastAPI Server Configuration
     fastapi_host: str = "0.0.0.0"
     fastapi_port: int = 8001
+    
+    # API Keys
+    openai_api_key: str = ""
+    anthropic_api_key: str = ""
+    delphi_epidata_key: str = ""
 
     class Config:
         env_file = ".env"

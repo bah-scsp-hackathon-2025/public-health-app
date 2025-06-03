@@ -10,9 +10,10 @@ This server provides three tools:
 Uses FastMCP framework with SSE transport for improved developer experience.
 """
 
-from typing import List, Optional, Literal
 from datetime import datetime
+from epidatpy import CovidcastEpidata, EpiDataContext, EpiRange
 from fastmcp import FastMCP
+from typing import List, Optional, Literal
 
 # Create the MCP server with SSE transport
 mcp = FastMCP("Public Health FastMCP")
@@ -244,10 +245,18 @@ def get_public_health_alerts(
     # Filter by date range if provided
     if start_date:
         try:
-            start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            # Parse start_date and ensure it's timezone-naive
+            if 'T' in start_date:
+                if start_date.endswith('Z'):
+                    start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00')).replace(tzinfo=None)
+                else:
+                    start_dt = datetime.fromisoformat(start_date)
+            else:
+                start_dt = datetime.fromisoformat(start_date)
+                
             filtered_alerts = [
                 alert for alert in filtered_alerts 
-                if datetime.fromisoformat(alert["timestamp"].replace('Z', '+00:00')) >= start_dt
+                if datetime.fromisoformat(alert["timestamp"].replace('Z', '+00:00')).replace(tzinfo=None) >= start_dt
             ]
         except ValueError:
             # Invalid date format, return error in metadata
@@ -255,10 +264,18 @@ def get_public_health_alerts(
     
     if end_date:
         try:
-            end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            # Parse end_date and ensure it's timezone-naive
+            if 'T' in end_date:
+                if end_date.endswith('Z'):
+                    end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00')).replace(tzinfo=None)
+                else:
+                    end_dt = datetime.fromisoformat(end_date)
+            else:
+                end_dt = datetime.fromisoformat(end_date)
+                
             filtered_alerts = [
                 alert for alert in filtered_alerts 
-                if datetime.fromisoformat(alert["timestamp"].replace('Z', '+00:00')) <= end_dt
+                if datetime.fromisoformat(alert["timestamp"].replace('Z', '+00:00')).replace(tzinfo=None) <= end_dt
             ]
         except ValueError:
             # Invalid date format, return error in metadata
@@ -365,9 +382,7 @@ def get_health_risk_trends(
 
 
 @mcp.tool()
-def fetch_epi_signal(data_source: str) -> pd.DataFrame:
-        ### Tool to fetch a specific COVID-19 signal from the EpiDataContext
-
+def fetch_epi_signal(
     data_source: str,
     signal: List[str],
     time_type: Literal["day", "week", "month"] = "day",
@@ -456,7 +471,7 @@ def fetch_epi_signal(data_source: str) -> pd.DataFrame:
     df["time_values"] = time_values
     df["geo_values"] = geo_values
     df.to_csv(f"{self.cache_dir}/{signal}.csv", index=False)
-    return df
+    return df.to_json(orient="records")
      # TO DO: Serialize the df?
     # def fetch(self):
     #     all_data = []

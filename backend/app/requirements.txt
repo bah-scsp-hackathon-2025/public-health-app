@@ -9,3 +9,16 @@ python-jose[cryptography]
 passlib[bcrypt]
 pytest
 httpx
+
+# LangGraph and LangChain dependencies for agents
+langgraph>=0.4.7
+langchain-core
+langchain-openai>=0.3.19
+langchain-anthropic>=0.3.14
+langchain-mcp-adapters>=0.1.4
+
+# Environment and utility dependencies
+python-dotenv>=1.0.0
+
+# Delphi Epidata API for health surveillance data
+git+https://github.com/cmu-delphi/epidatpy.git#egg=epidatpy
