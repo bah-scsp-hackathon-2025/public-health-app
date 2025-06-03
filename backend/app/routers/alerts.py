@@ -1,32 +1,11 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
 from app.database import get_db
-from app.models.alert import Alert
+from app.models.alert import Alert, AlertCreate, AlertUpdate, AlertResponse
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
-
-
-class AlertCreate(BaseModel):
-    name: str
-    description: str
-    risk_score: int
-    risk_reason: str
-    location: str
-
-
-class AlertUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    risk_score: Optional[int] = None
-    risk_reason: Optional[str] = None
-    location: Optional[str] = None
-
-
-class AlertResponse(AlertCreate):
-    id: int
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)

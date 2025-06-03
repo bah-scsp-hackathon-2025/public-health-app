@@ -1,29 +1,11 @@
-from typing import List, Optional
+from datetime import datetime
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
 from app.database import get_db
-from app.models.report import Report
+from app.models.report import Report, ReportCreate, ReportUpdate, ReportResponse
 
 router = APIRouter(prefix="/reports", tags=["reports"])
-
-
-class ReportCreate(BaseModel):
-    title: str
-    content: str
-    author: str
-    approved: bool
-
-
-class ReportUpdate(BaseModel):
-    title: Optional[str] = None
-    content: Optional[str] = None
-    author: Optional[str] = None
-    approved: Optional[bool] = None
-
-
-class ReportResponse(ReportCreate):
-    id: int
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)

@@ -1,3 +1,5 @@
+from typing import Optional
+from pydantic import BaseModel
 from sqlalchemy import Column, Integer, String
 from app.database import Base
 
@@ -12,4 +14,24 @@ class Alert(Base):
     risk_reason = Column(String)
     location = Column(String)
     created = Column(String)
-    update = Column(String)
+    updated = Column(String)
+
+
+class AlertCreate(BaseModel):
+    name: str
+    description: str
+    risk_score: int
+    risk_reason: str
+    location: str
+
+
+class AlertUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    risk_score: Optional[int] = None
+    risk_reason: Optional[str] = None
+    location: Optional[str] = None
+
+
+class AlertResponse(AlertCreate):
+    id: int
