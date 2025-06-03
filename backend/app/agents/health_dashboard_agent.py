@@ -196,32 +196,81 @@ class PublicHealthDashboardAgent:
             tools = await self.mcp_client.get_tools()
             logger.debug(f"Available tools: {[t.name for t in tools]}")
             
-            alerts_tool = next((t for t in tools if t.name == "get_public_health_alerts"), None)
-            trends_tool = next((t for t in tools if t.name == "get_health_risk_trends"), None)
+            # Note: The MCP server no longer provides get_public_health_alerts and get_health_risk_trends
+            # We'll use mock data for basic functionality while the real focus is on epidemiological signals
             
-            if not alerts_tool or not trends_tool:
-                raise Exception("Required MCP tools not available")
+            # Create basic mock data for demonstration purposes
+            logger.info("🔍 Using mock health data for basic dashboard functionality...")
             
-            # Fetch recent alerts (temporarily without date filtering due to timezone issue)
-            logger.info("🔍 Fetching public health alerts...")
-            alerts_params = {"limit": 20}
-            logger.debug(f"Alerts tool parameters: {alerts_params}")
-            alerts_result = await alerts_tool.ainvoke(alerts_params)
-            logger.debug(f"Alerts result type: {type(alerts_result)}")
+            alerts_data = {
+                "total_alerts": 3,
+                "alerts": [
+                    {
+                        "id": "alert_001",
+                        "title": "Sample Health Alert - Monitor for Updates",
+                        "description": "This is a sample alert for demonstration purposes. Real alerts would come from public health APIs.",
+                        "severity": "MEDIUM",
+                        "state": "CA",
+                        "county": "Sample County",
+                        "timestamp": "2024-01-15T14:30:00Z",
+                        "alert_type": "MONITORING",
+                        "affected_population": 10000,
+                        "source": "Sample Health Department"
+                    },
+                    {
+                        "id": "alert_002",
+                        "title": "Health Surveillance Update",
+                        "description": "Routine health surveillance data collection is ongoing. No immediate concerns identified.",
+                        "severity": "LOW",
+                        "state": "NY",
+                        "county": "Sample County",
+                        "timestamp": "2024-01-14T09:15:00Z",
+                        "alert_type": "SURVEILLANCE",
+                        "affected_population": 25000,
+                        "source": "Sample Health Network"
+                    },
+                    {
+                        "id": "alert_003",
+                        "title": "Seasonal Health Advisory",
+                        "description": "Standard seasonal health precautions recommended. Monitor epidemiological signals for changes.",
+                        "severity": "LOW",
+                        "state": "TX",
+                        "county": "Sample County",
+                        "timestamp": "2024-01-13T16:45:00Z",
+                        "alert_type": "SEASONAL",
+                        "affected_population": 15000,
+                        "source": "Sample Health Services"
+                    }
+                ],
+                "metadata": {
+                    "note": "Mock data for demonstration. Real implementation would use epidemiological APIs.",
+                    "data_source": "sample_data"
+                }
+            }
             
-            # Fetch all available trends
-            logger.info("📈 Fetching health risk trends...")
-            trends_params = {}
-            logger.debug(f"Trends tool parameters: {trends_params}")
-            trends_result = await trends_tool.ainvoke(trends_params)
-            logger.debug(f"Trends result type: {type(trends_result)}")
+            trends_data = {
+                "trends": {
+                    "epidemiological_monitoring": {
+                        "name": "Epidemiological Signal Monitoring",
+                        "description": "Monitoring of epidemiological signals through API integration",
+                        "unit": "signal_index",
+                        "data_points": [
+                            {"date": "2024-01-01", "value": 45.2, "change_percent": -2.3},
+                            {"date": "2024-01-08", "value": 47.1, "change_percent": 4.2},
+                            {"date": "2024-01-15", "value": 44.7, "change_percent": -5.1},
+                            {"date": "2024-01-22", "value": 46.4, "change_percent": 3.8}
+                        ]
+                    }
+                },
+                "metadata": {
+                    "note": "Sample trend data for basic dashboard functionality",
+                    "total_trend_types": 1,
+                    "data_source": "sample_data"
+                }
+            }
             
-            # Parse results (they come as JSON strings)
-            alerts_data = json.loads(alerts_result) if isinstance(alerts_result, str) else alerts_result
-            trends_data = json.loads(trends_result) if isinstance(trends_result, str) else trends_result
-            
-            logger.debug(f"Parsed alerts data - total alerts: {alerts_data.get('total_alerts', 'unknown')}")
-            logger.debug(f"Parsed trends data - trend types: {trends_data.get('metadata', {}).get('total_trend_types', 'unknown')}")
+            logger.debug(f"Using sample alerts data - total alerts: {alerts_data.get('total_alerts', 'unknown')}")
+            logger.debug(f"Using sample trends data - trend types: {trends_data.get('metadata', {}).get('total_trend_types', 'unknown')}")
             
             # Return new state instead of updating in place
             new_state = {

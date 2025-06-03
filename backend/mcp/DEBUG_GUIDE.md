@@ -57,7 +57,7 @@ This guide explains how to debug the MCP servers using the VS Code launch config
 
 ### 7. **Debug FastMCP with Specific Tool**
 - **Use case**: Focus debugging on specific tools
-- **Environment**: `MCP_TOOL_BREAKPOINT=get_public_health_alerts`
+- **Environment**: `MCP_TOOL_BREAKPOINT=fetch_epi_signal`
 - **Features**:
   - Automatic breakpoints on tool calls
   - Tool-specific debugging

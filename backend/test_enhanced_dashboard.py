@@ -3,11 +3,15 @@
 Test Enhanced Dashboard with Structured Data
 
 This test demonstrates the new structured data features:
-- Actual alerts with priority scoring and analysis
-- Rising trends detection from time series data
-- Epidemiological signals analysis
+- Sample alerts with priority scoring and analysis (mock data for basic functionality)
+- Rising trends detection from epidemiological time series data
+- Epidemiological signals analysis via MCP server integration
 - Risk assessment with quantitative metrics
 - Actionable recommendations
+
+Note: The MCP server now focuses on epidemiological data tools (fetch_epi_signal, detect_rising_trend)
+rather than mock alert/trend data. The enhanced dashboard uses sample data for basic alert functionality
+while leveraging real epidemiological APIs for trend analysis.
 """
 
 import asyncio
@@ -139,25 +143,26 @@ async def compare_agents():
     
     if standard_result and react_result:
         print("✅ Both agents successfully generated enhanced dashboards!")
-        print(f"\nStandard Agent:")
+        print(f"\nStandard Agent (using sample data):")
         print(f"  - Alerts with analysis: {len(standard_result.get('alerts', []))}")
         print(f"  - Rising trends: {len(standard_result.get('rising_trends', []))}")
         print(f"  - Recommendations: {len(standard_result.get('recommendations', []))}")
         print(f"  - Risk level: {standard_result.get('risk_assessment', {}).get('overall_risk_level', 'unknown')}")
         
-        print(f"\nReAct Agent:")
+        print(f"\nReAct Agent (using epidemiological APIs):")
         print(f"  - Epidemiological signals: {len(react_result.get('epidemiological_signals', []))}")
         print(f"  - Rising trends detected: {len(react_result.get('rising_trends', []))}")
         print(f"  - Recommendations: {len(react_result.get('recommendations', []))}")
         print(f"  - Risk level: {react_result.get('risk_assessment', {}).get('overall_risk_level', 'unknown')}")
         
         print(f"\n🎉 Enhanced Dashboard System Test Completed!")
-        print("Both agents now provide structured data with:")
-        print("  ✅ Prioritized alerts with risk analysis")
+        print("The system now provides:")
+        print("  ✅ Sample alerts with risk analysis (standard agent)")
+        print("  ✅ Real epidemiological signal integration (ReAct agent)")
         print("  ✅ Rising trend detection with statistical evidence")
-        print("  ✅ Epidemiological signal tracking")
         print("  ✅ Quantitative risk assessment")
         print("  ✅ Actionable recommendations")
+        print("\n🔬 Focus: Epidemiological data via fetch_epi_signal and detect_rising_trend tools")
         
     else:
         print("❌ One or both agents failed to generate enhanced dashboards")

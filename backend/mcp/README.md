@@ -1,32 +1,34 @@
 # Public Health MCP Server
 
-This MCP (Model Context Protocol) server provides tools for accessing public health data including alerts and risk trends.
+This MCP (Model Context Protocol) server provides tools for accessing epidemiological data and trend analysis.
 
 ## Overview
 
-The server currently provides two main tools:
+The server currently provides three main tools:
 
-1. **get_public_health_alerts** - Retrieves public health alerts with filtering capabilities
-2. **get_health_risk_trends** - Returns time series data for public health risk trends
+1. **fetch_epi_signal** - Fetch specific COVID-19 signals from Delphi Epidata API
+2. **detect_rising_trend** - Detect rising trends in time series data using rolling regression
+3. **get_server_info** - Server information and capabilities
 
 ## Features
 
-### Public Health Alerts Tool
-- Filters by date range (start_date, end_date)
-- Filters by states (e.g., CA, NY, TX)
-- Filters by severity (LOW, MEDIUM, HIGH)
-- Sorts by timestamp (most recent first)
-- Configurable result limits
+### Epidemiological Signal Fetching
+- Access to Delphi EpiData API for COVID-19 signals
+- Multiple signal types including:
+  - COVID symptom searches
+  - Doctor visits for COVID-like symptoms
+  - Vaccine acceptance rates
+  - Hospital admissions
+  - Death rates
+- Flexible geographic and time filtering
+- Real-time data access
 
-### Health Risk Trends Tool
-- Multiple risk trend types:
-  - COVID-19 doctor visits
-  - Flu symptom searches
-  - ICU bed occupation rates
-  - Respiratory emergency visits
-- Time series data with percentage changes
-- Date range filtering
-- Multiple trend types in single request
+### Rising Trend Detection
+- Statistical trend analysis using rolling linear regression
+- Configurable window sizes and thresholds
+- Log-scale analysis for exponential growth detection
+- Multiple time series support
+- Smoothing options for noise reduction
 
 ## Installation
 
@@ -48,173 +50,121 @@ chmod +x mcp_public_health.py
 python mcp_public_health.py
 ```
 
-The server runs using stdin/stdout streams for MCP communication.
+The server runs using FastMCP with SSE transport.
 
 ### Tool Examples
 
-#### Get Public Health Alerts
+#### Fetch Epidemiological Signal
 
-**Get recent alerts (default):**
+**Fetch COVID-like symptoms data:**
 ```json
 {
-  "name": "get_public_health_alerts",
+  "name": "fetch_epi_signal",
+  "arguments": {
+    "signal": "smoothed_wcli",
+    "time_type": "day",
+    "geo_type": "state",
+    "start_time": "20231201",
+    "end_time": "20231231"
+  }
+}
+```
+
+**Fetch COVID cases by county:**
+```json
+{
+  "name": "fetch_epi_signal",
+  "arguments": {
+    "signal": "confirmed_7dav_incidence_prop",
+    "geo_type": "county",
+    "geo_values": ["06037", "36061"]
+  }
+}
+```
+
+#### Detect Rising Trends
+
+**Analyze trend in fetched data:**
+```json
+{
+  "name": "detect_rising_trend",
+  "arguments": {
+    "signal_name": "smoothed_wcli",
+    "value_column": "value",
+    "window_size": 7,
+    "min_log_slope": 0.01
+  }
+}
+```
+
+#### Get Server Information
+
+```json
+{
+  "name": "get_server_info",
   "arguments": {}
 }
 ```
 
-**Filter by states and severity:**
-```json
-{
-  "name": "get_public_health_alerts", 
-  "arguments": {
-    "states": ["CA", "NY"],
-    "severity": "HIGH",
-    "limit": 5
-  }
-}
-```
+## Available Signals
 
-**Filter by date range:**
-```json
-{
-  "name": "get_public_health_alerts",
-  "arguments": {
-    "start_date": "2024-01-10T00:00:00Z",
-    "end_date": "2024-01-15T23:59:59Z"
-  }
-}
-```
+The following epidemiological signals are available through the Delphi EpiData API:
 
-#### Get Health Risk Trends
-
-**Get all trends:**
-```json
-{
-  "name": "get_health_risk_trends",
-  "arguments": {}
-}
-```
-
-**Get specific risk types:**
-```json
-{
-  "name": "get_health_risk_trends",
-  "arguments": {
-    "risk_types": ["covid_doctor_visits", "icu_bed_occupation"]
-  }
-}
-```
-
-**Filter by date range:**
-```json
-{
-  "name": "get_health_risk_trends",
-  "arguments": {
-    "start_date": "2024-01-01",
-    "end_date": "2024-01-31"
-  }
-}
-```
+- **smoothed_wwearing_mask_7d** - People Wearing Masks
+- **smoothed_wcovid_vaccinated_appointment_or_accept** - Vaccine Acceptance
+- **sum_anosmia_ageusia_smoothed_search** - COVID Symptom Searches on Google
+- **smoothed_wcli** - COVID-Like Symptoms
+- **smoothed_whh_cmnty_cli** - COVID-Like Symptoms in Community
+- **smoothed_adj_cli** - COVID-Related Doctor Visits
+- **confirmed_7dav_incidence_prop** - COVID Cases
+- **confirmed_admissions_covid_1d_prop_7dav** - COVID Hospital Admissions
+- **deaths_7dav_incidence_prop** - COVID Deaths
 
 ## Data Structure
 
-### Alert Response Format
+### Signal Response Format
 ```json
-{
-  "total_alerts": 3,
-  "filters_applied": {
-    "states": ["CA"],
-    "severity": "HIGH", 
-    "date_range": {
-      "start": "2024-01-10T00:00:00Z",
-      "end": "not specified"
-    }
-  },
-  "alerts": [
-    {
-      "id": "alert_001",
-      "title": "COVID-19 Outbreak in Downtown Area",
-      "description": "...",
-      "severity": "HIGH",
-      "state": "CA",
-      "county": "Los Angeles",
-      "timestamp": "2024-01-15T14:30:00Z",
-      "alert_type": "OUTBREAK",
-      "affected_population": 15000,
-      "source": "LA County Health Department"
-    }
-  ]
-}
+[
+  {
+    "geo_value": "ca",
+    "time_value": "2023-12-01",
+    "value": 2.3456,
+    "stderr": 0.1234,
+    "sample_size": 1000
+  }
+]
 ```
 
-### Risk Trends Response Format
+### Trend Detection Response Format
 ```json
 {
-  "requested_risk_types": ["covid_doctor_visits"],
-  "available_risk_types": ["covid_doctor_visits", "symptom_searches", "icu_bed_occupation", "respiratory_emergency_visits"],
-  "trends": {
-    "covid_doctor_visits": {
-      "name": "COVID-19 Doctor Visits",
-      "description": "Weekly trend of COVID-19 related doctor visits",
-      "unit": "visits_per_100k",
-      "data_points": [
-        {
-          "date": "2024-01-01",
-          "value": 45.2,
-          "change_percent": -12.3
-        }
-      ]
-    }
-  },
-  "metadata": {
-    "data_source": "Mock Public Health Data",
-    "last_updated": "2024-01-15T10:30:00Z",
-    "total_trend_types": 1
+  "rising_periods": [
+    ["2023-12-05", "2023-12-12"],
+    ["2023-12-20", "2023-12-25"]
+  ],
+  "total_periods": 2,
+  "sample_log_slopes": [0.023, 0.018, 0.031],
+  "status": "success",
+  "analysis_details": {
+    "window_size": 7,
+    "min_log_slope": 0.01,
+    "data_points_analyzed": 31
   }
 }
 ```
 
-## Current Data
-
-The server currently uses mock data for demonstration purposes. The mock data includes:
-
-### Alert Types
-- OUTBREAK (COVID-19, Norovirus)
-- SEASONAL (Flu activity)
-- FOOD_SAFETY (E. coli contamination)
-- ENVIRONMENTAL (Air quality)
-
-### Risk Trend Types
-- **covid_doctor_visits**: Weekly COVID-19 related doctor visits
-- **symptom_searches**: Search volume for flu-related symptoms
-- **icu_bed_occupation**: ICU bed occupation percentage
-- **respiratory_emergency_visits**: Emergency department visits for respiratory issues
-
 ## Configuration
 
-The server configuration is defined in `config.json` and includes:
-- Server metadata
-- Tool descriptions
-- Logging configuration
-- Data source settings
+The server uses FastMCP framework with SSE transport and includes:
+- Comprehensive error handling
+- Debug logging support
+- Type-safe tool definitions
+- Real-time data processing capabilities
 
-## Development
+## Integration
 
-### Adding New Alert Types
-1. Add new alert objects to `MOCK_ALERTS` list
-2. Follow the existing schema structure
-3. Update documentation
-
-### Adding New Risk Trends
-1. Add new trend data to `MOCK_RISK_TRENDS` dictionary
-2. Include data points with date, value, and change_percent
-3. Update the tool schema enum values
-
-### Extending Functionality
-- Add new filtering options to existing tools
-- Create additional tools for other public health data
-- Implement real data source connections
-
-## License
-
-This project is part of the public health application suite. 
+This server integrates with:
+- LangChain MCP adapters
+- LangGraph agent workflows
+- Public health dashboard systems
+- Real-time monitoring applications 

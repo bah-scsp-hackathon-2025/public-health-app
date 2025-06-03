@@ -128,7 +128,7 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/backend/mcp",
                 "MCP_DEBUG": "1",
-                "MCP_TOOL_BREAKPOINT": "get_public_health_alerts"
+                "MCP_TOOL_BREAKPOINT": "fetch_epi_signal"
             },
             "justMyCode": false,
             "stopOnEntry": false,
@@ -235,4 +235,4 @@
             }
         }
     ]
-} 
+}
