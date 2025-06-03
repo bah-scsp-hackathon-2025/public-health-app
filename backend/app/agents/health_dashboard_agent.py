@@ -113,8 +113,10 @@ class PublicHealthDashboardAgent:
             )
         elif llm_provider == "anthropic" and anthropic_key and anthropic_key.startswith('sk-ant-'):
             self.llm = ChatAnthropic(
-                model="claude-3-5-sonnet-20241022",
-                temperature=0.1,
+                model="claude-sonnet-4-20250514",
+                temperature=1.0,
+                thinking={"type": "enabled", "budget_tokens": 8000},
+                betas=["extended-cache-ttl-2025-04-11"],
                 api_key=anthropic_key
             )
         elif llm_provider and llm_provider not in ["auto", None]:
