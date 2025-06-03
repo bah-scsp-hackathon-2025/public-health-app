@@ -9,12 +9,14 @@ Phase 2: Generate comprehensive dashboard summaries with actionable insights
 The agent demonstrates modern LLM workflows with tool integration for public health analysis.
 """
 
+import anthropic
 import asyncio
-import os
+import certifi
+import httpx
 import logging
+import os
+import ssl
 from datetime import datetime
-from typing import Dict, List, Optional, Annotated, Any, TypedDict
-from operator import add
 
 from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
 from langchain_anthropic import ChatAnthropic
@@ -23,7 +25,8 @@ from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from pydantic import BaseModel, Field
-import anthropic
+from operator import add
+from typing import Dict, List, Optional, Annotated, Any, TypedDict
 
 # Langfuse imports
 from langfuse.callback import CallbackHandler
@@ -151,8 +154,27 @@ class PublicHealthReActAgent:
                 betas=["extended-cache-ttl-2025-04-11", "files-api-2025-04-14"],
                 api_key=anthropic_key
             )
-            # Initialize direct Anthropic client for Files API
-            self.anthropic_client = anthropic.Anthropic(api_key=anthropic_key)
+            # Initialize direct Anthropic client for Files API with SSL configuration
+            # Create custom httpx client with proper SSL configuration
+            ssl_verify = settings.ssl_verify if hasattr(settings, 'ssl_verify') else True
+            if ssl_verify:
+                # Use certifi CA bundle for SSL verification
+                ca_bundle = settings.ssl_ca_bundle if hasattr(settings, 'ssl_ca_bundle') and settings.ssl_ca_bundle else certifi.where()
+                ssl_context = ssl.create_default_context(cafile=ca_bundle)
+                verify_setting = ssl_context
+                logger.debug(f"🔒 SSL verification enabled with CA bundle: {ca_bundle}")
+            else:
+                verify_setting = False
+                logger.warning("⚠️ SSL verification disabled - this is not recommended for production")
+            
+            custom_httpx_client = httpx.Client(
+                verify=verify_setting,
+                timeout=httpx.Timeout(60.0, read=60.0, write=60.0, connect=10.0)
+            )
+            self.anthropic_client = anthropic.Anthropic(
+                api_key=anthropic_key,
+                http_client=custom_httpx_client
+            )
         else:
             print("⚠️  Anthropic API key not found or invalid. ReAct agent requires valid Anthropic API key.")
             raise ValueError("ReAct agent requires valid Anthropic API key")
