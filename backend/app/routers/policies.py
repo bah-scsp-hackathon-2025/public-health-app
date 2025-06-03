@@ -95,7 +95,7 @@ async def delete_policy(policy_id: int, db: Session = Depends(get_db)):
     return policy
 
 
-@router.post("/generate/{alert_id}", response_model=List[StrategyResponse])
+@router.get("/generate/{alert_id}", response_model=List[StrategyResponse])
 async def generate_strategies(alert_id: int, db: Session = Depends(get_db)):
     alert = get_alert_by_id(alert_id, db)
     # logic to generate strategy
@@ -136,6 +136,19 @@ def get_strategy_by_id(strategy_id: int, db: Session = Depends(get_db)):
     return strategy
 
 
+@router.get("/strategy/alert/{alert_id}", response_model=List[StrategyResponse])
+async def get_strategy_by_alert(alert_id: int, db: Session = Depends(get_db)):
+    strategies = db.query(Strategy).filter(Strategy.alert_id == alert_id).all()
+    if strategies is None:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+    return strategies
+
+
+@router.post("/strategy/", status_code=status.HTTP_201_CREATED)
+async def create_strategy(strategy: StrategyCreate, db: Session = Depends(get_db)):
+    return _create_strategy(strategy, strategy.alert_id, db)
+
+
 def _create_strategy(strategy: StrategyCreate, alert_id: int, db: Session = Depends(get_db)):
     db_strategy = Strategy(
         short_description=strategy.short_description,
@@ -148,7 +161,7 @@ def _create_strategy(strategy: StrategyCreate, alert_id: int, db: Session = Depe
     return db_strategy
 
 
-@router.post("/draft/{strategy_id}", status_code=status.HTTP_201_CREATED)
+@router.get("/draft/{strategy_id}", status_code=status.HTTP_201_CREATED)
 async def draft_policy(strategy_id: int, db: Session = Depends(get_db)):
     db_strategy = get_strategy_by_id(strategy_id, db)
     # logic to generate policy
@@ -167,9 +180,25 @@ async def draft_policy(strategy_id: int, db: Session = Depends(get_db)):
     return db_policy
 
 
-@router.get("/approved/{alert_id}", response_model=PolicyResponse)
-async def get_approved_policies(alert_id: int, db: Session = Depends(get_db)):
+@router.get("/approved/{alert_id}", response_model=List[PolicyResponse])
+async def get_approved_policies_by_alert(alert_id: int, db: Session = Depends(get_db)):
     db_policies = db.query(Policy).filter((Policy.alert_id == alert_id & Policy.approved == True)).all()
+    if db_policies is None:
+        raise HTTPException(status_code=404, detail="Policies not found")
+    return db_policies
+
+
+@router.get("/approved/", response_model=List[PolicyResponse])
+async def get_approved_policies(db: Session = Depends(get_db)):
+    db_policies = db.query(Policy).filter(Policy.approved == True).all()
+    if db_policies is None:
+        raise HTTPException(status_code=404, detail="Policies not found")
+    return db_policies
+
+
+@router.get("/draft/", response_model=List[PolicyResponse])
+async def get_draft_policies(db: Session = Depends(get_db)):
+    db_policies = db.query(Policy).filter(Policy.approved == False).all()
     if db_policies is None:
         raise HTTPException(status_code=404, detail="Policies not found")
     return db_policies

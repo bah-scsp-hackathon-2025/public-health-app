@@ -1,121 +1,156 @@
-import { useNavigate, useParams } from 'react-router-dom';
-import AdminNav from '../../components/AdminNav';
-import ScenarioCard from '../../components/ScenarioCard';
-
+import { useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import AdminNav from "../../components/AdminNav";
+import ScenarioCard from "../../components/ScenarioCard";
+import {
+  fetchStrategiesByAlert,
+  fetchAlert,
+  generateStrategiesByAlert,
+} from "../../common/api";
 
 function AdminAlert() {
   const { id } = useParams();
-  const scenarios = [
-  {
-    id: 1,
-    title: "Activate Emergency Operations Center",
-    description: "Mobilize the emergency operations center to coordinate the public health response.",
-    priority: "High",
-    responsibleAgency: "Public Health Department",
-    expectedOutcome: "Streamlined communication and resource allocation during the event.",
-    estimatedDurationDays: 7,
-  },
-  {
-    id: 2,
-    title: "Issue Public Health Advisory",
-    description: "Inform the public about the health risks and recommended preventive measures.",
-    priority: "High",
-    responsibleAgency: "CDC",
-    expectedOutcome: "Increased public awareness and compliance with health guidelines.",
-    estimatedDurationDays: 3,
-  },
-  {
-    id: 3,
-    title: "Implement Travel Restrictions",
-    description: "Restrict travel to and from affected areas to limit disease spread.",
-    priority: "Medium",
-    responsibleAgency: "Department of Transportation",
-    expectedOutcome: "Reduced transmission across regions.",
-    estimatedDurationDays: 14,
-  },
-];
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const goToDashboard = () => {
-    navigate('/admin/dashboard')
+    navigate("/admin/dashboard");
+  };
+
+  const [strategies, setStrategies] = useState([]);
+  useEffect(() => {
+    const getStrategies = async () => {
+      try {
+        const result = await fetchStrategiesByAlert(id);
+        setStrategies(result);
+      } catch (error) {
+        console.error("Error getting alerts:", error);
+      }
+    };
+    getStrategies();
+  }, []);
+
+  const [alert, setAlert] = useState([]);
+  useEffect(() => {
+    const getAlert = async () => {
+      try {
+        const result = await fetchAlert(id);
+        setAlert(result);
+      } catch (error) {
+        console.error("Error getting alerts:", error);
+      }
+    };
+    getAlert();
+  }, []);
+
+  async function generateStrategies() {
+    const result = await generateStrategiesByAlert(id);
+    setStrategies(result);
   }
 
   return (
-    <div style={{display: "flex", flexDirection: "column", height: "100vh", marginTop: "20px"}}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        marginTop: "20px",
+      }}
+    >
       <AdminNav></AdminNav>
-      <div style={{display: "flex", justifyContent: "center", flexDirection: "column", textAlign: "center"}}>
-        <div onClick={() => goToDashboard()} style={{display: "flex", justifyContent: "start"}}>
-        <div>Back to dashboard</div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          flexDirection: "column",
+          textAlign: "center",
+        }}
+      >
+        <div
+          onClick={() => goToDashboard()}
+          style={{ display: "flex", justifyContent: "start" }}
+        >
+          <div>Back to dashboard</div>
         </div>
-    <h1>Alert Response Planner</h1>
-    <p style={{color: "#191970"}}>View insights on public health alerts. Then, generate response strategies and draft policy documents.</p>
-      </div>
-      
-   
-
-    <div style={{display: "flex", justifyContent: "center"}}>
-     
-    <div style={{ width: "80%", padding: "20px", height: '100%'}}>
-      
-   
-<div style={{backgroundColor: "#191970", padding: "40px", border: "1px solid black"}}>
-      <div style={{ marginBottom: "20px" }}>
-        <div style={{ 
-          border: "1px solid black", 
-          borderRadius: "10px", 
-          padding: "10px", 
-          minHeight: "80px" ,
-           background: "white"
-        }}>
-          Details
-        </div>
+        <h1>Alert Response Planner</h1>
+        <p style={{ color: "#191970" }}>
+          View insights on public health alerts. Then, generate response
+          strategies and draft policy documents.
+        </p>
       </div>
 
-      <div style={{ display: "flex", gap: "10px"}}>
-        <div style={{ 
-          border: "1px solid black", 
-          borderRadius: "10px", 
-          padding: "10px", 
-          flex: "1", 
-          minHeight: "80px",
-          background: "white"
-        }}>
-          Risk Score
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <div style={{ width: "80%", padding: "20px", height: "100%" }}>
+          <div
+            style={{
+              backgroundColor: "#191970",
+              padding: "40px",
+              border: "1px solid black",
+            }}
+          >
+            <div style={{ marginBottom: "20px" }}>
+              <div
+                style={{
+                  border: "1px solid black",
+                  borderRadius: "10px",
+                  padding: "10px",
+                  minHeight: "80px",
+                  background: "white",
+                }}
+              >
+                {alert.description}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "10px" }}>
+              <div
+                style={{
+                  border: "1px solid black",
+                  borderRadius: "10px",
+                  padding: "10px",
+                  flex: "1",
+                  minHeight: "80px",
+                  background: "white",
+                }}
+              >
+                {alert.risk_score}
+              </div>
+              <div
+                style={{
+                  border: "1px solid black",
+                  borderRadius: "10px",
+                  padding: "10px",
+                  flex: "2",
+                  minHeight: "80px",
+                  background: "white",
+                }}
+              >
+                {alert.risk_reason}
+              </div>
+            </div>
+          </div>
+          <div style={{ marginTop: "20px" }}>
+            <span>Ready to start planning?</span>
+            <button onClick={generateStrategies}>
+              Generate Courses of Action
+            </button>
+          </div>
         </div>
-        <div style={{ 
-          border: "1px solid black", 
-          borderRadius: "10px", 
-          padding: "10px", 
-          flex: "2", 
-          minHeight: "80px" ,
-           background: "white"
-        }}>
-          Score Explanation
+      </div>
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <div style={{ width: "80%" }}>
+          <h2 style={{ borderBottom: "1px dashed black" }}>
+            Generated Strategies
+          </h2>
         </div>
       </div>
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <div style={{ width: "80%" }}>
+          {strategies.map((scenario) => (
+            <ScenarioCard scenario={scenario}></ScenarioCard>
+          ))}
+        </div>
       </div>
-      <div style={{marginTop: "20px"}}>
-      <span>Ready to start planning?</span>
-      <button>Generate Courses of Action</button>
-      </div>
-    </div>
-    </div>
-     <div style={{display: "flex", justifyContent:"center"}}>
-      
-    <div style={{width:"80%"}}>
-    <h2 style={{borderBottom: "1px dashed black"}}>Generated Scenarios</h2>
-    </div>
-    </div>
-    <div style={{display: "flex", justifyContent:"center"}}>
-       
-    <div style={{width:"80%"}}>
-    {scenarios.map((scenario) => (
-        <ScenarioCard scenario={scenario}></ScenarioCard>
-    ))
-    }
-    </div>
-    </div>
     </div>
   );
 }

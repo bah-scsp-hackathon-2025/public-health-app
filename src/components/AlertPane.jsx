@@ -21,7 +21,6 @@ function AlertPane() {
   };
 
   const [alerts, setAlerts] = useState([]);
-  const [loading, setLoading] = useState(true);
   useEffect(() => {
     const getAlerts = async () => {
       try {
@@ -30,14 +29,10 @@ function AlertPane() {
         setAlerts(result.slice(0, 4));
       } catch (error) {
         console.error("Error getting alerts:", error);
-      } finally {
-        setLoading(false);
       }
     };
     getAlerts();
   }, []);
-
-  if (loading) return <div>Loading...</div>;
 
   return (
     <div
