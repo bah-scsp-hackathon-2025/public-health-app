@@ -1,9 +1,9 @@
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import AdminAlert from './pages/DecisionMaker/AdminAlert';
-import AdminFAQs from './pages/DecisionMaker/AdminFAQs';
 import AdminReportingHub from './pages/DecisionMaker/AdminReportingHub';
 import AdminDashboard from './pages/DecisionMaker/DashboardAdmin';
 import Login from './pages/Login';
+import Alert from './pages/RegularUser/Alert';
 import Dashboard from './pages/RegularUser/Dashboard';
 
 function App() {
@@ -20,10 +20,11 @@ function App() {
           <Routes>
             <Route path="/" element={<Login />} />
              <Route path="/dashboard" element={<Dashboard />} />
+             <Route path="/alert/:id" element={<Alert />} />
             <Route path="admin/dashboard" element={<AdminDashboard />} />
             <Route path="admin/alert/:id" element={<AdminAlert />} />
             <Route path="admin/reporting" element={<AdminReportingHub/>}/>
-            <Route path="admin/FAQs" element={<AdminFAQs/>}/>
+
           </Routes>
         </div>
       </div>

@@ -6,7 +6,7 @@ function AdminReportingHub () {
         <div>
             <AdminNav></AdminNav>
             <div style={{display: "flex", justifyContent: "center"}}>
-            <h1>Policy Hub</h1>
+            <h1 style={{boxShadow: "0 4px 6px -4px rgba(0, 0, 0, 0.3)", textAlign: "center", width: "100%"}}>Policy Hub</h1>
             </div>
             <PolicyTable></PolicyTable>
         </div>

@@ -2,21 +2,18 @@ import { LogOut } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import styles from './Nav.module.css';
 
-function AdminNav() {
-   const navigate = useNavigate()
+function RegularNav() {
 
-   const selected = ""
+  const navigate = useNavigate()
+
+  const selected = ""
 
   const goToLogin = () => {
      navigate(`/`);
   };
 
   const goToDashboard = () => {
-     navigate(`/admin/dashboard`);
-  };
-
-  const goToReportingHub = () => {
-     navigate(`/admin/reporting`);
+     navigate(`/dashboard`);
   };
 
 
@@ -25,21 +22,15 @@ return (
     <div className={styles.logoContainer}>
         <span>Public Health Sentinel</span>
         </div>
-    <ul>
+    {/* <ul>
      <li onClick={() => goToDashboard()} className={selected === "dashboard"
       ? `${styles.listItemContainer} ${styles.selected}`
       : styles.listItemContainer}> 
          <span className={styles.listItem}>Central Dashboard </span>
     </li>
-     <li onClick={() => goToReportingHub()} className={selected === "reporting"
-      ? `${styles.listItemContainer} ${styles.selected}`
-      : styles.listItemContainer}> 
-         <span  className={styles.listItem}>Reporting and Communication Hub</span>
-    </li>
-  
-    </ul>
+    </ul> */}
 
-<div style={{width: "15%"}}>
+    <div style={{width: "15%"}}>
    <div className={styles.logoutContainer}>
    
     <div
@@ -63,6 +54,6 @@ return (
 
 }
 
-export default AdminNav
+export default RegularNav
 
 

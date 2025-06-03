@@ -1,12 +1,14 @@
+import { ArrowBigLeftDash } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
-import AdminNav from "../../components/AdminNav";
-import ScenarioCard from "../../components/ScenarioCard";
 import {
-  fetchStrategiesByAlert,
   fetchAlert,
+  fetchStrategiesByAlert,
   generateStrategiesByAlert,
 } from "../../common/api";
+import AdminNav from "../../components/AdminNav";
+import ScenarioCard from "../../components/ScenarioCard";
+import styles from "./AdminAlert.module.css";
 
 function AdminAlert() {
   const { id } = useParams();
@@ -58,49 +60,54 @@ function AdminAlert() {
       }}
     >
       <AdminNav></AdminNav>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          flexDirection: "column",
-          textAlign: "center",
-        }}
-      >
-        <div
-          onClick={() => goToDashboard()}
-          style={{ display: "flex", justifyContent: "start" }}
-        >
-          <div>Back to dashboard</div>
-        </div>
-        <h1>Alert Response Planner</h1>
-        <p style={{ color: "#191970" }}>
-          View insights on public health alerts. Then, generate response
-          strategies and draft policy documents.
-        </p>
-      </div>
 
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <div style={{ width: "80%", padding: "20px", height: "100%" }}>
-          <div
-            style={{
-              backgroundColor: "#191970",
-              padding: "40px",
-              border: "1px solid black",
-            }}
-          >
-            <div style={{ marginBottom: "20px" }}>
+         <div style={{display: "flex", justifyContent: "center", flexDirection: "column", textAlign: "center"}}>
+      
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", width: "100%",boxShadow: "0 4px 6px -4px rgba(0, 0, 0, 0.3)"}}>
+             
+          <div className={styles.button}>
               <div
-                style={{
-                  border: "1px solid black",
-                  borderRadius: "10px",
-                  padding: "10px",
-                  minHeight: "80px",
-                  background: "white",
-                }}
-              >
-                {alert.description}
-              </div>
+              className={styles.logout}
+              onClick={() => goToLogin()}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px", // space between icon and text
+                cursor: "pointer",
+                color: "#191970",
+              }}
+        >
+          <ArrowBigLeftDash />
+          Go back to dashboard
+        </div>
+       </div>
+
+          <h1 style={{ margin: 0, textAlign: "center"}}>Alert Response Planner</h1>
+          <div></div>{/* empty spacer to balance the p */}
+          </div>
+      
+          <p style={{color: "#191970"}}>View insights on public health alerts. Then, generate response strategies and draft policy documents.</p>
             </div>
+      
+   
+
+    <div style={{display: "flex", justifyContent: "center"}}>
+     
+    <div style={{ width: "80%", padding: "20px", height: '100%'}}>
+      
+   
+<div style={{backgroundColor: "#191970", padding: "40px", border: "1px solid black"}}>
+      <div style={{ marginBottom: "20px" }}>
+        <div style={{ 
+          border: "1px solid black", 
+          borderRadius: "10px", 
+          padding: "10px", 
+          minHeight: "80px" ,
+           background: "white"
+        }}>
+          Details
+        </div>
+      </div>
 
             <div style={{ display: "flex", gap: "10px" }}>
               <div

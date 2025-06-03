@@ -24,21 +24,35 @@
   width: 15%;
 }
 
-.logoutContainer {
+.logout {
   font-weight: bold;
   font-size: 18px;
   text-align: right;
-  width: 15%;
+  width: 40%;
+  padding: 5px;
+  border-radius: 5px;
 }
 
-.logoutContainer:hover {
+.logoutContainer {
+  display: flex;
+  justify-content: end; 
+  padding: 2px;
+}
+
+.logout:hover {
   background: grey;
   cursor: pointer;  
+}
+
+.listItemContainer {
+   padding: 5px;
+   border-radius: 5px
 }
 
 .listItemContainer:hover{
   background: gray;
   cursor: pointer;
+ 
 }
 
 ul {
