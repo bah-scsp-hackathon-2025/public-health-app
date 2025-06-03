@@ -39,7 +39,7 @@ export const createAlert = async (alertData) => {
 export const fetchStrategiesByAlert = async (alert_id) => {
   try {
     const response = await fetch(
-      `http://localhost:8000/policies/strategy/alert/${alert_id}`
+      `http://localhost:8000/policies/strategies/alert/${alert_id}`
     );
     const data = await response.json();
     return data;
