@@ -83,35 +83,18 @@ class DashboardState(TypedDict):
 class PublicHealthDashboardAgent:
     """LangGraph agent for public health dashboard generation"""
     
-    def __init__(self, llm_provider: str = "auto", mcp_host: str = None, mcp_port: int = None):
+    def __init__(self, mcp_host: str = None, mcp_port: int = None):
         # Load MCP configuration
         self.mcp_host = mcp_host or settings.mcp_server_host if hasattr(settings, 'mcp_server_host') else os.getenv("MCP_SERVER_HOST", "localhost")
         self.mcp_port = mcp_port or int(settings.mcp_server_port if hasattr(settings, 'mcp_server_port') else os.getenv("MCP_SERVER_PORT", "8000"))
-        self.llm_provider = llm_provider
         
-        # Get API keys from settings
+        # Get API keys from settings (keep both for future use)
         openai_key = settings.openai_api_key if settings.openai_api_key else None
         anthropic_key = settings.anthropic_api_key if settings.anthropic_api_key else None
         
-        # Initialize LLM with error handling
+        # Initialize with Anthropic/Claude
         self.llm = None
-        if llm_provider == "auto":
-            # Auto-detect available provider
-            if openai_key and openai_key.startswith('sk-'):
-                llm_provider = "openai"
-            elif anthropic_key and anthropic_key.startswith('sk-ant-'):
-                llm_provider = "anthropic"
-            else:
-                print("⚠️  No valid LLM API keys found. Agent will work in MCP-only mode.")
-                llm_provider = None
-        
-        if llm_provider == "openai" and openai_key and openai_key.startswith('sk-'):
-            self.llm = ChatOpenAI(
-                model="gpt-4o-mini",
-                temperature=0.1,
-                api_key=openai_key
-            )
-        elif llm_provider == "anthropic" and anthropic_key and anthropic_key.startswith('sk-ant-'):
+        if anthropic_key and anthropic_key.startswith('sk-ant-'):
             self.llm = ChatAnthropic(
                 model="claude-sonnet-4-20250514",
                 temperature=1.0,
@@ -120,8 +103,8 @@ class PublicHealthDashboardAgent:
                 betas=["extended-cache-ttl-2025-04-11"],
                 api_key=anthropic_key
             )
-        elif llm_provider and llm_provider not in ["auto", None]:
-            print(f"⚠️  {llm_provider} API key not found or invalid. Agent will work in MCP-only mode.")
+        else:
+            print("⚠️  Anthropic API key not found or invalid. Agent will work in MCP-only mode.")
         
         # Initialize MCP client
         self.mcp_client = None
@@ -912,12 +895,9 @@ async def test_dashboard_agent():
         print("⚠️  No API keys found. Set OPENAI_API_KEY or ANTHROPIC_API_KEY environment variable.")
         print("For testing without LLM, this will still demonstrate MCP integration.")
     
-    # Determine LLM provider
-    llm_provider = "openai" if os.getenv("OPENAI_API_KEY") else "anthropic"
-    
     try:
         # Create agent
-        agent = PublicHealthDashboardAgent(llm_provider=llm_provider)
+        agent = PublicHealthDashboardAgent()
         
         # Generate dashboard
         result = await agent.generate_dashboard(
@@ -951,8 +931,7 @@ async def run_interactive_dashboard():
     print("Type 'exit' to quit, 'help' for commands")
     print("=" * 50)
     
-    llm_provider = "openai" if os.getenv("OPENAI_API_KEY") else "anthropic"
-    agent = PublicHealthDashboardAgent(llm_provider=llm_provider)
+    agent = PublicHealthDashboardAgent()
     
     while True:
         try:

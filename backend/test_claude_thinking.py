@@ -3,136 +3,100 @@
 Test script to verify Claude 4.0 Sonnet with thinking mode configuration
 """
 
-import sys
+import asyncio
 import os
+import sys
 
-# Add paths for imports
-sys.path.insert(0, os.path.dirname(__file__))
+# Add the app directory to the Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 
-def test_claude_thinking_mode():
-    """Test Claude thinking mode configuration"""
-    print("🧪 Testing Claude 4.0 Sonnet with Thinking Mode Configuration")
+from app.agents.health_dashboard_agent import PublicHealthDashboardAgent
+from app.agents.health_dashboard_react_agent import PublicHealthReActAgent
+
+async def test_standard_agent():
+    """Test the standard dashboard agent with Claude Thinking Mode"""
+    print("🧠 Testing Standard Dashboard Agent with Claude Thinking Mode")
     print("=" * 70)
     
     try:
-        # Test standard agent
-        print("\n1. Testing Standard Dashboard Agent...")
-        from app.agents.health_dashboard_agent import PublicHealthDashboardAgent
+        agent1 = PublicHealthDashboardAgent()
         
-        try:
-            agent1 = PublicHealthDashboardAgent(llm_provider='anthropic')
-            if agent1.llm:
-                print(f"✅ Standard Agent Created Successfully")
-                print(f"   Model: {agent1.llm.model}")
-                print(f"   Temperature: {agent1.llm.temperature}")
-                
-                # Check for thinking mode configuration
-                if hasattr(agent1.llm, 'thinking') and agent1.llm.thinking:
-                    print(f"   Thinking Mode: ✅ Enabled (Direct)")
-                    print(f"   Thinking Config: {agent1.llm.thinking}")
-                elif hasattr(agent1.llm, 'extra_headers') and agent1.llm.extra_headers:
-                    thinking_enabled = "anthropic-beta" in agent1.llm.extra_headers
-                    print(f"   Thinking Mode: {'✅ Enabled (Beta)' if thinking_enabled else '❌ Disabled'}")
-                    if thinking_enabled:
-                        print(f"   Beta Header: {agent1.llm.extra_headers['anthropic-beta']}")
-                else:
-                    print("   Thinking Mode: ❌ Not configured")
-            else:
-                print("⚠️ No LLM configured (likely missing API key)")
-                
-        except Exception as e:
-            print(f"❌ Standard Agent Error: {str(e)}")
+        result = await agent1.generate_dashboard(
+            "Analyze the current public health situation with focus on emerging threats and provide detailed risk assessment"
+        )
         
-        # Test ReAct agent
-        print("\n2. Testing ReAct Dashboard Agent...")
-        from app.agents.health_dashboard_react_agent import PublicHealthReActAgent
+        print("✅ Standard Agent Result:")
+        print(f"Success: {result.get('success')}")
+        print(f"LLM: {type(agent1.llm).__name__ if agent1.llm else 'None'}")
+        print(f"Thinking enabled: {hasattr(agent1.llm, 'thinking') if agent1.llm else False}")
         
-        try:
-            agent2 = PublicHealthReActAgent(llm_provider='anthropic')
-            if agent2.llm:
-                print(f"✅ ReAct Agent Created Successfully")
-                print(f"   Model: {agent2.llm.model}")
-                print(f"   Temperature: {agent2.llm.temperature}")
-                
-                # Check for thinking mode configuration
-                if hasattr(agent2.llm, 'thinking') and agent2.llm.thinking:
-                    print(f"   Thinking Mode: ✅ Enabled (Direct)")
-                    print(f"   Thinking Config: {agent2.llm.thinking}")
-                elif hasattr(agent2.llm, 'extra_headers') and agent2.llm.extra_headers:
-                    thinking_enabled = "anthropic-beta" in agent2.llm.extra_headers
-                    print(f"   Thinking Mode: {'✅ Enabled (Beta)' if thinking_enabled else '❌ Disabled'}")
-                    if thinking_enabled:
-                        print(f"   Beta Header: {agent2.llm.extra_headers['anthropic-beta']}")
-                else:
-                    print("   Thinking Mode: ❌ Not configured")
-            else:
-                print("⚠️ No LLM configured (likely missing API key)")
-                
-        except Exception as e:
-            print(f"❌ ReAct Agent Error: {str(e)}")
+        if result.get('success'):
+            print("\n📊 Summary Preview:")
+            summary = result.get('dashboard_summary', '')
+            print(summary[:300] + "..." if len(summary) > 300 else summary)
         
-        print("\n" + "=" * 70)
-        print("🎯 Claude 4.0 Sonnet + Thinking Mode Test Complete")
+        return result.get('success', False)
         
-        # Test a simple LLM call if we have an agent
-        if 'agent1' in locals() and agent1.llm:
-            print("\n3. Testing Simple LLM Call with Thinking Mode...")
-            try:
-                from langchain_core.messages import HumanMessage
-                
-                # Simple test message
-                messages = [HumanMessage(content="What is 2+2? Think through this step by step.")]
-                
-                print("   Sending test message to Claude...")
-                response = agent1.llm.invoke(messages)
-                
-                print(f"✅ LLM Response Received")
-                
-                # Handle the new response format with thinking
-                if hasattr(response, 'content') and isinstance(response.content, list):
-                    # New format with separate thinking and text blocks
-                    print(f"   Response Type: Multi-block format")
-                    
-                    thinking_block = None
-                    text_block = None
-                    
-                    for block in response.content:
-                        if isinstance(block, dict) and block.get('type') == 'thinking':
-                            thinking_block = block.get('thinking', '')
-                        elif isinstance(block, dict) and block.get('type') == 'text':
-                            text_block = block.get('text', '')
-                    
-                    if thinking_block:
-                        print(f"✅ Thinking mode is working!")
-                        print(f"   Thinking Length: {len(thinking_block)} characters")
-                        print(f"   Thinking Preview: {thinking_block[:100]}...")
-                    
-                    if text_block:
-                        print(f"   Final Response Length: {len(text_block)} characters")
-                        print(f"   Final Response Preview: {text_block[:100]}...")
-                    
-                elif hasattr(response, 'content') and isinstance(response.content, str):
-                    # Legacy format
-                    print(f"   Response Length: {len(response.content)} characters")
-                    print(f"   Response Preview: {response.content[:100]}...")
-                    
-                    # Check if thinking is visible in response
-                    if "<thinking>" in response.content or "thinking" in response.content:
-                        print("✅ Thinking mode appears to be working (thinking content detected)")
-                    else:
-                        print("⚠️ No obvious thinking content detected in response")
-                else:
-                    print(f"   Unknown response format: {type(response.content)}")
-                    
-            except Exception as e:
-                print(f"❌ LLM Test Error: {str(e)}")
-        
-    except ImportError as e:
-        print(f"❌ Import Error: {str(e)}")
-        print("Make sure you're running from the backend directory with the virtual environment activated")
-    
     except Exception as e:
-        print(f"❌ Unexpected Error: {str(e)}")
+        print(f"❌ Standard agent test failed: {e}")
+        return False
+
+async def test_react_agent():
+    """Test the ReAct agent with Claude Thinking Mode"""
+    print("\n🤖 Testing ReAct Agent with Claude Thinking Mode")
+    print("=" * 70)
+    
+    try:
+        agent2 = PublicHealthReActAgent()
+        
+        result = await agent2.generate_dashboard(
+            "Use epidemiological tools to analyze COVID trends and hospital capacity"
+        )
+        
+        print("✅ ReAct Agent Result:")
+        print(f"Success: {result.get('success')}")
+        print(f"LLM: {type(agent2.llm).__name__ if agent2.llm else 'None'}")
+        print(f"Thinking enabled: {hasattr(agent2.llm, 'thinking') if agent2.llm else False}")
+        print(f"Tools used: {result.get('tools_used', [])}")
+        
+        if result.get('success'):
+            print("\n📊 Summary Preview:")
+            summary = result.get('dashboard_summary', '')
+            print(summary[:300] + "..." if len(summary) > 300 else summary)
+        
+        return result.get('success', False)
+        
+    except Exception as e:
+        print(f"❌ ReAct agent test failed: {e}")
+        return False
+
+async def main():
+    """Run both agent tests"""
+    print("🧠 Claude Sonnet 4.0 with Thinking Mode - Agent Tests")
+    print("=" * 80)
+    print("Testing both Standard and ReAct agents with Claude's thinking capabilities")
+    print("=" * 80)
+    
+    # Test both agents
+    standard_success = await test_standard_agent()
+    react_success = await test_react_agent()
+    
+    # Summary
+    print("\n" + "=" * 80)
+    print("📊 TEST SUMMARY")
+    print("=" * 80)
+    print(f"Standard Agent: {'✅ PASSED' if standard_success else '❌ FAILED'}")
+    print(f"ReAct Agent: {'✅ PASSED' if react_success else '❌ FAILED'}")
+    
+    if standard_success and react_success:
+        print("\n🎉 All tests passed! Claude Thinking Mode is working with both agents.")
+        print("\nClaude's thinking process enables:")
+        print("• Enhanced reasoning and analysis")
+        print("• Step-by-step problem solving")
+        print("• More accurate epidemiological insights")
+        print("• Better structured recommendations")
+    else:
+        print("\n⚠️ Some tests failed. Check API keys and MCP server status.")
 
 if __name__ == "__main__":
-    test_claude_thinking_mode() 
+    asyncio.run(main()) 

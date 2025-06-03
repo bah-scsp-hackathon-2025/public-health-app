@@ -21,16 +21,20 @@ sys.path.insert(0, 'mcp')
 async def test_agent_init():
     from app.agents.health_dashboard_agent import PublicHealthDashboardAgent
     
-    print('🧪 Testing agent initialization...')
-    agent = PublicHealthDashboardAgent(llm_provider='auto')
-    print(f'LLM Provider: {agent.llm_provider}')
-    print(f'LLM Object: {type(agent.llm)}')
-    print(f'Has LLM: {agent.llm is not None}')
-    
-    if agent.llm:
-        print('✅ Agent has LLM - should work with full analysis')
-    else:
-        print('⚠️ Agent has no LLM - will use basic mode')
+    try:
+        print("Testing agent initialization...")
+        
+        agent = PublicHealthDashboardAgent()
+        print(f'✅ Agent initialized')
+        print(f'LLM configured: {agent.llm is not None}')
+        print(f'LLM type: {type(agent.llm).__name__ if agent.llm else "None"}')
+        print(f'MCP Host: {agent.mcp_host}')
+        print(f'MCP Port: {agent.mcp_port}')
+        
+        return True
+    except Exception as e:
+        print(f'❌ Agent initialization failed: {e}')
+        return False
 
 if __name__ == "__main__":
     asyncio.run(test_agent_init()) 

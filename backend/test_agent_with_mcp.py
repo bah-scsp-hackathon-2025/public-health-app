@@ -18,34 +18,37 @@ sys.path.insert(0, '.')
 sys.path.insert(0, 'mcp')
 
 async def test_agent_with_mcp():
+    """Test agent with real MCP server"""
     from app.agents.health_dashboard_agent import PublicHealthDashboardAgent
     
-    print('🧪 Testing agent with MCP server integration...')
-    agent = PublicHealthDashboardAgent(llm_provider='auto')
-    print(f'Agent initialized with LLM: {agent.llm is not None}')
+    print("🧪 Testing Agent with MCP Server")
+    print("=" * 50)
     
-    # Test dashboard generation
-    print('\n📊 Testing dashboard generation...')
     try:
-        result = await agent.generate_dashboard('Generate dashboard focusing on California health data')
-        print('✅ Dashboard generation completed successfully!')
-        print(f'Result type: {type(result)}')
+        print("1. Creating agent...")
+        agent = PublicHealthDashboardAgent()
+        print(f"   ✅ Agent created with LLM: {agent.llm is not None}")
         
-        if isinstance(result, dict):
-            if 'dashboard_summary' in result:
-                print(f'Dashboard summary preview: {result["dashboard_summary"][:300]}...')
-            if 'analysis_result' in result and result['analysis_result']:
-                print(f'Analysis insights: {len(result["analysis_result"].get("insights", []))} insights found')
-            if 'alerts_data' in result and result['alerts_data']:
-                print(f'Alerts data: {result["alerts_data"]["total_alerts"]} alerts processed')
-            if 'trends_data' in result and result['trends_data']:
-                print(f'Trends data: {result["trends_data"]["metadata"]["total_trend_types"]} trend types processed')
-        else:
-            print(f'Result: {str(result)[:300]}...')
+        print("\n2. Testing dashboard generation...")
+        result = await agent.generate_dashboard(
+            "Generate comprehensive public health dashboard"
+        )
+        
+        print(f"   ✅ Dashboard generated successfully")
+        print(f"   📊 Alerts: {result.get('alerts_count', 0)}")
+        print(f"   📈 Trends: {result.get('trends_count', 0)}")
+        print(f"   ⚡ Success: {result.get('success', False)}")
+        
+        if result.get('dashboard_summary'):
+            print(f"\n📄 Summary preview:")
+            summary = result['dashboard_summary']
+            print(summary[:200] + "..." if len(summary) > 200 else summary)
+        
+        return result.get('success', False)
+        
     except Exception as e:
-        print(f'❌ Error during dashboard generation: {str(e)}')
-        import traceback
-        traceback.print_exc()
+        print(f"❌ Test failed: {e}")
+        return False
 
 if __name__ == "__main__":
     import asyncio

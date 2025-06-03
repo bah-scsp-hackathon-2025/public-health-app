@@ -32,7 +32,7 @@ def test_fastapi_imports():
         print("   ✅ Main app import successful")
         
         print("5️⃣ Testing agent instantiation...")
-        agent = PublicHealthDashboardAgent(llm_provider='auto')
+        agent = PublicHealthDashboardAgent()
         print(f"   ✅ Agent created with LLM: {agent.llm is not None}")
         
         print("\n🎉 ALL IMPORTS AND INSTANTIATION SUCCESSFUL!")
