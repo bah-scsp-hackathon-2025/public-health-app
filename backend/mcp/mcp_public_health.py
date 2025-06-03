@@ -20,6 +20,7 @@ import numpy as np
 from scipy.stats import linregress
 from epidatpy import EpiDataContext, EpiRange
 import os
+import tempfile
 
 # Create the MCP server with SSE transport
 mcp = FastMCP("Public Health FastMCP")
@@ -439,7 +440,7 @@ def fetch_epi_signal(
     df["geo_type"] = geo_type
     df["time_values"] = time_values
     df["geo_values"] = geo_values
-    df.to_csv(f"{self.cache_dir}/{signal}.csv", index=False)
+    df.to_csv(f"{tempfile.gettempdir()}/{signal}.csv", index=False)
     return df.to_json(orient="records")
      # TO DO: Serialize the df?
     # def fetch(self):
@@ -456,7 +457,7 @@ def fetch_epi_signal(
 # Tool to detect rising trends in time series data using rolling linear regression
 @mcp.tool()
 def detect_rising_trend(
-    csv_path: str,
+    signal_name: str,
     value_column: str,
     date_column: str = "time_value",
     window_size: int = 7,
@@ -467,12 +468,21 @@ def detect_rising_trend(
     Detects rising trends in a time series using rolling linear regression on the log-transformed values.
 
     Args:
-        csv_path (str): Path to the time series CSV file.
+        signal_name (str): Name of the signal to detect rising trends for. The fetch_epi_signal must be called for that signal for prefetching the data. The options are: 
+        - smoothed_wwearing_mask_7d. -> Description: People Wearing Masks
+        - smoothed_wcovid_vaccinated_appointment_or_accept -> Description: Vaccine Acceptance.
+        - sum_anosmia_ageusia_smoothed_search -> Description: COVID Symptom Searches on Google.
+        - smoothed_wcli -> COVID-Like Symptoms
+        - smoothed_whh_cmnty_cli -> Description: COVID-Like Symptoms in Community
+        - smoothed_adj_cli -> Description: COVID-Related Doctor Visits
+        - confirmed_7dav_incidence_prop -> Description: COVID Cases
+        - confirmed_admissions_covid_1d_prop_7dav -> Description: COVID Hospital Admissions
+        - deaths_7dav_incidence_prop -> Description: COVID Deaths
         value_column (str): Column with numeric values to analyze.
-        date_column (str): Column with date values (default: "time_value").
-        window_size (int): Size of the rolling window (in time steps).
-        min_log_slope (float): Minimum slope (on log scale) to qualify as rising trend.
-        smooth (bool): Whether to apply a 3-day rolling average before log transform.
+        date_column (str, optional): Column with date values (default: "time_value").
+        window_size (int, optional): Size of the rolling window (in time steps).
+        min_log_slope (float, optional): Minimum slope (on log scale) to qualify as rising trend.
+        smooth (bool, optional): Whether to apply a 3-day rolling average before log transform.
 
     Returns:
         dict: {
@@ -482,7 +492,7 @@ def detect_rising_trend(
             "status": "success"
         }
     """
-    df = pd.read_csv(csv_path)
+    df = pd.read_csv(f"{tempfile.gettempdir()}/{signal_name}.csv")
     df[date_column] = pd.to_datetime(df[date_column])
     df = df.sort_values(date_column).dropna(subset=[value_column])
 
