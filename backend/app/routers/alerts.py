@@ -1,4 +1,5 @@
-from typing import List
+from datetime import datetime
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -8,7 +9,7 @@ from app.models.alert import Alert
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
 
-class AlertModel(BaseModel):
+class AlertCreate(BaseModel):
     name: str
     description: str
     risk_score: int
@@ -16,23 +17,34 @@ class AlertModel(BaseModel):
     location: str
 
 
-class AlertResponse(AlertModel):
+class AlertUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    risk_score: Optional[int] = None
+    risk_reason: Optional[str] = None
+    location: Optional[str] = None
+
+
+class AlertResponse(AlertCreate):
     id: int
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def create_alert(alert: AlertModel, db: Session = Depends(get_db)):
+async def create_alert(alert: AlertCreate, db: Session = Depends(get_db)):
     # Check if alert already exists
     db_alert = db.query(Alert).filter(Alert.name == alert.name).first()
     if db_alert:
         raise HTTPException(status_code=400, detail="Alert already exists")
 
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     db_alert = Alert(
         name=alert.name,
         description=alert.description,
         risk_score=alert.risk_score,
         risk_reason=alert.risk_reason,
         location=alert.location,
+        created=current_time,
+        updated=current_time,
     )
     db.add(db_alert)
     db.commit()
@@ -51,4 +63,39 @@ async def get_alert(alert_id: int, db: Session = Depends(get_db)):
     alert = db.query(Alert).filter(Alert.id == alert_id).first()
     if alert is None:
         raise HTTPException(status_code=404, detail="Alert not found")
+    return alert
+
+
+@router.put("/{alert_id}", response_model=AlertResponse)
+async def update_alert(alert_id: int, alert_update: AlertUpdate, db: Session = Depends(get_db)):
+    alert = db.query(Alert).filter(Alert.id == alert_id).first()
+    if alert is None:
+        raise HTTPException(status_code=404, detail="Alert not found")
+
+    if alert_update.name:
+        alert.name = alert_update.name
+    if alert_update.description:
+        alert.description = alert_update.description
+    if alert_update.risk_score:
+        alert.risk_score = alert_update.risk_score
+    if alert_update.risk_reason:
+        alert.risk_reason = alert_update.risk_reason
+    if alert_update.location:
+        alert.location = alert_update.location
+    alert.updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    db.add(alert)
+    db.commit()
+    db.refresh(alert)
+    return alert
+
+
+@router.delete("/{alert_id}", response_model=AlertResponse)
+async def delete_alert(alert_id: int, db: Session = Depends(get_db)):
+    alert = db.query(Alert).filter(Alert.id == alert_id).first()
+    if alert is None:
+        raise HTTPException(status_code=404, detail="Alert not found")
+
+    db.delete(alert)
+    db.commit()
     return alert

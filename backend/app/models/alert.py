@@ -11,3 +11,5 @@ class Alert(Base):
     risk_score = Column(Integer)
     risk_reason = Column(String)
     location = Column(String)
+    created = Column(String)
+    update = Column(String)
