@@ -1,5 +1,6 @@
 from typing import Optional
 from sqlalchemy import Column, Integer, String, Boolean
+from pydantic import BaseModel
 from app.database import Base
 
 
@@ -42,7 +43,7 @@ class Strategy(Base):
     id = Column(Integer, primary_key=True, index=True)
     short_description = Column(String)
     full_description = Column(String)
-    alert_id = Column(int)
+    alert_id = Column(Integer)
 
 
 class StrategyCreate(BaseModel):
