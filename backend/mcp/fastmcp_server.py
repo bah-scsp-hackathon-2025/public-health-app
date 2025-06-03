@@ -362,6 +362,181 @@ def get_health_risk_trends(
         }
     }
 
+
+
+@mcp.tool()
+def fetch_epi_signal(data_source: str) -> pd.DataFrame:
+        ### Tool to fetch a specific COVID-19 signal from the EpiDataContext
+
+    data_source: str,
+    signal: List[str],
+    time_type: Literal["day", "week", "month"] = "day",
+    geo_type: Literal["county", "hrr", "msa", "dma", "state"] = "state",
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+    geo_values: Optional[List[str]] = None
+) -> dict:
+    """
+    Fetch a specific COVID-19 signal from the EpiDataContext and save it to a CSV file.
+    Args:
+        signal (str): The specific signal to fetch. The options are: 
+        - smoothed_wwearing_mask_7d. -> Description: People Wearing Masks
+        - smoothed_wcovid_vaccinated_appointment_or_accept -> Description: Vaccine Acceptance.
+        - sum_anosmia_ageusia_smoothed_search -> Description: COVID Symptom Searches on Google.
+        - smoothed_wcli -> COVID-Like Symptoms
+        - smoothed_whh_cmnty_cli -> Description: COVID-Like Symptoms in Community
+        - smoothed_adj_cli -> Description: COVID-Related Doctor Visits
+        - confirmed_7dav_incidence_prop -> Description: COVID Cases
+        - confirmed_admissions_covid_1d_prop_7dav -> Description: COVID Hospital Admissions
+        - deaths_7dav_incidence_prop -> Description: COVID Deaths
+
+        time_type (Literal["day", "week", "month"]): The time granularity of the data.
+        geo_type (Literal["state", "county", "hrr", "msa"]): The geographic granularity of the data.
+        start_time (Optional[str]): The start time for the data query. Format: YYYYMMDD
+        end_time (Optional[str]): The end time for the data query. Format: YYYYMMDD
+        geo_values (List[str], optional): Geographic locations to fetch data for.
+        Accepted values depend on geo_type:
+        - "county": 5-digit FIPS codes (e.g., "06037" for Los Angeles County).
+        - "hrr": Hospital Referral Region numbers (1-457).
+        - "hhs": HHS region numbers (1-10).
+        - "msa": Metropolitan Statistical Area codes (CBSA ID).
+        - "dma": Nielsen Designated Market Area codes.
+        - "state": 2-letter state codes (e.g., "ny", "ca", "dc", "pr").
+        - "nation": ISO country code ("us" only).
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the fetched signal data, with additional metadata columns. 
+    """
+
+    # Logic to map signal to data source
+    ALLOWED_SIGNALS = {
+    "fb-survey": [
+        "smoothed_wwearing_mask_7d",
+        "smoothed_wcovid_vaccinated_appointment_or_accept",
+        "smoothed_wcli",
+        "smoothed_whh_cmnty_cli"
+    ],
+    "google-symptoms": [
+        "sum_anosmia_ageusia_smoothed_search"
+    ],
+    "doctor-visits": [
+        "smoothed_adj_cli",
+        "deaths_7dav_incidence_prop"
+    ],
+    "jhu-csse": [
+        "confirmed_7dav_incidence_prop"
+    ],
+    "hhs": [
+        "confirmed_admissions_covid_1d_prop_7dav"
+    ]
+    }
+
+    # Inverted mapping: signal -> data_source
+    SIGNAL_TO_SOURCE = {
+        signal: source
+        for source, signals in ALLOWED_SIGNALS.items()
+        for signal in signals
+    }
+
+    time_values = EpiRange(start_time, end_time)
+    epidata = EpiDataContext(use_cache=True, cache_max_age_days=7)
+    apicall = epidata.pub_covidcast(
+        data_source=source,
+        signals=signal,
+        time_type=time_type,
+        geo_type=geo_type,
+        time_values=time_range,
+        geo_values=geo_values
+    )
+    df = apicall.df()
+    df["signal"] = signal
+    df["source"] = source
+    df["time_type"] = time_type
+    df["geo_type"] = geo_type
+    df["time_values"] = time_values
+    df["geo_values"] = geo_values
+    df.to_csv(f"{self.cache_dir}/{signal}.csv", index=False)
+    return df
+     # TO DO: Serialize the df?
+    # def fetch(self):
+    #     all_data = []
+    #     for entry in tqdm(DELTA_SIGNALS, desc="Fetching signals"):
+    #         data = self.fetch_signal(entry["source"], entry["signal"])
+    #         all_data.append(data)
+    #     return pd.concat(all_data, ignore_index=True)
+
+    # def list_signals(self):
+    #     return [entry["signal"] for entry in DELTA_SIGNALS]
+
+
+# Tool to detect rising trends in time series data using rolling linear regression
+@mcp.tool()
+def detect_rising_trend(
+    csv_path: str,
+    value_column: str,
+    date_column: str = "time_value",
+    window_size: int = 7,
+    min_log_slope: float = 0.01,
+    smooth: bool = True
+) -> dict:
+    """
+    Detects rising trends in a time series using rolling linear regression on the log-transformed values.
+
+    Args:
+        csv_path (str): Path to the time series CSV file.
+        value_column (str): Column with numeric values to analyze.
+        date_column (str): Column with date values (default: "time_value").
+        window_size (int): Size of the rolling window (in time steps).
+        min_log_slope (float): Minimum slope (on log scale) to qualify as rising trend.
+        smooth (bool): Whether to apply a 3-day rolling average before log transform.
+
+    Returns:
+        dict: {
+            "rising_periods": List of (start_date, end_date),
+            "total_periods": int,
+            "sample_log_slopes": List[float],
+            "status": "success"
+        }
+    """
+    df = pd.read_csv(csv_path)
+    df[date_column] = pd.to_datetime(df[date_column])
+    df = df.sort_values(date_column).dropna(subset=[value_column])
+
+    # Ensure strictly positive for log transform
+    df = df[df[value_column] > 0]
+
+    if smooth:
+        df["smoothed"] = df[value_column].rolling(window=3, center=True).mean()
+        series = df["smoothed"]
+    else:
+        series = df[value_column]
+
+    log_series = np.log(series)
+    dates = df[date_column].tolist()
+    log_slopes = []
+    rising_periods = []
+
+    for i in range(len(log_series) - window_size + 1):
+        y = log_series[i:i + window_size]
+        x = list(range(window_size))
+        if y.isnull().any():
+            continue
+        slope, _, _, _, _ = linregress(x, y)
+        log_slopes.append(slope)
+
+        if slope >= min_log_slope:
+            start = dates[i]
+            end = dates[i + window_size - 1]
+            rising_periods.append((str(start.date()), str(end.date())))
+
+    return {
+        "status": "success",
+        "rising_periods": rising_periods,
+        "total_periods": len(rising_periods),
+        "sample_log_slopes": log_slopes[:5]
+    }
+
+
 @mcp.tool()
 def get_server_info() -> dict:
     """
