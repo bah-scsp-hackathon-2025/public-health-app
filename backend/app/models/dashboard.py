@@ -9,11 +9,6 @@ class DashboardRequest(BaseModel):
         description="Natural language description of the dashboard requirements",
         example="Focus on high severity alerts in California"
     )
-    llm_provider: Optional[str] = Field(
-        default="auto",
-        description="LLM provider to use: 'openai', 'anthropic', or 'auto' for auto-detection",
-        example="openai"
-    )
     agent_type: Optional[str] = Field(
         default="standard",
         description="Agent type to use: 'standard' for workflow-based agent or 'react' for ReAct agent with epidemiological tools",
@@ -70,5 +65,5 @@ class DashboardStatus(BaseModel):
     """Status model for checking dashboard generation status"""
     agent_available: bool
     mcp_server_accessible: bool
-    llm_providers: dict
+    anthropic_api_available: bool
     timestamp: str 

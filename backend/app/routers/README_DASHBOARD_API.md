@@ -1,346 +1,299 @@
-# Dashboard API Endpoints
+# Dashboard API Documentation
 
-The Dashboard API provides HTTP endpoints to generate public health dashboards using the LangGraph agent. This allows web applications, mobile apps, and other services to access intelligent dashboard summaries via REST API calls.
+## Overview
 
-## 🚀 Endpoints Overview
+The Dashboard API provides endpoints for generating comprehensive public health dashboards using AI-powered analysis. The system uses **Anthropic Claude** for intelligent analysis and integrates with epidemiological data sources through MCP (Model Context Protocol) servers.
 
-### Main Dashboard Generation
+## Base URL
 
-#### `POST /dashboard/generate`
-Generate a custom dashboard based on natural language requirements.
+```
+http://localhost:8000/dashboard
+```
+
+## Request/Response Models
+
+### DashboardRequest
+
+```json
+{
+    "query": "Generate comprehensive public health dashboard for current situation",
+    "agent_type": "standard",  // optional: "standard" or "react"
+    "mcp_host": "localhost",   // optional: MCP server host
+    "mcp_port": 8000          // optional: MCP server port
+}
+```
+
+### DashboardResponse
+
+```json
+{
+    "success": true,
+    "dashboard_summary": "📊 **PUBLIC HEALTH DASHBOARD SUMMARY**...",
+    "alerts_count": 5,
+    "trends_count": 3,
+    "timestamp": "2024-01-15T10:30:00Z",
+    "error": null,
+    "generation_time_seconds": 12.5,
+    "agent_type": "standard",
+    "tools_used": ["fetch_epi_signal", "detect_rising_trend"],
+    
+    // Enhanced structured data
+    "alerts": [...],
+    "rising_trends": [...],
+    "epidemiological_signals": [...], 
+    "risk_assessment": {...},
+    "recommendations": [...]
+}
+```
+
+### DashboardStatus
+
+```json
+{
+    "agent_available": true,
+    "mcp_server_accessible": true,
+    "anthropic_api_available": true,
+    "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+## Endpoints
+
+### 1. Generate Dashboard
+
+**POST** `/generate`
+
+Generate a customized public health dashboard.
 
 **Request Body:**
 ```json
 {
-  "query": "Generate comprehensive public health dashboard for current situation",
-  "llm_provider": "auto",  // optional: "openai", "anthropic", "auto"
-  "mcp_host": "localhost", // optional: override MCP server host
-  "mcp_port": 8000        // optional: override MCP server port
+    "query": "Focus on high severity alerts in California and trending health metrics",
+    "agent_type": "standard"
 }
 ```
 
 **Response:**
 ```json
 {
-  "success": true,
-  "dashboard_summary": "📊 PUBLIC HEALTH DASHBOARD SUMMARY...",
-  "alerts_count": 15,
-  "trends_count": 6,
-  "timestamp": "2024-01-15T14:30:00Z",
-  "error": null,
-  "generation_time_seconds": 4.23
+    "success": true,
+    "dashboard_summary": "📊 **PUBLIC HEALTH DASHBOARD SUMMARY**\n\n🚨 **CURRENT SITUATION**...",
+    "alerts_count": 8,
+    "trends_count": 4,
+    "timestamp": "2024-01-15T10:30:00Z",
+    "generation_time_seconds": 15.3,
+    "agent_type": "standard"
 }
 ```
 
-### Status & Health Checks
+### 2. Dashboard Status
 
-#### `GET /dashboard/status`
-Check the availability of the dashboard agent and its dependencies.
+**GET** `/status`
+
+Check the status of dashboard generation services.
 
 **Response:**
 ```json
 {
-  "agent_available": true,
-  "mcp_server_accessible": true,
-  "llm_providers": {
-    "openai": true,
-    "anthropic": false
-  },
-  "timestamp": "2024-01-15T14:30:00Z"
+    "agent_available": true,
+    "mcp_server_accessible": true,
+    "anthropic_api_available": true,
+    "timestamp": "2024-01-15T10:30:00Z"
 }
 ```
 
-### Pre-configured Dashboards
+### 3. Alerts Summary
 
-#### `GET /dashboard/alerts-summary`
-Generate a dashboard focused on current public health alerts.
+**GET** `/alerts-summary`
 
-#### `GET /dashboard/trends-summary`
-Generate a dashboard focused on health risk trends and patterns.
+Generate a dashboard focused specifically on current alerts.
 
-#### `GET /dashboard/emergency-summary`
-Generate an emergency response dashboard with high-severity alerts.
+**Response:** Same as `/generate` but focused on alerts.
 
-All return the same response format as `/dashboard/generate`.
+### 4. Trends Summary
 
-### Async Generation
+**GET** `/trends-summary`
 
-#### `POST /dashboard/generate/async`
-Start dashboard generation as a background task for long-running requests.
+Generate a dashboard focused on health risk trends over time.
+
+**Response:** Same as `/generate` but focused on trends.
+
+### 5. Emergency Summary
+
+**GET** `/emergency-summary`
+
+Generate a dashboard optimized for emergency response scenarios.
+
+**Response:** Same as `/generate` but with emergency focus.
+
+### 6. Epidemiological Analysis
+
+**POST** `/epidemiological-analysis`
+
+Generate comprehensive epidemiological analysis using the ReAct agent with real-time data.
+
+**Request Body:**
+```json
+{
+    "query": "Analyze recent COVID-19 trends and hospital capacity nationwide",
+    "agent_type": "react"
+}
+```
 
 **Response:**
 ```json
 {
-  "message": "Dashboard generation started in background",
-  "task_id": "dashboard_20240115_143000",
-  "timestamp": "2024-01-15T14:30:00Z"
+    "success": true,
+    "dashboard_summary": "🔬 **EPIDEMIOLOGICAL ANALYSIS**...",
+    "timestamp": "2024-01-15T10:30:00Z",
+    "generation_time_seconds": 45.2,
+    "agent_type": "ReAct-Epidemiological",
+    "tools_used": ["fetch_epi_signal", "detect_rising_trend"],
+    "epidemiological_signals": [...],
+    "rising_trends": [...],
+    "risk_assessment": {...}
 }
 ```
 
-## 🛠️ Usage Examples
+### 7. Async Generation
 
-### Python with requests
+**POST** `/generate/async`
+
+Start dashboard generation as a background task.
+
+**Request Body:** Same as `/generate`
+
+**Response:**
+```json
+{
+    "message": "Dashboard generation started in background",
+    "task_id": "dashboard_20240115_103000",
+    "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+## Agent Types
+
+### Standard Agent
+- **Type:** `"standard"`
+- **Description:** Uses LangGraph workflow for structured data processing
+- **Best for:** General dashboard generation, alert analysis, basic trending
+- **Features:** Sample data integration, enhanced analytics, structured responses
+
+### ReAct Agent  
+- **Type:** `"react"`
+- **Description:** Uses ReAct pattern with real-time epidemiological tools
+- **Best for:** Real-time epidemiological analysis, statistical trend detection
+- **Features:** Live API integration, statistical analysis, evidence-based insights
+
+## Configuration
+
+### Environment Variables
+
+```bash
+# Required for AI analysis
+ANTHROPIC_API_KEY=sk-ant-...
+
+# MCP Server Configuration (optional)
+MCP_SERVER_HOST=localhost
+MCP_SERVER_PORT=8000
+```
+
+### Agent Configuration
+
+Both agents now use **Anthropic Claude Sonnet 4.0** with thinking mode for enhanced reasoning capabilities.
+
+## Error Handling
+
+All endpoints return structured error responses:
+
+```json
+{
+    "success": false,
+    "error": "Dashboard generation failed: Connection timeout",
+    "timestamp": "2024-01-15T10:30:00Z",
+    "generation_time_seconds": 5.0
+}
+```
+
+## Integration Examples
+
+### Python Client
 
 ```python
 import requests
-import os
 
-# Get FastAPI URL from environment
-host = os.getenv("FASTAPI_HOST", "localhost")
-port = os.getenv("FASTAPI_PORT", "8001")
-base_url = f"http://{host}:{port}"
-
-# Generate custom dashboard
-response = requests.post(f"{base_url}/dashboard/generate", json={
-    "query": "Focus on respiratory illness trends in California",
-    "llm_provider": "openai"
-})
+# Generate standard dashboard
+response = requests.post(
+    "http://localhost:8000/dashboard/generate",
+    json={
+        "query": "Emergency response dashboard for wildfire areas",
+        "agent_type": "standard"
+    }
+)
 
 result = response.json()
 if result["success"]:
     print(result["dashboard_summary"])
 ```
 
-### JavaScript/Node.js
+### JavaScript/Frontend
 
 ```javascript
-// Get FastAPI URL from environment
-const host = process.env.FASTAPI_HOST || 'localhost';
-const port = process.env.FASTAPI_PORT || '8001';
-const baseUrl = `http://${host}:${port}`;
-
-const response = await fetch(`${baseUrl}/dashboard/generate`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    query: 'Emergency response dashboard for Texas',
-    llm_provider: 'auto'
-  })
-});
-
-const result = await response.json();
-console.log(result.dashboard_summary);
+const generateDashboard = async (query) => {
+    const response = await fetch('/dashboard/generate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            query: query,
+            agent_type: 'standard'
+        })
+    });
+    
+    const result = await response.json();
+    return result;
+};
 ```
 
 ### cURL
 
 ```bash
-# Using environment variables (recommended)
-FASTAPI_HOST=${FASTAPI_HOST:-localhost}
-FASTAPI_PORT=${FASTAPI_PORT:-8001}
-
-curl -X POST "http://${FASTAPI_HOST}:${FASTAPI_PORT}/dashboard/generate" \
+# Generate epidemiological analysis
+curl -X POST http://localhost:8000/dashboard/epidemiological-analysis \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "Generate dashboard for high-severity alerts only",
-    "llm_provider": "auto"
+    "query": "Analyze COVID trends in the Pacific Northwest",
+    "agent_type": "react"
   }'
 ```
 
-## 🔧 Configuration
+## Performance Notes
 
-### Environment Variables
+- **Standard Agent:** Typically 10-20 seconds for full dashboard
+- **ReAct Agent:** 30-60 seconds due to real-time data fetching and analysis
+- **Async Generation:** Use for long-running requests to avoid timeouts
+- **Caching:** Consider implementing caching for frequently requested dashboards
 
-The dashboard API uses these environment variables:
+## Troubleshooting
 
-```bash
-# FastAPI Server Configuration
-FASTAPI_HOST=0.0.0.0
-FASTAPI_PORT=8001
+### Common Issues
 
-# MCP Server Configuration
-MCP_SERVER_HOST=localhost
-MCP_SERVER_PORT=8000
+1. **"Agent not available"**
+   - Check Anthropic API key is set
+   - Verify API key has sufficient credits
 
-# LLM API Keys (optional)
-OPENAI_API_KEY=your-openai-key
-ANTHROPIC_API_KEY=your-anthropic-key
-```
+2. **"MCP server not accessible"**
+   - Ensure MCP server is running on configured port
+   - Check network connectivity to MCP server
 
-### Error Handling
+3. **"Generation timeout"**
+   - Use async endpoint for complex requests
+   - Check system resources and API rate limits
 
-The API includes comprehensive error handling:
+### Debug Mode
 
-- **400 Bad Request**: Invalid request parameters
-- **500 Internal Server Error**: Agent or MCP server errors
-- **Timeout**: Long-running dashboard generation
-
-Error responses include detailed information:
-```json
-{
-  "detail": {
-    "error": "Dashboard generation failed: MCP server connection timeout",
-    "generation_time_seconds": 10.0,
-    "timestamp": "2024-01-15T14:30:00Z"
-  }
-}
-```
-
-## 🧪 Testing
-
-Use the provided test script to verify all endpoints:
+Set `DEBUG=1` environment variable for detailed logging:
 
 ```bash
-cd backend
-python3 test_dashboard_api.py
-```
-
-Or test individual endpoints:
-
-```bash
-# Set environment variables
-FASTAPI_HOST=${FASTAPI_HOST:-localhost}
-FASTAPI_PORT=${FASTAPI_PORT:-8001}
-
-# Check status
-curl http://${FASTAPI_HOST}:${FASTAPI_PORT}/dashboard/status
-
-# Quick alerts summary
-curl http://${FASTAPI_HOST}:${FASTAPI_PORT}/dashboard/alerts-summary
-
-# Custom dashboard
-curl -X POST http://${FASTAPI_HOST}:${FASTAPI_PORT}/dashboard/generate \
-  -H "Content-Type: application/json" \
-  -d '{"query": "Focus on COVID-19 trends"}'
-```
-
-## 🔄 Integration Patterns
-
-### Web Dashboard Integration
-
-```python
-from fastapi import FastAPI
-import httpx
-import os
-
-app = FastAPI()
-
-@app.get("/api/health-dashboard")
-async def get_health_dashboard(region: str = None):
-    query = f"Generate health dashboard for {region}" if region else "Generate comprehensive health dashboard"
-    
-    # Get FastAPI URL from environment
-    host = os.getenv("FASTAPI_HOST", "localhost")
-    port = os.getenv("FASTAPI_PORT", "8001")
-    dashboard_url = f"http://{host}:{port}/dashboard/generate"
-    
-    async with httpx.AsyncClient() as client:
-        response = await client.post(dashboard_url, json={
-            "query": query
-        })
-        return response.json()
-```
-
-### Scheduled Reports
-
-```python
-import asyncio
-import httpx
-import os
-from datetime import datetime
-
-async def daily_dashboard_report():
-    # Get FastAPI URL from environment
-    host = os.getenv("FASTAPI_HOST", "localhost")
-    port = os.getenv("FASTAPI_PORT", "8001")
-    base_url = f"http://{host}:{port}"
-    
-    async with httpx.AsyncClient() as client:
-        # Generate different types of reports
-        reports = [
-            ("alerts", "/dashboard/alerts-summary"),
-            ("trends", "/dashboard/trends-summary"),
-            ("emergency", "/dashboard/emergency-summary")
-        ]
-        
-        for report_name, endpoint in reports:
-            response = await client.get(f"{base_url}{endpoint}")
-            result = response.json()
-            
-            if result["success"]:
-                # Save or send the dashboard
-                filename = f"reports/{report_name}_{datetime.now().strftime('%Y%m%d')}.md"
-                with open(filename, 'w') as f:
-                    f.write(result["dashboard_summary"])
-
-# Schedule with cron or run periodically
-asyncio.run(daily_dashboard_report())
-```
-
-### Real-time Updates
-
-```javascript
-// Polling for updates
-async function getDashboardUpdates() {
-  const response = await fetch('/dashboard/alerts-summary');
-  const data = await response.json();
-  
-  if (data.success) {
-    updateDashboardUI(data.dashboard_summary);
-  }
-  
-  // Poll every 5 minutes
-  setTimeout(getDashboardUpdates, 5 * 60 * 1000);
-}
-```
-
-## 📊 Response Format Details
-
-### Dashboard Summary Structure
-
-The `dashboard_summary` field contains markdown-formatted text with these sections:
-
-- **🚨 CURRENT SITUATION**: Overall health landscape overview
-- **🔥 CRITICAL ALERTS**: High-priority alerts requiring attention  
-- **📈 TREND HIGHLIGHTS**: Key patterns and changes in health data
-- **✅ PRIORITY RECOMMENDATIONS**: Actionable next steps
-- **📊 STATISTICS**: Numerical summary of processed data
-
-### Example Output
-
-```markdown
-📊 PUBLIC HEALTH DASHBOARD SUMMARY
-
-🚨 CURRENT SITUATION
-The public health landscape shows elevated activity with 12 active alerts 
-affecting 1.8M people. Respiratory illnesses trending upward in urban areas.
-
-🔥 CRITICAL ALERTS
-• HIGH: COVID-19 outbreak in nursing facilities (CA) - 35,000 affected
-• HIGH: Foodborne illness cluster (TX) - 8,000 affected
-
-📈 TREND HIGHLIGHTS  
-• Respiratory emergency visits ↗️ +18% (concerning)
-• COVID-19 cases ↘️ -3% (improving)
-
-✅ PRIORITY RECOMMENDATIONS
-1. Deploy additional testing resources to affected facilities
-2. Investigate food supply chain in Texas regions
-
-📊 STATISTICS
-• Total Active Alerts: 12
-• High Severity: 3
-• Population Affected: 1,800,000
-```
-
-## 🚨 Production Considerations
-
-### Security
-- Add API authentication and rate limiting
-- Validate and sanitize all input parameters
-- Use HTTPS in production environments
-
-### Performance
-- Implement request caching for frequently accessed dashboards
-- Use a proper task queue (Redis/Celery) for async operations
-- Monitor API response times and set appropriate timeouts
-
-### Reliability
-- Add retry logic for MCP server communication
-- Implement circuit breakers for external dependencies
-- Log all requests and responses for debugging
-
-### Scalability
-- Consider horizontal scaling with load balancers
-- Cache dashboard results for common queries
-- Implement request deduplication for identical queries 
+DEBUG=1 uvicorn app.main:app --port 8000
+``` 

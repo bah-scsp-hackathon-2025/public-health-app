@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for the Dashboard API endpoints
+Test script for the dashboard API endpoints
 
 This script demonstrates how to use the new dashboard endpoints
 added to the FastAPI application.
@@ -36,7 +36,7 @@ class DashboardAPITester:
             print(f"✅ Status check successful!")
             print(f"   Agent Available: {status.get('agent_available')}")
             print(f"   MCP Server: {status.get('mcp_server_accessible')}")
-            print(f"   LLM Providers: {status.get('llm_providers')}")
+            print(f"   Anthropic API: {status.get('anthropic_api_available')}")
             return status
             
         except requests.exceptions.RequestException as e:
@@ -48,8 +48,8 @@ class DashboardAPITester:
         print("🤖 Testing dashboard generation...")
         
         payload = {
-            "query": query or "Generate comprehensive public health dashboard for current situation",
-            "llm_provider": "auto"
+            "query": query or "Generate test dashboard for API testing",
+            "agent_type": "standard"
         }
         
         try:
@@ -57,7 +57,7 @@ class DashboardAPITester:
             response = requests.post(
                 f"{self.base_url}/dashboard/generate",
                 json=payload,
-                timeout=60  # Dashboard generation can take time
+                timeout=30
             )
             end_time = time.time()
             
@@ -66,13 +66,12 @@ class DashboardAPITester:
             
             print(f"✅ Dashboard generation completed in {end_time - start_time:.2f}s")
             print(f"   Success: {result.get('success')}")
-            print(f"   Alerts Count: {result.get('alerts_count')}")
-            print(f"   Trends Count: {result.get('trends_count')}")
+            print(f"   Agent Type: {result.get('agent_type')}")
             
             if result.get('dashboard_summary'):
                 print("\n📊 Dashboard Summary (preview):")
                 summary = result.get('dashboard_summary', '')
-                preview = summary[:300] + "..." if len(summary) > 300 else summary
+                preview = summary[:100] + "..." if len(summary) > 100 else summary
                 print(f"   {preview}")
             
             if result.get('error'):
@@ -89,7 +88,7 @@ class DashboardAPITester:
         print("🚨 Testing alerts summary...")
         
         try:
-            response = requests.get(f"{self.base_url}/dashboard/alerts-summary", timeout=60)
+            response = requests.get(f"{self.base_url}/dashboard/alerts-summary", timeout=30)
             response.raise_for_status()
             
             result = response.json()
@@ -106,7 +105,7 @@ class DashboardAPITester:
         print("📈 Testing trends summary...")
         
         try:
-            response = requests.get(f"{self.base_url}/dashboard/trends-summary", timeout=60)
+            response = requests.get(f"{self.base_url}/dashboard/trends-summary", timeout=30)
             response.raise_for_status()
             
             result = response.json()
@@ -118,31 +117,33 @@ class DashboardAPITester:
             print(f"❌ Trends summary failed: {e}")
             return {"error": str(e)}
     
-    def test_async_generation(self) -> Dict[str, Any]:
-        """Test the async dashboard generation endpoint"""
-        print("⚡ Testing async dashboard generation...")
+    def test_epidemiological_analysis(self) -> Dict[str, Any]:
+        """Test the epidemiological analysis endpoint"""
+        print("🔬 Testing epidemiological analysis...")
         
         payload = {
-            "query": "Quick emergency response dashboard",
-            "llm_provider": "auto"
+            "query": "Analyze COVID trends using real epidemiological data",
+            "agent_type": "react"
         }
         
         try:
             response = requests.post(
-                f"{self.base_url}/dashboard/generate/async",
+                f"{self.base_url}/dashboard/epidemiological-analysis",
                 json=payload,
-                timeout=10
+                timeout=60  # Longer timeout for ReAct agent
             )
             response.raise_for_status()
             
             result = response.json()
-            print(f"✅ Async generation started")
-            print(f"   Task ID: {result.get('task_id')}")
-            print(f"   Message: {result.get('message')}")
+            print(f"✅ Epidemiological analysis completed")
+            print(f"   Success: {result.get('success')}")
+            print(f"   Agent Type: {result.get('agent_type')}")
+            print(f"   Tools Used: {result.get('tools_used', [])}")
+            
             return result
             
         except requests.exceptions.RequestException as e:
-            print(f"❌ Async generation failed: {e}")
+            print(f"❌ Epidemiological analysis failed: {e}")
             return {"error": str(e)}
     
     def test_all_endpoints(self):
@@ -174,8 +175,8 @@ class DashboardAPITester:
             results['trends'] = self.test_trends_summary()
             print()
             
-            # Test async
-            results['async'] = self.test_async_generation()
+            # Test epidemiological analysis
+            results['epidemiological_analysis'] = self.test_epidemiological_analysis()
             print()
         
         print("🎯 Test Summary:")
