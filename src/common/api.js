@@ -77,9 +77,7 @@ export const generatePolicyFromStrategy = async (strategy_id) => {
 
 export const fetchApprovedPolicies = async () => {
   try {
-    const response = await fetch(
-      `http://localhost:8000/policies/approved/`
-    );
+    const response = await fetch(`http://localhost:8000/policies/approved/`);
     const data = await response.json();
     return data;
   } catch (error) {
@@ -90,9 +88,18 @@ export const fetchApprovedPolicies = async () => {
 
 export const fetchDraftPolicies = async () => {
   try {
-    const response = await fetch(
-      `http://localhost:8000/policies/draft/`
-    );
+    const response = await fetch(`http://localhost:8000/policies/draft/`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error:", error);
+    return [];
+  }
+};
+
+export const fetchSummary = async () => {
+  try {
+    const response = await fetch(`http://localhost:8000/summary/`);
     const data = await response.json();
     return data;
   } catch (error) {
