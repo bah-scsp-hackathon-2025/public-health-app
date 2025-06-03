@@ -1,10 +1,10 @@
 import { MapPin } from "lucide-react";
-import { React, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Chart from '../../components/Chart';
 import Map from '../../components/Map';
 import RegularAlertPane from "../../components/RegularAlertPane";
 import RegularNav from "../../components/RegularNav";
-import { fetchAlerts, fetchSummary } from "../../common/api";
+import { fetchSummary } from "../../common/api";
 
 const US_STATE_AND_TERRITORY_NAMES = [
   "Alabama",
@@ -69,29 +69,11 @@ const US_STATE_AND_TERRITORY_NAMES = [
 function Dashboard() {
     const [selectedState, setSelectedState] = useState("");
 
-    const [alerts, setAlerts] = useState([]);
-    useEffect(() => {
-      const getAlerts = async () => {
-        try {
-          const result = await fetchAlerts();
-          // set alerts to be just the first 4 for now
-          setAlerts(result.slice(0, 4));
-        } catch (error) {
-          console.error("Error getting alerts:", error);
-        }
-      };
-      getAlerts();
-    }, []);
-
     const [summary, setSummary] = useState([]);
       useEffect(() => {
         const getSummary = async () => {
-          try {
-            const result = await fetchSummary();
-            setSummary(result);
-          } catch (error) {
-            console.error("Error getting approved policies:", error);
-          }
+          const result = await fetchSummary();
+          setSummary(result);
         };
         getSummary();
       }, []);

@@ -8,12 +8,8 @@ export default function USMapWithDots() {
   const [alerts, setAlerts] = useState([]);
   useEffect(() => {
     const getAlerts = async () => {
-      try {
-        const result = await fetchAlerts();
-        setAlerts(result);
-      } catch (error) {
-        console.error("Error getting alerts:", error);
-      }
+      const result = await fetchAlerts();
+      setAlerts(result);
     };
     getAlerts();
   }, []);

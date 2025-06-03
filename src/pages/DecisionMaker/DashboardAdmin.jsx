@@ -9,12 +9,8 @@ function AdminDashboard() {
   const [summary, setSummary] = useState([]);
   useEffect(() => {
     const getSummary = async () => {
-      try {
-        const result = await fetchSummary();
-        setSummary(result);
-      } catch (error) {
-        console.error("Error getting approved policies:", error);
-      }
+      const result = await fetchSummary();
+      setSummary(result);
     };
     getSummary();
   }, []);

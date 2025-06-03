@@ -4,7 +4,7 @@ export const fetchAlerts = async () => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error getting alerts:", error);
     return [];
   }
 };
@@ -15,7 +15,7 @@ export const fetchAlert = async (alert_id) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error getting alert:", error);
     return {};
   }
 };
@@ -31,7 +31,7 @@ export const createAlert = async (alertData) => {
     });
     return response.json();
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error creating alert:", error);
     return {};
   }
 };
@@ -44,7 +44,7 @@ export const fetchStrategiesByAlert = async (alert_id) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error getting strategies:", error);
     return [];
   }
 };
@@ -57,7 +57,7 @@ export const generateStrategiesByAlert = async (alert_id) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error generating strategies:", error);
     return [];
   }
 };
@@ -70,7 +70,7 @@ export const generatePolicyFromStrategy = async (strategy_id) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error generating policy:", error);
     return {};
   }
 };
@@ -81,7 +81,7 @@ export const fetchApprovedPolicies = async () => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error getting approved policies:", error);
     return [];
   }
 };
@@ -92,8 +92,36 @@ export const fetchDraftPolicies = async () => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error getting draft policies:", error);
     return [];
+  }
+};
+
+export const fetchApprovedPoliciesByAlert = async (alert_id) => {
+  try {
+    const response = await fetch(`http://localhost:8000/policies/approved/${alert_id}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error getting approved policies:", error);
+    return [];
+  }
+};
+
+
+export const updatePolicy = async (policyData) => {
+  try {
+    const response = await fetch("http://localhost:8000/policies/", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(policyData),
+    });
+    return response.json();
+  } catch (error) {
+    console.error("Error updating policy:", error);
+    return {};
   }
 };
 
@@ -103,7 +131,7 @@ export const fetchSummary = async () => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error getting summary:", error);
     return [];
   }
 };

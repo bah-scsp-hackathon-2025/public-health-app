@@ -26,12 +26,8 @@ const PolicyTable = () => {
   const [approvedPolicies, setApprovedPolicies] = useState([]);
   useEffect(() => {
     const getApprovedPolicies = async () => {
-      try {
-        const result = await fetchApprovedPolicies();
-        setApprovedPolicies(result);
-      } catch (error) {
-        console.error("Error getting approved policies:", error);
-      }
+      const result = await fetchApprovedPolicies();
+      setApprovedPolicies(result);
     };
     getApprovedPolicies();
   }, []);
@@ -39,12 +35,8 @@ const PolicyTable = () => {
   const [draftPolicies, setDraftPolicies] = useState([]);
   useEffect(() => {
     const getDraftPolicies = async () => {
-      try {
-        const result = await fetchDraftPolicies();
-        setDraftPolicies(result);
-      } catch (error) {
-        console.error("Error getting approved policies:", error);
-      }
+      const result = await fetchDraftPolicies();
+      setDraftPolicies(result);
     };
     getDraftPolicies();
   }, []);
