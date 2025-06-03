@@ -833,14 +833,7 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
             logger.error(f"❌ LangGraph workflow failed: {str(e)}")
             raise
         
-        # Clean up MCP connection
-        if self.mcp_client:
-            try:
-                logger.debug("Closing MCP client connection...")
-                await self.mcp_client.close()
-                logger.debug("✅ MCP client closed")
-            except Exception as e:
-                logger.warning(f"⚠️ Error closing MCP client: {str(e)}")
+        # MCP client will auto-cleanup when async loop exits
         
         alerts_data = final_state.get("alerts_data") or {}
         trends_data = final_state.get("trends_data") or {}

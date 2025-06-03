@@ -46,12 +46,8 @@ async def test_react_agent_basic():
         return False
     
     finally:
-        # Clean up
-        if hasattr(agent, 'mcp_client') and agent.mcp_client:
-            try:
-                await agent.mcp_client.close()
-            except:
-                pass
+        # MCP client will auto-cleanup when async loop exits
+        pass
     
     return True
 
@@ -163,12 +159,8 @@ async def test_mcp_tools_direct():
         return False
     
     finally:
-        # Clean up
-        if hasattr(agent, 'mcp_client') and agent.mcp_client:
-            try:
-                await agent.mcp_client.close()
-            except:
-                pass
+        # MCP client will auto-cleanup when async loop exits
+        pass
 
 
 async def test_integration_scenarios():

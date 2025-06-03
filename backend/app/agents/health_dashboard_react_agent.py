@@ -631,14 +631,7 @@ An error occurred while generating the epidemiological dashboard:
             
             logger.info("✅ LangGraph ReAct workflow completed")
             
-            # Clean up MCP connection
-            if self.mcp_client:
-                try:
-                    logger.debug("Closing MCP client connection...")
-                    await self.mcp_client.close()
-                    logger.debug("✅ MCP client closed")
-                except Exception as e:
-                    logger.warning(f"⚠️ Error closing MCP client: {str(e)}")
+            # MCP client will auto-cleanup when async loop exits
             
             # Build final result from typed state data
             final_result = {
@@ -663,12 +656,7 @@ An error occurred while generating the epidemiological dashboard:
         except Exception as e:
             logger.error(f"❌ LangGraph ReAct dashboard generation failed: {str(e)}")
             
-            # Clean up MCP connection on error
-            if self.mcp_client:
-                try:
-                    await self.mcp_client.close()
-                except:
-                    pass
+            # MCP client will auto-cleanup when async loop exits
             
             return {
                 "dashboard_summary": f"⚠️ ReAct dashboard generation failed: {str(e)}",
