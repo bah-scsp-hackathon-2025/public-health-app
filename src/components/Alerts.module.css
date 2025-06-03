@@ -1,0 +1,12 @@
+.alertCard{
+    border: 1px solid black;
+    width: 80%;
+    min-height: 50px;
+    background: white;
+    padding: 10px
+}
+
+.alertCard:hover {
+    background: grey;
+    cursor: pointer;
+}

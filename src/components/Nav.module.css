@@ -1,0 +1,53 @@
+.navbar {
+  background: #dee2e6;
+  width: 200px;
+  height: 100vh; /* Full height of viewport */
+  position: fixed; /* Optional: keeps it always visible */
+  top: 0;
+  left: 0;
+  border-right: 1px solid #ddd;
+
+  & ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+}
+
+.logoContainer {
+  background: lightblue;
+  height: 10%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+}
+
+
+.listItemContainer {
+  border: 1px solid gray;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.listItemContainer:hover {
+  background: white;
+  cursor: pointer
+}
+
+.listItem {
+  margin-left: 20px
+}
+
+.navbar a {
+  text-decoration: none;
+  color: #333;
+  font-weight: bold;
+}
+
+.navbar a:hover {
+  color: #007BFF;
+}
