@@ -32,6 +32,7 @@ async def create_policy(policy: PolicyCreate, db: Session = Depends(get_db)):
         approved=policy.approved,
         created=current_time,
         updated=current_time,
+        alert_id=policy.alert_id,
     )
     db.add(db_policy)
     db.commit()
@@ -69,6 +70,8 @@ async def update_policy(
         policy.author = policy_update.author
     if policy_update.approved:
         policy.approved = policy_update.approved
+    if policy_update.alert_id:
+        policy.alert_id = policy_update.alert_id
     policy.updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     db.add(policy)
