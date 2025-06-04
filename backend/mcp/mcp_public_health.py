@@ -54,9 +54,10 @@ mcp = FastMCP("Public Health FastMCP")
 def fetch_epi_signal(
     signal: str,
     time_type: str,
-    geo_type: str,
     start_time: str,
     end_time: str,
+    geo_value: str,
+    geo_type: str = "state",
     as_json: bool = True
 ) -> json:
     """
@@ -71,11 +72,10 @@ def fetch_epi_signal(
         - confirmed_admissions_covid_1d_prop_7dav -> Description: COVID Hospital Admissions
 
         time_type (Literal["day", "week", "month"]): The time granularity of the data.
-        geo_type (Literal["state", "county", "hrr", "msa"]): The geographic granularity of the data.
-        start_time (str, optional): The start time for the data query. Format: YYYYMMDD
-        end_time (str, optional): The end time for the data query. Format: YYYYMMDD
-        Accepted values depend on geo_type:
-        - "state": 2-letter state codes (e.g., "ny", "ca", "dc", "pr").
+        start_time (str): The start time for the data query. Format: YYYYMMDD
+        end_time (str): The end time for the data query. Format: YYYYMMDD
+        geo_value (Literal["ny", "ca", "dc", "pr"]): The 2-letter state codes ("ny", "ca", "dc", "pr").
+        geo_type (Literal["state"]): The geographic granularity of the data.
 
     Returns:
         json: A JSON containing the fetched signal data, with additional metadata columns. 
@@ -100,7 +100,7 @@ def fetch_epi_signal(
         "geo_type": geo_type,
         "time_values": start_time + "-" + end_time,  # Combine start_time and end_time
         "as_of": end_time,  # Use the end_time as the 'as_of' date
-        "geo_value": {"ny", "ca", "fl", "dc"},
+        "geo_value": {geo_value},
     }
     response = requests.get(BASE_URL, params=params, verify=False) # Disable SSL verification for testing purposes
     if as_json:
