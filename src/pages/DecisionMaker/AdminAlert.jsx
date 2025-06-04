@@ -116,21 +116,14 @@ useEffect(() => {
      
     <div style={{ width: "80%", padding: "20px", height: '100%'}}>
       
+      <div style={{ width: "80%", padding: "20px", height: '100%'}}>
+        <div style={{display: "flex", justifyContent: "center"}}>
+       <label style={{ color: "black", marginBottom: "5px", fontSize: "25px", display: "block" }}>{alert.name}</label>
+       </div>
+       </div>
    
 <div style={{ backgroundColor: "#191970", padding: "40px", border: "1px solid black", borderRadius: "20px" }}>
-  <div style={{ marginBottom: "20px" }}>
-    <label style={{ color: "white", marginBottom: "5px", display: "block" }}>Alert Name</label>
-    <div style={{
-      border: "1px solid black",
-      borderRadius: "10px",
-      padding: "10px",
-      minHeight: "80px",
-      background: "white"
-    }}>
-      {alert.name}
-    </div>
-  </div>
-
+ 
     <div style={{ marginBottom: "20px" }}>
     <label style={{ color: "white", marginBottom: "5px", display: "block" }}>Alert Description</label>
     <div style={{ 

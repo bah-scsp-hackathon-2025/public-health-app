@@ -1,10 +1,10 @@
 import { MapPin } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { fetchAlertByLocation, fetchAlerts, fetchSummary } from "../../common/api";
 import Chart from '../../components/Chart';
 import Map from '../../components/Map';
 import RegularAlertPane from "../../components/RegularAlertPane";
 import RegularNav from "../../components/RegularNav";
-import { fetchSummary, fetchAlertByLocation, fetchAlerts } from "../../common/api";
 
 
 const US_STATE_AND_TERRITORY_NAMES = [
@@ -141,7 +141,7 @@ function Dashboard() {
     </div>
 
         <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: "50px"}}>
-        <div style={{ background: "lightgrey", width: "80%", border: "1px solid black",  padding: "20px",
+        <div style={{ background: "#f0f0f0", width: "80%", border: "1px solid black",  padding: "20px",
         boxSizing: "border-box", height: "80%"}}>
             {summary.description}
         </div>
