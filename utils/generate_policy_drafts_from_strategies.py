@@ -11,6 +11,9 @@ The script processes:
 - First 3 alerts from dashboard.json 
 - Generates 12 policy drafts saved to policy_drafts.jsonl
 
+Each policy draft is appended to the output file immediately after generation
+for incremental progress tracking and resilience to failures.
+
 Usage:
     python utils/generate_policy_drafts_from_strategies.py
 
@@ -231,26 +234,42 @@ async def generate_policy_draft(agent: PolicyDraftGenerationAgent, strategy: Str
             "generated_timestamp": datetime.now().isoformat()
         }
 
-async def save_policy_drafts(policy_drafts: List[Dict[str, Any]]) -> None:
-    """Save policy drafts to JSONL file"""
+async def append_policy_draft(policy_draft: Dict[str, Any]) -> None:
+    """Append a single policy draft to the NDJSON file"""
     try:
         # Ensure output directory exists
         OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
         
-        with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
-            for policy_draft in policy_drafts:
-                json.dump(policy_draft, f, ensure_ascii=False)
-                f.write('\n')
+        # Append to file (create if doesn't exist)
+        with open(OUTPUT_FILE, 'a', encoding='utf-8') as f:
+            json.dump(policy_draft, f, ensure_ascii=False)
+            f.write('\n')
         
-        logger.info(f"💾 Saved {len(policy_drafts)} policy drafts to {OUTPUT_FILE}")
-        
-        # Show file size
-        file_size = OUTPUT_FILE.stat().st_size
-        file_size_mb = file_size / (1024 * 1024)
-        logger.info(f"📊 Output file size: {file_size_mb:.2f} MB")
+        # Log success
+        if 'error' in policy_draft:
+            logger.info(f"📝 Appended error record for policy #{policy_draft.get('global_strategy_number', 'unknown')}")
+        else:
+            logger.info(f"💾 Appended policy draft #{policy_draft.get('global_strategy_number', 'unknown')} to {OUTPUT_FILE}")
         
     except Exception as e:
-        logger.error(f"❌ Error saving policy drafts: {e}")
+        logger.error(f"❌ Error appending policy draft to file: {e}")
+        raise
+
+async def initialize_output_file() -> None:
+    """Initialize the output file by clearing it if it exists"""
+    try:
+        # Ensure output directory exists
+        OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Clear the file if it exists
+        if OUTPUT_FILE.exists():
+            OUTPUT_FILE.unlink()
+            logger.info(f"🗑️  Cleared existing output file: {OUTPUT_FILE}")
+        
+        logger.info(f"📁 Output file initialized: {OUTPUT_FILE}")
+        
+    except Exception as e:
+        logger.error(f"❌ Error initializing output file: {e}")
         raise
 
 async def main():
@@ -259,8 +278,14 @@ async def main():
     print("=" * 80)
     
     start_time = datetime.now()
+    successful_drafts = 0
+    failed_drafts = 0
     
     try:
+        # Initialize output file
+        logger.info("📁 Initializing output file...")
+        await initialize_output_file()
+        
         # Load data
         logger.info("📂 Loading data files...")
         strategies = await load_strategies()
@@ -278,35 +303,62 @@ async def main():
         logger.info("🤖 Initializing PolicyDraftGenerationAgent...")
         agent = PolicyDraftGenerationAgent()
         
-        # Generate policy drafts
+        # Generate policy drafts with incremental saving
         logger.info(f"📝 Generating {len(strategy_alert_pairs)} policy drafts...")
-        policy_drafts = []
         
         for i, (strategy_data, alert_data, alert_num, strategy_num, global_strategy_num) in enumerate(strategy_alert_pairs, 1):
             logger.info(f"\n🔄 Processing Policy #{global_strategy_num} ({i}/{len(strategy_alert_pairs)})")
             
-            # Convert to models
-            strategy = create_strategy_model(strategy_data)
-            alert = create_alert_model(alert_data)
-            
-            # Generate policy draft
-            policy_draft = await generate_policy_draft(agent, strategy, alert, alert_num, strategy_num, global_strategy_num)
-            policy_drafts.append(policy_draft)
-            
-            # Progress update
-            progress = (i / len(strategy_alert_pairs)) * 100
-            logger.info(f"📊 Progress: {progress:.1f}% ({i}/{len(strategy_alert_pairs)})")
-        
-        # Save results
-        logger.info("\n💾 Saving policy drafts...")
-        await save_policy_drafts(policy_drafts)
+            try:
+                # Convert to models
+                strategy = create_strategy_model(strategy_data)
+                alert = create_alert_model(alert_data)
+                
+                # Generate policy draft
+                policy_draft = await generate_policy_draft(agent, strategy, alert, alert_num, strategy_num, global_strategy_num)
+                
+                # Append to file immediately
+                await append_policy_draft(policy_draft)
+                
+                # Update counters
+                if 'error' in policy_draft:
+                    failed_drafts += 1
+                else:
+                    successful_drafts += 1
+                
+                # Progress update
+                progress = (i / len(strategy_alert_pairs)) * 100
+                logger.info(f"📊 Progress: {progress:.1f}% ({i}/{len(strategy_alert_pairs)}) - Success: {successful_drafts}, Failed: {failed_drafts}")
+                
+            except Exception as policy_error:
+                logger.error(f"❌ Unexpected error processing policy #{global_strategy_num}: {policy_error}")
+                
+                # Create error record and append it
+                error_record = {
+                    "error": f"Processing error: {str(policy_error)}",
+                    "alert_number": alert_num,
+                    "strategy_number": strategy_num,
+                    "global_strategy_number": global_strategy_num,
+                    "source_alert_name": alert_data.get('name', 'Unknown') if alert_data else 'Unknown',
+                    "source_strategy_description": strategy_data.get('short_description', 'Unknown') if strategy_data else 'Unknown',
+                    "generated_timestamp": datetime.now().isoformat()
+                }
+                
+                try:
+                    await append_policy_draft(error_record)
+                    failed_drafts += 1
+                except Exception as append_error:
+                    logger.error(f"❌ Failed to append error record: {append_error}")
         
         # Final summary
         end_time = datetime.now()
         total_time = (end_time - start_time).total_seconds()
         
-        successful_drafts = len([p for p in policy_drafts if 'error' not in p])
-        failed_drafts = len([p for p in policy_drafts if 'error' in p])
+        # Show file size
+        if OUTPUT_FILE.exists():
+            file_size = OUTPUT_FILE.stat().st_size
+            file_size_mb = file_size / (1024 * 1024)
+            logger.info(f"📊 Output file size: {file_size_mb:.2f} MB")
         
         print("\n" + "=" * 80)
         print("📊 FINAL SUMMARY")
@@ -315,12 +367,15 @@ async def main():
         print(f"❌ Failed policy drafts: {failed_drafts}")
         print(f"📁 Output file: {OUTPUT_FILE}")
         print(f"⏱️  Total processing time: {total_time/60:.1f} minutes")
-        print(f"⚡ Average time per draft: {total_time/len(strategy_alert_pairs):.1f} seconds")
+        
+        if len(strategy_alert_pairs) > 0:
+            print(f"⚡ Average time per draft: {total_time/len(strategy_alert_pairs):.1f} seconds")
         
         if successful_drafts == len(strategy_alert_pairs):
             print("🎉 All policy drafts generated successfully!")
         elif successful_drafts > 0:
             print("⚠️  Some policy drafts generated successfully, check logs for errors")
+            print(f"💡 You can monitor progress by running: tail -f {OUTPUT_FILE}")
         else:
             print("❌ No policy drafts generated successfully")
             
