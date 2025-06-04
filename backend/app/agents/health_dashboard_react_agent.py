@@ -28,6 +28,9 @@ from pydantic import BaseModel, Field
 from operator import add
 from typing import Dict, List, Optional, Annotated, Any, TypedDict
 
+# Import models
+from app.models.alert import AlertCreate
+
 # Langfuse imports
 from langfuse.callback import CallbackHandler
 
@@ -119,6 +122,7 @@ class ReActState(TypedDict):
     epi_signals: Annotated[List[Dict[str, Any]], add]  # Store as dicts for JSON compatibility
     trend_analyses: Annotated[List[Dict[str, Any]], add]  # Store as dicts for JSON compatibility
     fetch_epi_signal_data: Annotated[List[Dict[str, Any]], add]  # Store raw fetch_epi_signal results for trends output
+    alerts: Annotated[List[Dict[str, Any]], add]  # Store generated alerts
     
     # Tool execution state
     tool_results: List[Dict[str, Any]]  # Raw tool results from reasoning node (don't accumulate, always replace)
@@ -623,6 +627,7 @@ Respond with either:
             new_epi_signals = []
             new_trend_analyses = []
             new_fetch_epi_signal_data = []
+            new_alerts = []
             
             for tool_result in tool_results:
                 tool_name = tool_result.get("tool_name", "unknown")
@@ -663,8 +668,14 @@ Respond with either:
                     if trend_data:
                         new_trend_analyses.append(trend_data.dict())
                         logger.debug(f"Stored trend analysis: {trend_data.signal_name}")
+                        
+                        # Generate alert for this trend detection
+                        alert = await self._generate_alert_for_trend(trend_data, tool_result.get("tool_args", {}), state)
+                        if alert:
+                            new_alerts.append(alert)
+                            logger.debug(f"🚨 Generated alert: {alert.get('name', 'Unknown')} (risk: {alert.get('risk_score', 0)})")
             
-            logger.debug(f"✅ Processed all tool results. New signals: {len(new_epi_signals)}, New trends: {len(new_trend_analyses)}, New fetch data: {len(new_fetch_epi_signal_data)}")
+            logger.debug(f"✅ Processed all tool results. New signals: {len(new_epi_signals)}, New trends: {len(new_trend_analyses)}, New fetch data: {len(new_fetch_epi_signal_data)}, New alerts: {len(new_alerts)}")
             
             # Return partial state update
             return {
@@ -673,7 +684,8 @@ Respond with either:
                 "tools_used": new_tools_used,  # LangGraph will append to existing list
                 "epi_signals": new_epi_signals,  # LangGraph will append to existing list
                 "trend_analyses": new_trend_analyses,  # LangGraph will append to existing list
-                "fetch_epi_signal_data": new_fetch_epi_signal_data  # LangGraph will append to existing list
+                "fetch_epi_signal_data": new_fetch_epi_signal_data,  # LangGraph will append to existing list
+                "alerts": new_alerts  # LangGraph will append to existing list
             }
             
         except Exception as e:
@@ -919,6 +931,161 @@ Respond with either:
             logger.warning(f"⚠️ Could not parse trend analysis output: {str(e)}")
             logger.debug(f"🔍 Content that failed to parse: {content[:200]}...")
             return None
+    
+    async def _generate_alert_for_trend(self, trend_data: TrendAnalysisData, tool_args: Dict[str, Any], state: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Generate an alert based on trend analysis results using LLM"""
+        try:
+            logger.debug(f"🚨 Generating alert for trend: {trend_data.signal_name} with {trend_data.rising_periods}/{trend_data.total_periods} rising periods")
+            
+            # Get policy document file IDs
+            policy_file_ids = await self._get_policy_file_ids()
+            
+            # Build alert generation prompt
+            alert_prompt = self._build_alert_generation_prompt(trend_data, tool_args, state, policy_file_ids)
+            
+            system_content = """You are a Public Health Alert Generator AI. Your task is to generate actionable alerts based on rising trend detection results.
+
+CRITICAL REQUIREMENTS:
+1. Generate alerts ONLY when there are genuine public health concerns
+2. Base risk scores on actual epidemiological evidence and trend strength
+3. Use policy documents to ensure alerts align with official public health guidelines
+4. Provide specific, actionable information for public health officials
+
+ALERT CRITERIA:
+- Risk Score 1-3: Minor trends, informational alerts
+- Risk Score 4-6: Moderate trends requiring monitoring
+- Risk Score 7-10: Significant trends requiring immediate action
+
+You must respond with a JSON object matching this exact structure:
+{
+  "name": "Brief alert title (max 100 chars)",
+  "description": "Detailed alert description with specific metrics and context",
+  "risk_score": 1-10,
+  "risk_reason": "Explanation of why this risk score was assigned",
+  "location": "Geographic location (state/region)",
+  "latitude": "Latitude coordinate",
+  "longitude": "Longitude coordinate"
+}
+
+Use the policy documents provided to ensure your recommendations and risk assessments align with official guidelines."""
+
+            messages = [
+                SystemMessage(content=system_content),
+                HumanMessage(content=alert_prompt)
+            ]
+            
+            # Generate alert using LLM with policy files
+            if policy_file_ids:
+                logger.debug(f"📄 Including {len(policy_file_ids)} policy documents in alert generation")
+                response = await self._invoke_with_files(messages, policy_file_ids)
+            else:
+                logger.debug("📄 No policy documents found, proceeding without files")
+                callbacks = [self.langfuse_handler] if self.langfuse_handler else []
+                config = {"callbacks": callbacks} if callbacks else {}
+                response = await self.llm.ainvoke(messages, config=config)
+            
+            # Extract and parse response content
+            response_text = ""
+            if hasattr(response, 'content'):
+                if isinstance(response.content, list):
+                    for item in response.content:
+                        if isinstance(item, dict) and item.get('type') == 'text':
+                            response_text += item.get('text', '')
+                        elif hasattr(item, 'text'):
+                            response_text += item.text
+                else:
+                    response_text = str(response.content)
+            else:
+                response_text = str(response)
+            
+            # Parse JSON response
+            import json
+            import re
+            
+            # Try to extract JSON from response
+            json_match = re.search(r'\{[^{}]*"name"[^{}]*\}', response_text, re.DOTALL)
+            if json_match:
+                try:
+                    alert_data = json.loads(json_match.group())
+                    
+                    # Validate required fields
+                    required_fields = ["name", "description", "risk_score", "risk_reason", "location", "latitude", "longitude"]
+                    if all(field in alert_data for field in required_fields):
+                        # Create AlertCreate object to validate structure
+                        alert_create = AlertCreate(**alert_data)
+                        
+                        logger.debug(f"✅ Generated alert: {alert_create.name} (risk score: {alert_create.risk_score})")
+                        return alert_create.dict()
+                    else:
+                        missing_fields = [f for f in required_fields if f not in alert_data]
+                        logger.warning(f"⚠️ Alert missing required fields: {missing_fields}")
+                        
+                except json.JSONDecodeError as e:
+                    logger.warning(f"⚠️ Could not parse alert JSON: {e}")
+            else:
+                logger.warning(f"⚠️ No valid JSON found in alert response: {response_text[:200]}...")
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"❌ Error generating alert: {str(e)}")
+            return None
+    
+    def _build_alert_generation_prompt(self, trend_data: TrendAnalysisData, tool_args: Dict[str, Any], state: Dict[str, Any], policy_file_ids: Optional[List[str]] = None) -> str:
+        """Build prompt for alert generation based on trend analysis"""
+        prompt_parts = [
+            "Generate a public health alert based on the following rising trend detection:\n"
+        ]
+        
+        # Add policy document information if available
+        if policy_file_ids:
+            prompt_parts.append(f"POLICY DOCUMENTS: {len(policy_file_ids)} COVID-19 policy briefs are attached.")
+            prompt_parts.append("Reference these documents for guidance on alert thresholds and response protocols.\n")
+        
+        # Add trend analysis details
+        prompt_parts.append("TREND ANALYSIS RESULTS:")
+        prompt_parts.append(f"- Signal: {trend_data.signal_name}")
+        prompt_parts.append(f"- Rising Periods: {trend_data.rising_periods} out of {trend_data.total_periods}")
+        prompt_parts.append(f"- Risk Level: {trend_data.risk_level}")
+        prompt_parts.append(f"- Trend Strength: {trend_data.trend_strength}")
+        
+        # Add tool arguments context
+        if tool_args:
+            prompt_parts.append(f"\nDATA CONTEXT:")
+            prompt_parts.append(f"- Geographic Area: {tool_args.get('geo_value', 'Unknown').upper()}")
+            prompt_parts.append(f"- Time Period: {tool_args.get('start_time', '')} to {tool_args.get('end_time', '')}")
+            prompt_parts.append(f"- Data Type: {tool_args.get('time_type', 'daily')}")
+        
+        # Add other intelligence gathered
+        epi_signals = state.get("epi_signals", [])
+        if epi_signals:
+            prompt_parts.append(f"\nRELATED EPIDEMIOLOGICAL DATA:")
+            for signal in epi_signals[-3:]:  # Last 3 signals
+                prompt_parts.append(f"- {signal.get('display_name', 'Unknown')}: {signal.get('trend_direction', 'unknown')} trend")
+        
+        # Geographic coordinates mapping (simplified - you may want to expand this)
+        geo_coordinates = {
+            "ca": ("36.7783", "-119.4179"),
+            "ny": ("40.7128", "-74.0060"), 
+            "tx": ("31.9686", "-99.9018"),
+            "fl": ("27.7663", "-82.6404"),
+            "us": ("39.8283", "-98.5795"),  # Center of US
+        }
+        
+        geo_value = tool_args.get('geo_value', 'us').lower()
+        lat, lon = geo_coordinates.get(geo_value, ("39.8283", "-98.5795"))
+        
+        prompt_parts.append(f"\nGEOGRAPHIC CONTEXT:")
+        prompt_parts.append(f"- Location: {geo_value.upper()}")
+        prompt_parts.append(f"- Suggested Coordinates: {lat}, {lon}")
+        
+        prompt_parts.append(f"\nALERT GENERATION GUIDELINES:")
+        prompt_parts.append("- Only generate alerts for significant public health concerns")
+        prompt_parts.append("- Risk score should reflect actual epidemiological evidence")
+        prompt_parts.append("- Include specific metrics and actionable recommendations")
+        prompt_parts.append("- Reference policy guidelines when available")
+        
+        return "\n".join(prompt_parts)
     
     async def _final_analysis_node(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """Assemble final dashboard analysis from collected structured data"""
@@ -1224,6 +1391,7 @@ An error occurred while generating the epidemiological dashboard:
                 "epi_signals": [],
                 "trend_analyses": [],
                 "fetch_epi_signal_data": [],
+                "alerts": [],
                 "tool_results": [],
                 "has_tool_results": False,
                 "reasoning_steps": [],
@@ -1271,7 +1439,7 @@ An error occurred while generating the epidemiological dashboard:
                 "tools_used": final_state.get("tools_used", []),
                 
                 # Enhanced structured data directly from typed state
-                "alerts": [],  # ReAct agent focuses on epidemiological data, not alerts
+                "alerts": final_state.get("alerts", []),  # Generated alerts from trend detections
                 "rising_trends": self._format_rising_trends_from_state(final_state),
                 "epidemiological_signals": self._format_epi_signals_from_state(final_state),
                 "risk_assessment": final_state.get("risk_assessment", {}),
