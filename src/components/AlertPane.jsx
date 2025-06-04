@@ -9,8 +9,8 @@ function AlertCard({ alert, onClick }) {
   );
 }
 
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
 import { fetchAlerts } from "../common/api";
 
 function AlertPane() {
@@ -40,6 +40,7 @@ function AlertPane() {
         width: "600px",
         backgroundColor: "#f0f0f0",
         border: "1px solid black",
+        overflow: "auto"
       }}
     >
       <div style={{ display: "flex", justifyContent: "center" }}>

@@ -98,7 +98,7 @@ function Alert() {
         padding: "10px", 
         minHeight: "80px",
         background: "white",
-        color: "red",
+        color: alert.risk_score < 4 ? "green" : alert.risk_score < 7 ? "orange" : "red",
         fontWeight: "bold",
         fontSize: "50px",
         display: "flex",
