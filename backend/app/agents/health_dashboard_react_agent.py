@@ -119,24 +119,24 @@ class ReActState(TypedDict):
     end_date: str    # Format: YYYY-MM-DD
     
     # Tool data storage
-    epi_signals: List[Dict[str, Any]]  # Store as dicts for JSON compatibility
-    trend_analyses: List[Dict[str, Any]]  # Store as dicts for JSON compatibility
-    fetch_epi_signal_data: List[Dict[str, Any]]  # Store raw fetch_epi_signal results for trends output
+    epi_signals: Annotated[List[Dict[str, Any]], add]  # Store as dicts for JSON compatibility
+    trend_analyses: Annotated[List[Dict[str, Any]], add]  # Store as dicts for JSON compatibility
+    fetch_epi_signal_data: Annotated[List[Dict[str, Any]], add]  # Store raw fetch_epi_signal results for trends output
     
     # Tool execution state
-    tool_results: List[Dict[str, Any]]  # Raw tool results from reasoning node
+    tool_results: List[Dict[str, Any]]  # Raw tool results from reasoning node (don't accumulate, always replace)
     has_tool_results: bool  # Flag to indicate if tool results need processing
     
     # Analysis state
-    reasoning_steps: List[str]
-    tools_used: List[str]
+    reasoning_steps: Annotated[List[str], add]
+    tools_used: Annotated[List[str], add]
     tool_call_counts: Dict[str, int]  # Track how many times each tool has been called
     analysis_complete: bool
     
     # Final outputs
     dashboard_summary: Optional[str]
     risk_assessment: Dict[str, Any]
-    recommendations: List[Dict[str, Any]]
+    recommendations: Annotated[List[Dict[str, Any]], add]
     error_message: Optional[str]
     timestamp: str
 
@@ -655,6 +655,10 @@ Respond with either:
                                 "timestamp": datetime.now().isoformat()
                             })
                             logger.debug(f"Stored raw fetch_epi_signal data for trends output")
+                        else:
+                            logger.debug(f"fetch_epi_signal has_data=True but raw_result is empty")
+                    else:
+                        logger.debug(f"fetch_epi_signal call has_data=False, not storing for trends")
                 
                 # Process detect_rising_trend outputs
                 elif tool_name == "detect_rising_trend":
@@ -1184,7 +1188,10 @@ An error occurred while generating the epidemiological dashboard:
         """Format trends from raw fetch_epi_signal data into TrendResponse objects"""
         trends = []
         
-        for fetch_data in state.get("fetch_epi_signal_data", []):
+        fetch_data_list = state.get("fetch_epi_signal_data", [])
+        logger.debug(f"🔍 Processing {len(fetch_data_list)} fetch_epi_signal results for trends output")
+        
+        for fetch_data in fetch_data_list:
             try:
                 # Create TrendResponse object with the raw data
                 trend_response = TrendResponse(data=fetch_data)
@@ -1196,7 +1203,7 @@ An error occurred while generating the epidemiological dashboard:
                 logger.warning(f"⚠️ Could not create TrendResponse from fetch data: {str(e)}")
                 continue
         
-        logger.debug(f"✅ Formatted {len(trends)} trends from {len(state.get('fetch_epi_signal_data', []))} fetch_epi_signal results")
+        logger.debug(f"✅ Formatted {len(trends)} trends from {len(fetch_data_list)} fetch_epi_signal results")
         return trends
 
 
