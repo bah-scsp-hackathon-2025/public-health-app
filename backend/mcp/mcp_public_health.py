@@ -99,16 +99,29 @@ def fetch_epi_signal(
         "time_type": time_type,
         "geo_type": geo_type,
         "time_values": start_time + "-" + end_time,  # Combine start_time and end_time
-        "as_of": end_time,  # Use the end_time as the 'as_of' date
+        # "as_of": end_time,  # Use the end_time as the 'as_of' date
         "geo_value": {geo_value},
     }
     response = requests.get(BASE_URL, params=params, verify=False) # Disable SSL verification for testing purposes
     if as_json:
         response.raise_for_status()
-        json_response = response.json()
+        json_response = response.json()["epidata"]
         # Limit the json response to 'time_value' and 'value' keys:
-        json_response = {k: v for k, v in json_response.items() if k in ['time_value', 'value']}
-        return json_response
+        # json_response = {k: v for k, v in json_response.items() if k in ['time_value', 'value']}
+        # Convert the json_response to a pandas dataframe
+        df = pd.DataFrame(json_response)
+        # Convert the time_value column to datetime
+        if not df.empty:
+            df['time_value'] = pd.to_datetime(df['time_value'], format='%Y%m%d')
+            # Sort the dataframe by time_value
+            df = df.sort_values('time_value')
+            df = df[['time_value', 'value', 'geo_value']]
+            # write the dataframe to a csv file
+            temp_dir = tempfile.gettempdir()
+            csv_file = os.path.join(temp_dir, f"{signal}_data.csv")
+            df.to_csv(csv_file, index=False)
+        # Return the dataframe
+        return df.to_json(orient='records')
     
 
 @mcp.tool()
