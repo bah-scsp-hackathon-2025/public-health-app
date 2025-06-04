@@ -12,7 +12,7 @@ function Alert() {
   const navigate = useNavigate()
 
   const goToDashboard = () => {
-    navigate('/dashboard')
+    navigate('/dashboard', )
   }
 
     const [policies, setPolicies] = useState([]);
@@ -92,16 +92,24 @@ function Alert() {
   <div style={{ display: "flex", gap: "10px" }}>
     <div style={{ flex: "1" }}>
       <label style={{ color: "white", marginBottom: "5px", display: "block" }}>Risk Score</label>
-      <div style={{ 
+     <div style={{ 
         border: "1px solid black", 
         borderRadius: "10px", 
         padding: "10px", 
         minHeight: "80px",
-        background: "white" 
+        background: "white",
+        color: "red",
+        fontWeight: "bold",
+        fontSize: "50px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        textAlign: "center",
       }}>
         {alert.risk_score}
       </div>
     </div>
+
 
     <div style={{ flex: "2" }}>
       <label style={{ color: "white", marginBottom: "5px", display: "block" }}>Risk Score Reasoning</label>

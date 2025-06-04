@@ -1,29 +1,64 @@
 import { useEffect, useState } from "react";
-import { fetchSummaries } from "../../common/api";
+import { fetchSummaries, fetchTrends } from "../../common/api";
 import AdminNav from "../../components/AdminNav";
 import AlertPane from "../../components/AlertPane";
 import Chart from "../../components/Chart";
+import ChartHeader from "../../components/ChartHeader";
 import Map from "../../components/Map";
 
-function YouTubeEmbed() {
-  return (
-    <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
-      <iframe
-        src="https://www.youtube.com/embed/YdbQ1d0OBt0"
-        title="YouTube video"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-        }}
-      />
-    </div>
-  );
-}
+const STATE_ABBR_TO_NAME = {
+  AL: "Alabama",
+  AK: "Alaska",
+  AZ: "Arizona",
+  AR: "Arkansas",
+  CA: "California",
+  CO: "Colorado",
+  CT: "Connecticut",
+  DE: "Delaware",
+  FL: "Florida",
+  GA: "Georgia",
+  HI: "Hawaii",
+  ID: "Idaho",
+  IL: "Illinois",
+  IN: "Indiana",
+  IA: "Iowa",
+  KS: "Kansas",
+  KY: "Kentucky",
+  LA: "Louisiana",
+  ME: "Maine",
+  MD: "Maryland",
+  MA: "Massachusetts",
+  MI: "Michigan",
+  MN: "Minnesota",
+  MS: "Mississippi",
+  MO: "Missouri",
+  MT: "Montana",
+  NE: "Nebraska",
+  NV: "Nevada",
+  NH: "New Hampshire",
+  NJ: "New Jersey",
+  NM: "New Mexico",
+  NY: "New York",
+  NC: "North Carolina",
+  ND: "North Dakota",
+  OH: "Ohio",
+  OK: "Oklahoma",
+  OR: "Oregon",
+  PA: "Pennsylvania",
+  RI: "Rhode Island",
+  SC: "South Carolina",
+  SD: "South Dakota",
+  TN: "Tennessee",
+  TX: "Texas",
+  UT: "Utah",
+  VT: "Vermont",
+  VA: "Virginia",
+  WA: "Washington",
+  WV: "West Virginia",
+  WI: "Wisconsin",
+  WY: "Wyoming",
+  DC: "District of Columbia",
+};
 
 function AdminDashboard() {
   const [summary, setSummary] = useState([]);
@@ -38,6 +73,42 @@ function AdminDashboard() {
     };
     getSummary();
   }, []);
+
+  const [trends, setTrends] = useState([]);
+  
+  useEffect(() => {
+    const getTrends = async () => {
+      const result = await fetchTrends();
+  
+      if (!Array.isArray(result)) {
+        console.error("Expected array from fetchTrends, got:", result);
+        setTrends([]);
+        return;
+      }
+  
+      const trend_data = result
+        .map((item, i) => {
+          if (item?.data) {
+            try {
+              return JSON.parse(item.data);
+            } catch (e) {
+              console.error(`Error parsing trend.data at index ${i}:`, item.data);
+              return null;
+            }
+          } else {
+            console.warn(`Missing .data in item at index ${i}:`, item);
+            return null;
+          }
+        })
+        .filter(Boolean); // Remove nulls
+  
+      console.log("Parsed trend data:", trend_data);
+      setTrends(trend_data);
+    };
+  
+    getTrends();
+  }, []);
+  
 
 
   return (
@@ -68,6 +139,7 @@ function AdminDashboard() {
           display: "flex",
           justifyContent: "center",
           marginTop: "50px",
+          marginBottom: "50px"
         }}
       >
         <div
@@ -80,34 +152,35 @@ function AdminDashboard() {
             height: "80%",
           }}
         >
+           <h2
+          style={{
+            color: "#191970",
+            borderBottom: "1px solid black",
+            textAlign: "center",
+            width: "100%",
+          }}
+        >
+          Summary
+          </h2>
           {summary.description}...
         </div>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          gap: "50px",
-          marginLeft: "50px",
-          marginTop: "100px",
-        }}
-      >
-        <Chart />
-        <Chart />
+     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+  {trends.map((trend, index) => {
+    const chartData = trend.result.map(point => ({
+      time: point.time_value,
+      value: point.value,
+    }));
+
+    return (
+      <div key={index} style={{ marginBottom: "70px", width: "60%" }}>
+        <ChartHeader signalName={trend.tool_args.signal} stateAcronym={trend.tool_args.geo_value} />
+        <Chart data={chartData} signalName={trend.tool_args.signal} />
       </div>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          gap: "50px",
-          marginLeft: "50px",
-        }}
-      >
-        <Chart />
-        <Chart />
-      </div>
-      <YouTubeEmbed></YouTubeEmbed>
+    );
+  })}
+</div>
 </div>
   
   );
