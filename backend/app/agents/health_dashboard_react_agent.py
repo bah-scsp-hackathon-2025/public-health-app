@@ -111,6 +111,10 @@ class ReActState(TypedDict):
     messages: Annotated[List[BaseMessage], add]
     current_request: str
     
+    # Date constraints
+    start_date: str  # Format: YYYY-MM-DD
+    end_date: str    # Format: YYYY-MM-DD
+    
     # Tool data storage
     epi_signals: List[Dict[str, Any]]  # Store as dicts for JSON compatibility
     trend_analyses: List[Dict[str, Any]]  # Store as dicts for JSON compatibility
@@ -122,6 +126,7 @@ class ReActState(TypedDict):
     # Analysis state
     reasoning_steps: List[str]
     tools_used: List[str]
+    tool_call_counts: Dict[str, int]  # Track how many times each tool has been called
     analysis_complete: bool
     
     # Final outputs
@@ -297,30 +302,50 @@ Available tools:
 - fetch_epi_signal: Get epidemiological data (for various signals and date ranges)
 - detect_rising_trend: Analyze time series data for rising trends
 
+CRITICAL DATE CONSTRAINTS:
+- Analysis period: {start_date} to {end_date}
+- ALL tool calls must use these exact dates as start_time and end_time parameters
+- Date format for tools: YYYYMMDD (e.g., "20200201" for 2020-02-01)
+- Do NOT request data outside this date range under any circumstances
+
 Analysis approach:
 1. Start by fetching key epidemiological signals (described by the fetch_epi_signal tool)
-2. Analyze trends using detect_rising_trend for concerning patterns
+2. Analyze trends using detect_rising_trend for concerning patterns  
 3. Once you have sufficient data obtained, provide comprehensive final dashboard analysis
 
 Current state analysis:
+- Analysis period: {start_date} to {end_date}
+- Required date format for tools: {start_date_tool} to {end_date_tool} (YYYYMMDD)
 - Epidemiological signals collected: {signal_count}
 - Trend analyses completed: {trend_count}
 - Tools used so far: {tools_used}
+- Tool call limits: fetch_epi_signal ({fetch_calls}/5), detect_rising_trend ({trend_calls}/5)
 
 Decision rules:
-- If no data collected yet, start with fetch_epi_signal for key indicators
-- If you have signal data but no trend analysis, use detect_rising_trend
+- If no data collected yet, start with fetch_epi_signal for key indicators (max 5 calls)
+- If you have signal data but no trend analysis, use detect_rising_trend (max 5 calls)
 - If you have both signals and trends, proceed to final analysis
 - If analysis_complete is True, proceed to final analysis
+- If tool call limits reached (5 each), proceed to final analysis with available data
+- ALWAYS use start_time={start_date_tool} and end_time={end_date_tool} in ALL tool calls
 - DO NOT generate or create any data, MUST only rely on the tools to get any signals and trends and data points
 - You MUST use the tools, and ONLY the tools as a data source for signals and trends and data points
 
+EXAMPLE TOOL CALL (with correct date format):
+fetch_epi_signal(signal="confirmed_7dav_incidence_prop", time_type="day", geo_type="state", start_time="{start_date_tool}", end_time="{end_date_tool}")
+
 Respond with either:
-1. Tool calls to gather initial or more data
+1. Tool calls to gather initial or more data (respecting call limits and date constraints)
 2. "ANALYSIS_COMPLETE" if ready for final synthesis""".format(
+                start_date=state.get("start_date", "2020-02-01"),
+                end_date=state.get("end_date", "2022-02-01"),
+                start_date_tool=state.get("start_date", "2020-02-01").replace("-", ""),
+                end_date_tool=state.get("end_date", "2022-02-01").replace("-", ""),
                 signal_count=len(state.get("epi_signals", [])),
                 trend_count=len(state.get("trend_analyses", [])),
-                tools_used=", ".join(state.get("tools_used", [])) if state.get("tools_used") else "none"
+                tools_used=", ".join(state.get("tools_used", [])) if state.get("tools_used") else "none",
+                fetch_calls=state.get("tool_call_counts", {}).get("fetch_epi_signal", 0),
+                trend_calls=state.get("tool_call_counts", {}).get("detect_rising_trend", 0)
             ))
             
             # Add conversation context
@@ -339,12 +364,52 @@ Respond with either:
             if response.tool_calls:
                 logger.debug(f"🔧 LLM requested {len(response.tool_calls)} tool calls")
                 
-                # Execute tools directly and create tool result messages
+                # Check current limits for informational purposes
+                current_counts = state.get("tool_call_counts", {})
+                
+                # Execute all requested tools first, then count only successful ones
                 tool_results = []
                 tool_messages = []
+                successful_calls_by_tool = {}  # Track successful calls per tool type
                 
                 for tool_call in response.tool_calls:
-                    logger.debug(f"Executing tool: {tool_call['name']} with args: {tool_call['args']}")
+                    tool_name = tool_call['name']
+                    current_count = current_counts.get(tool_name, 0)
+                    
+                    # Check if we're already at limit for this tool
+                    if current_count >= 5:
+                        logger.warning(f"⚠️ Skipping {tool_name} call - limit reached (5/5)")
+                        # Create an error message for the skipped call
+                        error_result = f"Tool call skipped: {tool_name} limit reached (5/5)"
+                        tool_result = {
+                            "tool_call_id": tool_call.get('id', f"call_{tool_call['name']}"),
+                            "tool_name": tool_name,
+                            "tool_args": tool_call['args'],
+                            "result": error_result,
+                            "skipped": True
+                        }
+                        tool_results.append(tool_result)
+                        
+                        tool_message = ToolMessage(
+                            content=error_result,
+                            tool_call_id=tool_call.get('id', f"call_{tool_call['name']}"),
+                            name=tool_name
+                        )
+                        tool_messages.append(tool_message)
+                        continue
+                    
+                    logger.debug(f"Executing tool: {tool_name} with args: {tool_call['args']}")
+                    
+                    # Validate date parameters for tools that use dates
+                    if tool_name in ["fetch_epi_signal", "detect_rising_trend"]:
+                        expected_start = state.get("start_date", "2020-02-01").replace("-", "")
+                        expected_end = state.get("end_date", "2022-02-01").replace("-", "")
+                        
+                        tool_args = tool_call['args']
+                        if 'start_time' in tool_args and tool_args['start_time'] != expected_start:
+                            logger.warning(f"⚠️ Tool {tool_name} using start_time {tool_args['start_time']}, expected {expected_start}")
+                        if 'end_time' in tool_args and tool_args['end_time'] != expected_end:
+                            logger.warning(f"⚠️ Tool {tool_name} using end_time {tool_args['end_time']}, expected {expected_end}")
                     
                     # Find the tool by name
                     tool = next((t for t in self.tools if t.name == tool_call['name']), None)
@@ -352,11 +417,16 @@ Respond with either:
                         try:
                             # Execute the tool
                             result = await tool.ainvoke(tool_call['args'])
+                            
+                            # Check if the result contains useful data
+                            has_useful_data = self._check_tool_result_has_data(tool_name, result)
+                            
                             tool_result = {
                                 "tool_call_id": tool_call.get('id', f"call_{tool_call['name']}"),
-                                "tool_name": tool_call['name'],
+                                "tool_name": tool_name,
                                 "tool_args": tool_call['args'],
-                                "result": result
+                                "result": result,
+                                "has_data": has_useful_data
                             }
                             tool_results.append(tool_result)
                             
@@ -364,19 +434,25 @@ Respond with either:
                             tool_message = ToolMessage(
                                 content=str(result),
                                 tool_call_id=tool_call.get('id', f"call_{tool_call['name']}"),
-                                name=tool_call['name']
+                                name=tool_name
                             )
                             tool_messages.append(tool_message)
                             
-                            logger.debug(f"✅ Tool {tool_call['name']} executed successfully")
+                            # Only count successful calls with data against the limit
+                            if has_useful_data:
+                                successful_calls_by_tool[tool_name] = successful_calls_by_tool.get(tool_name, 0) + 1
+                                logger.debug(f"✅ Tool {tool_name} executed successfully with data (counted)")
+                            else:
+                                logger.debug(f"⚠️ Tool {tool_name} executed but returned no useful data (not counted)")
                         except Exception as e:
-                            logger.error(f"❌ Tool {tool_call['name']} failed: {str(e)}")
+                            logger.error(f"❌ Tool {tool_name} failed: {str(e)}")
                             error_result = f"Error: {str(e)}"
                             tool_result = {
                                 "tool_call_id": tool_call.get('id', f"call_{tool_call['name']}"),
-                                "tool_name": tool_call['name'],
+                                "tool_name": tool_name,
                                 "tool_args": tool_call['args'],
-                                "result": error_result
+                                "result": error_result,
+                                "has_data": False  # Failed calls don't count
                             }
                             tool_results.append(tool_result)
                             
@@ -384,17 +460,19 @@ Respond with either:
                             tool_message = ToolMessage(
                                 content=error_result,
                                 tool_call_id=tool_call.get('id', f"call_{tool_call['name']}"),
-                                name=tool_call['name']
+                                name=tool_name
                             )
                             tool_messages.append(tool_message)
+                            # Failed calls don't count against the limit
                     else:
-                        logger.error(f"❌ Tool {tool_call['name']} not found")
-                        error_result = f"Error: Tool {tool_call['name']} not found"
+                        logger.error(f"❌ Tool {tool_name} not found")
+                        error_result = f"Error: Tool {tool_name} not found"
                         tool_result = {
                             "tool_call_id": tool_call.get('id', f"call_{tool_call['name']}"),
-                            "tool_name": tool_call['name'],
+                            "tool_name": tool_name,
                             "tool_args": tool_call['args'],
-                            "result": error_result
+                            "result": error_result,
+                            "has_data": False  # Tool not found doesn't count
                         }
                         tool_results.append(tool_result)
                         
@@ -402,17 +480,25 @@ Respond with either:
                         tool_message = ToolMessage(
                             content=error_result,
                             tool_call_id=tool_call.get('id', f"call_{tool_call['name']}"),
-                            name=tool_call['name']
+                            name=tool_name
                         )
                         tool_messages.append(tool_message)
                 
+                # Update tool call counts only for successful calls with data
+                updated_counts = current_counts.copy()
+                for tool_name, success_count in successful_calls_by_tool.items():
+                    updated_counts[tool_name] = updated_counts.get(tool_name, 0) + success_count
+                
                 # Return partial state update - LangGraph will merge automatically
-                logger.debug(f"✅ Stored {len(tool_results)} tool results and added {len(tool_messages)} tool messages to conversation")
+                successful_count = sum(successful_calls_by_tool.values())
+                logger.debug(f"✅ Stored {len(tool_results)} tool results ({successful_count} successful with data)")
+                logger.debug(f"📊 Updated tool call counts: {updated_counts}")
                 return {
                     "messages": [response] + tool_messages,
                     "tool_results": tool_results,
                     "has_tool_results": True,
-                    "reasoning_steps": [reasoning_step]
+                    "reasoning_steps": [reasoning_step],
+                    "tool_call_counts": updated_counts
                 }
             else:
                 # No tool calls made, just add the response
@@ -440,18 +526,83 @@ Respond with either:
         if state.get("analysis_complete") or "ANALYSIS_COMPLETE" in str(state["messages"][-1].content):
             return "final_analysis"
         
+        # Check tool call limits
+        tool_counts = state.get("tool_call_counts", {})
+        fetch_count = tool_counts.get("fetch_epi_signal", 0)
+        trend_count = tool_counts.get("detect_rising_trend", 0)
+        
+        # If all tool limits reached, proceed to final analysis
+        if fetch_count >= 5 and trend_count >= 5:
+            logger.warning("⚠️ All tool call limits reached, proceeding to final analysis")
+            return "final_analysis"
+        
         # Check for sufficient data to conclude
         if len(state.get("epi_signals", [])) >= 2 and len(state.get("trend_analyses", [])) >= 1:
             return "final_analysis"
         
-        # If we have some signals but no trends, continue reasoning to get trends
+        # If we have some signals but no trends, and trend tool not maxed out, continue reasoning
         if (len(state.get("epi_signals", [])) > 0 and 
-            len(state.get("trend_analyses", [])) == 0):
+            len(state.get("trend_analyses", [])) == 0 and
+            trend_count < 5):
             # Continue reasoning to analyze trends (will trigger tool calls)
             return "final_analysis"  # Let reasoning decide if more tools needed
         
-        # Default to final analysis if unclear
+        # Default to final analysis
         return "final_analysis"
+    
+    def _check_tool_result_has_data(self, tool_name: str, result: Any) -> bool:
+        """Check if a tool result contains useful data that should count against limits"""
+        try:
+            result_str = str(result).lower()
+            
+            # Check for common error patterns
+            error_patterns = [
+                "error",
+                "failed",
+                "no data",
+                "empty",
+                "null",
+                "none",
+                "not found",
+                "unavailable",
+                "timeout",
+                "connection",
+                "exception"
+            ]
+            
+            # If result contains error patterns, it's not useful data
+            for pattern in error_patterns:
+                if pattern in result_str:
+                    return False
+            
+            # Tool-specific checks
+            if tool_name == "fetch_epi_signal":
+                # Check if we got actual signal data
+                if isinstance(result, dict):
+                    # Look for data indicators in the response
+                    has_data_keys = any(key in result for key in ["data", "values", "time_value", "geo_value"])
+                    has_records = len(str(result)) > 50  # Reasonable response size
+                    return has_data_keys or has_records  # Either data keys OR substantial content
+                elif isinstance(result, str):
+                    # Look for JSON-like structure indicators or data fields
+                    has_json_structure = "{" in result_str and "}" in result_str
+                    has_data_fields = any(field in result_str for field in ["time_value", "geo_value", "value"])
+                    return (has_json_structure or has_data_fields) and len(result_str) > 50
+                    
+            elif tool_name == "detect_rising_trend":
+                # Check if we got trend analysis data
+                if isinstance(result, dict):
+                    has_trend_keys = any(key in result for key in ["rising_periods", "total_periods", "status"])
+                    return has_trend_keys and result.get("status") == "success"
+                elif isinstance(result, str):
+                    return "rising_periods" in result_str and "success" in result_str
+            
+            # Default: if result is substantial (>50 chars) and not just error message
+            return len(result_str) > 50 and not any(pattern in result_str for pattern in error_patterns)
+            
+        except Exception as e:
+            logger.debug(f"Error checking tool result data: {e}")
+            return False
     
     async def _process_tool_output_node(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """Process tool outputs and store structured data in state"""
@@ -519,7 +670,7 @@ Respond with either:
             
             # Look for signal name
             signal_name = "unknown_signal"
-            for known_signal in ["confirmed_7dav_incidence_prop", "smoothed_wcli", "smoothed_adj_cli", "deaths_7dav_incidence_prop"]:
+            for known_signal in ["confirmed_7dav_incidence_prop", "smoothed_wcli", "smoothed_adj_cli"]:
                 if known_signal in content:
                     signal_name = known_signal
                     break
@@ -529,7 +680,6 @@ Respond with either:
                 "confirmed_7dav_incidence_prop": "COVID-19 Case Rates",
                 "smoothed_wcli": "COVID-Like Symptoms",
                 "smoothed_adj_cli": "COVID-Related Doctor Visits",
-                "deaths_7dav_incidence_prop": "COVID-19 Death Rates"
             }
             
             return EpiSignalData(
@@ -889,12 +1039,15 @@ An error occurred while generating the epidemiological dashboard:
             initial_state = {
                 "messages": [HumanMessage(content=dashboard_request)],
                 "current_request": dashboard_request,
+                "start_date": start_date,
+                "end_date": end_date,
                 "epi_signals": [],
                 "trend_analyses": [],
                 "tool_results": [],
                 "has_tool_results": False,
                 "reasoning_steps": [],
                 "tools_used": [],
+                "tool_call_counts": {},
                 "analysis_complete": False,
                 "dashboard_summary": None,
                 "risk_assessment": {},

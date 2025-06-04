@@ -54,37 +54,28 @@ mcp = FastMCP("Public Health FastMCP")
 def fetch_epi_signal(
     signal: str,
     time_type: str,
-    geo_type: str,
     start_time: str,
     end_time: str,
+    geo_value: str,
+    geo_type: str = "state",
     as_json: bool = True
 ) -> json:
     """
     Fetch a specific COVID-19 signal from the EpiDataContext and return a JSON.
     Args:
         signal (str): The specific signal to fetch. The options are: 
-        - smoothed_wwearing_mask_7d. -> Description: People Wearing Masks
-        - smoothed_wcovid_vaccinated_appointment_or_accept -> Description: Vaccine Acceptance.
         - sum_anosmia_ageusia_smoothed_search -> Description: COVID Symptom Searches on Google.
         - smoothed_wcli -> COVID-Like Symptoms
         - smoothed_whh_cmnty_cli -> Description: COVID-Like Symptoms in Community
         - smoothed_adj_cli -> Description: COVID-Related Doctor Visits
         - confirmed_7dav_incidence_prop -> Description: COVID Cases
         - confirmed_admissions_covid_1d_prop_7dav -> Description: COVID Hospital Admissions
-        - deaths_7dav_incidence_prop -> Description: COVID Deaths
 
         time_type (Literal["day", "week", "month"]): The time granularity of the data.
-        geo_type (Literal["state", "county", "hrr", "msa"]): The geographic granularity of the data.
-        start_time (str, optional): The start time for the data query. Format: YYYYMMDD
-        end_time (str, optional): The end time for the data query. Format: YYYYMMDD
-        Accepted values depend on geo_type:
-        - "county": 5-digit FIPS codes (e.g., "06037" for Los Angeles County).
-        - "hrr": Hospital Referral Region numbers (1-457).
-        - "hhs": HHS region numbers (1-10).
-        - "msa": Metropolitan Statistical Area codes (CBSA ID).
-        - "dma": Nielsen Designated Market Area codes.
-        - "state": 2-letter state codes (e.g., "ny", "ca", "dc", "pr").
-        - "nation": ISO country code ("us" only).
+        start_time (str): The start time for the data query. Format: YYYYMMDD
+        end_time (str): The end time for the data query. Format: YYYYMMDD
+        geo_value (Literal["ny", "ca", "dc", "pr"]): The 2-letter state codes ("ny", "ca", "dc", "pr").
+        geo_type (Literal["state"]): The geographic granularity of the data.
 
     Returns:
         json: A JSON containing the fetched signal data, with additional metadata columns. 
@@ -109,7 +100,7 @@ def fetch_epi_signal(
         "geo_type": geo_type,
         "time_values": start_time + "-" + end_time,  # Combine start_time and end_time
         "as_of": end_time,  # Use the end_time as the 'as_of' date
-        "geo_value": "*",
+        "geo_value": {geo_value},
     }
     response = requests.get(BASE_URL, params=params, verify=False) # Disable SSL verification for testing purposes
     if as_json:
@@ -134,15 +125,12 @@ def detect_rising_trend(
 
     Args:
         signal_name (str): Name of the signal to detect rising trends for. The fetch_epi_signal must be called for that signal for prefetching the data. The options are: 
-        - smoothed_wwearing_mask_7d. -> Description: People Wearing Masks
-        - smoothed_wcovid_vaccinated_appointment_or_accept -> Description: Vaccine Acceptance.
         - sum_anosmia_ageusia_smoothed_search -> Description: COVID Symptom Searches on Google.
         - smoothed_wcli -> COVID-Like Symptoms
         - smoothed_whh_cmnty_cli -> Description: COVID-Like Symptoms in Community
         - smoothed_adj_cli -> Description: COVID-Related Doctor Visits
         - confirmed_7dav_incidence_prop -> Description: COVID Cases
         - confirmed_admissions_covid_1d_prop_7dav -> Description: COVID Hospital Admissions
-        - deaths_7dav_incidence_prop -> Description: COVID Deaths
         value_column (str): Column with numeric values to analyze.
         date_column (str, optional): Column with date values (default: "time_value").
         window_size (int, optional): Size of the rolling window (in time steps).
