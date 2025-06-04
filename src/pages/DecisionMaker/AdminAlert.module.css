@@ -16,3 +16,7 @@ button {
     height: 40px;
     font-weight: bold;
 }
+
+button:hover {
+    background: "grey"
+}

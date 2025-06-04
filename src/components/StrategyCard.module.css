@@ -18,6 +18,7 @@ button:hover{
 
 .card:hover{
     background: white;
+    cursor: pointer;
 }
 
 .card {
@@ -33,11 +34,21 @@ button:hover{
     box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
 }
 
-/* .card:hover{
-    background: lightblue;
-    cursor: pointer;
-    transform: translateY(-4px);
-} */
+/* Add this new rule for the header row */
+.headerRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+/* Button section to stack button and success message */
+.buttonSection {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
 
 strong {
     color: #191970;
@@ -47,4 +58,34 @@ strong {
 .details {
     font-size: 15px;
     margin-top: 10px
+}
+
+/* StrategyCard.module.css */
+.card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid black;
+  border-radius: 10px;
+  padding: 16px;
+  background: #f0f0f0;
+  margin-bottom: 12px;
+}
+
+.cardContent {
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.success {
+  color: green;
+}
+
+.error {
+  color: red;
 }

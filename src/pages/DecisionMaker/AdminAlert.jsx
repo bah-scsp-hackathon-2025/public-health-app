@@ -1,5 +1,5 @@
 import { ArrowBigLeftDash, NotebookPen } from "lucide-react";
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from "react-router-dom";
 import {
   fetchAlert,
@@ -14,7 +14,7 @@ import styles from "./AdminAlert.module.css";
 function AdminAlert() {
   const { id } = useParams();
 
-  const [selectedStrategy, setSelectedStrategy] = React.useState()
+  const [selectedId, setSelectedId] = useState(null);
 
   const navigate = useNavigate();
 
@@ -54,14 +54,14 @@ useEffect(() => {
     try {
       console.log(id)
         const result = await fetchPoliciesByAlert(id);
+        console.log(result)
         setPoliciesForAlert(result);
-
     } catch (error) {
       console.error("Error getting policies:", error);
     }
   };
   getPolicies();
-}, [alert]);
+}, []);
 
 
   async function generateStrategies() {
@@ -117,52 +117,55 @@ useEffect(() => {
     <div style={{ width: "80%", padding: "20px", height: '100%'}}>
       
    
-<div style={{backgroundColor: "#191970", padding: "40px", border: "1px solid black", borderRadius: "20px"}}>
-      <div style={{ marginBottom: "20px" }}>
-        <div style={{ 
-          border: "1px solid black", 
-          borderRadius: "10px", 
-          padding: "10px", 
-          minHeight: "80px" ,
-           background: "white"
-        }}>
-          {alert.description}
-        </div>
-      </div>
+<div style={{ backgroundColor: "#191970", padding: "40px", border: "1px solid black", borderRadius: "20px" }}>
+  <div style={{ marginBottom: "20px" }}>
+    <label style={{ color: "white", marginBottom: "5px", display: "block" }}>Alert Description</label>
+    <div style={{ 
+      border: "1px solid black", 
+      borderRadius: "10px", 
+      padding: "10px", 
+      minHeight: "80px",
+      background: "white" 
+    }}>
+      {alert.description}
+    </div>
+  </div>
 
-            <div style={{ display: "flex", gap: "10px" }}>
-              <div
-                style={{
-                  border: "1px solid black",
-                  borderRadius: "10px",
-                  padding: "10px",
-                  flex: "1",
-                  minHeight: "80px",
-                  background: "white",
-                }}
-              >
-                {alert.risk_score}
-              </div>
-              <div
-                style={{
-                  border: "1px solid black",
-                  borderRadius: "10px",
-                  padding: "10px",
-                  flex: "2",
-                  minHeight: "80px",
-                  background: "white",
-                }}
-              >
-                {alert.risk_reason}
-              </div>
-            </div>
-          </div>
+  <div style={{ display: "flex", gap: "10px" }}>
+    <div style={{ flex: "1" }}>
+      <label style={{ color: "white", marginBottom: "5px", display: "block" }}>Risk Score</label>
+      <div style={{ 
+        border: "1px solid black", 
+        borderRadius: "10px", 
+        padding: "10px", 
+        minHeight: "80px",
+        background: "white" 
+      }}>
+        {alert.risk_score}
+      </div>
+    </div>
+
+    <div style={{ flex: "2" }}>
+      <label style={{ color: "white", marginBottom: "5px", display: "block" }}>Risk Score Reasoning</label>
+      <div style={{ 
+        border: "1px solid black", 
+        borderRadius: "10px", 
+        padding: "10px", 
+        minHeight: "80px",
+        background: "white" 
+      }}>
+        {alert.risk_reason}
+      </div>
+    </div>
+  </div>
+</div>
+
           {strategies.length == 0 &&
-          <div style={{ marginTop: "20px" }}>
+          <div style={{ marginTop: "20px", display: "flex", justifyContent: "center", alignItems: "center" }}>
             <NotebookPen/>
             <span>Ready to start planning?</span>
             <button onClick={generateStrategies}>
-              Generate Courses of Action
+              Generate Strategies
             </button>
           </div>
       
@@ -174,25 +177,28 @@ useEffect(() => {
           <h1 style={{ borderBottom: "1px solid black" , textAlign: "center"}}>
             Generated Strategies
           </h1>
-          <p style={{textAlign: "center"}}>View and evaluate the generated strategies. Then, select a strategy to generate a draft policy document.</p>
+          {strategies != 0 ? 
+          <p style={{textAlign: "center"}}>View and evaluate the generated strategies. Then, select a strategy to generate a draft policy document</p>
+          : 
+           <p style={{textAlign: "center"}}>No policies have been generated yet for this alert.</p>
+           }
           <div style={{ width: "80%", marginLeft: "75px"}}>
-     
-        <div style={{display: "flex", flexDirection: "column", alignItems: "center", width: "100%"}}>
+     {policiesForAlert.length == 0 ?
+        <div style={{display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginLeft: "15%"}}>
         {strategies.map((strategy) => (
         <div key={strategy.id} style={{width: "100%"}}>
-
-      <StrategyCard
-        onClick={() => setSelectedStrategy(strategy)}
-        strategy={strategy}
+       <StrategyCard
+          key={strategy.id}
+          strategy={strategy}
+          isSelected={strategy.id === selectedId}
+          onClick={() => setSelectedId(strategy.id)}
+        
       />
     </div>
-  ))
- } </div>
+        ))
+      } </div>
+      : <div></div>} 
 
-
-        
-
-    
         </div>
       </div>
       <div style={{ display: "flex", justifyContent: "center" }}>
