@@ -1,5 +1,6 @@
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
+from .trend import TrendResponse
 
 
 class DashboardRequest(BaseModel):
@@ -51,6 +52,10 @@ class DashboardResponse(BaseModel):
     recommendations: Optional[List[str]] = Field(
         default=None,
         description="Actionable recommendations based on analysis"
+    )
+    trends: Optional[List[TrendResponse]] = Field(
+        default=None,
+        description="Raw epidemiological data from successful fetch_epi_signal calls"
     )
 
 

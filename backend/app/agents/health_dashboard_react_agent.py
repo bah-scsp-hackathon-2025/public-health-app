@@ -28,6 +28,9 @@ from pydantic import BaseModel, Field
 from operator import add
 from typing import Dict, List, Optional, Annotated, Any, TypedDict
 
+# Import models
+from app.models.trend import TrendResponse
+
 # Langfuse imports
 from langfuse.callback import CallbackHandler
 
@@ -118,6 +121,7 @@ class ReActState(TypedDict):
     # Tool data storage
     epi_signals: List[Dict[str, Any]]  # Store as dicts for JSON compatibility
     trend_analyses: List[Dict[str, Any]]  # Store as dicts for JSON compatibility
+    fetch_epi_signal_data: List[Dict[str, Any]]  # Store raw fetch_epi_signal results for trends output
     
     # Tool execution state
     tool_results: List[Dict[str, Any]]  # Raw tool results from reasoning node
@@ -621,10 +625,12 @@ Respond with either:
             new_tools_used = []
             new_epi_signals = []
             new_trend_analyses = []
+            new_fetch_epi_signal_data = []
             
             for tool_result in tool_results:
                 tool_name = tool_result.get("tool_name", "unknown")
                 tool_content = str(tool_result.get("result", ""))
+                has_data = tool_result.get("has_data", False)
                 
                 logger.debug(f"Processing output from tool: {tool_name}")
                 
@@ -638,6 +644,17 @@ Respond with either:
                     if signal_data:
                         new_epi_signals.append(signal_data.dict())
                         logger.debug(f"Stored epidemiological signal: {signal_data.signal_name}")
+                    
+                    # Store raw fetch_epi_signal data if it has useful data (for trends output)
+                    if has_data:
+                        raw_result = tool_result.get("result")
+                        if raw_result:
+                            new_fetch_epi_signal_data.append({
+                                "tool_args": tool_result.get("tool_args", {}),
+                                "result": raw_result,
+                                "timestamp": datetime.now().isoformat()
+                            })
+                            logger.debug(f"Stored raw fetch_epi_signal data for trends output")
                 
                 # Process detect_rising_trend outputs
                 elif tool_name == "detect_rising_trend":
@@ -646,7 +663,7 @@ Respond with either:
                         new_trend_analyses.append(trend_data.dict())
                         logger.debug(f"Stored trend analysis: {trend_data.signal_name}")
             
-            logger.debug(f"✅ Processed all tool results. New signals: {len(new_epi_signals)}, New trends: {len(new_trend_analyses)}")
+            logger.debug(f"✅ Processed all tool results. New signals: {len(new_epi_signals)}, New trends: {len(new_trend_analyses)}, New fetch data: {len(new_fetch_epi_signal_data)}")
             
             # Return partial state update
             return {
@@ -654,7 +671,8 @@ Respond with either:
                 "has_tool_results": False,
                 "tools_used": new_tools_used,  # LangGraph will append to existing list
                 "epi_signals": new_epi_signals,  # LangGraph will append to existing list
-                "trend_analyses": new_trend_analyses  # LangGraph will append to existing list
+                "trend_analyses": new_trend_analyses,  # LangGraph will append to existing list
+                "fetch_epi_signal_data": new_fetch_epi_signal_data  # LangGraph will append to existing list
             }
             
         except Exception as e:
@@ -1043,6 +1061,7 @@ An error occurred while generating the epidemiological dashboard:
                 "end_date": end_date,
                 "epi_signals": [],
                 "trend_analyses": [],
+                "fetch_epi_signal_data": [],
                 "tool_results": [],
                 "has_tool_results": False,
                 "reasoning_steps": [],
@@ -1094,7 +1113,10 @@ An error occurred while generating the epidemiological dashboard:
                 "rising_trends": self._format_rising_trends_from_state(final_state),
                 "epidemiological_signals": self._format_epi_signals_from_state(final_state),
                 "risk_assessment": final_state.get("risk_assessment", {}),
-                "recommendations": final_state.get("recommendations", [])
+                "recommendations": final_state.get("recommendations", []),
+                
+                # Add trends list with TrendResponse objects
+                "trends": self._format_trends_from_fetch_data(final_state)
             }
             
             logger.info("🎉 LangGraph ReAct dashboard generation completed successfully")
@@ -1116,7 +1138,8 @@ An error occurred while generating the epidemiological dashboard:
                 "rising_trends": [],
                 "epidemiological_signals": [],
                 "risk_assessment": {"overall_risk_level": "unknown", "error": str(e)},
-                "recommendations": []
+                "recommendations": [],
+                "trends": []  # Empty trends list on error
             }
     
     def _format_rising_trends_from_state(self, state: Dict) -> List[Dict]:
@@ -1156,6 +1179,25 @@ An error occurred while generating the epidemiological dashboard:
             })
         
         return formatted_signals
+
+    def _format_trends_from_fetch_data(self, state: Dict) -> List[Dict]:
+        """Format trends from raw fetch_epi_signal data into TrendResponse objects"""
+        trends = []
+        
+        for fetch_data in state.get("fetch_epi_signal_data", []):
+            try:
+                # Create TrendResponse object with the raw data
+                trend_response = TrendResponse(data=fetch_data)
+                trends.append(trend_response.dict())
+                
+                logger.debug(f"Created TrendResponse for fetch_epi_signal data from {fetch_data.get('timestamp', 'unknown')}")
+                
+            except Exception as e:
+                logger.warning(f"⚠️ Could not create TrendResponse from fetch data: {str(e)}")
+                continue
+        
+        logger.debug(f"✅ Formatted {len(trends)} trends from {len(state.get('fetch_epi_signal_data', []))} fetch_epi_signal results")
+        return trends
 
 
 # Convenience functions for testing and usage

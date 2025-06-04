@@ -65,7 +65,8 @@ async def assemble_dashboard(request: DashboardRequest):
             rising_trends=result.get("rising_trends"),
             epidemiological_signals=result.get("epidemiological_signals"),
             risk_assessment=result.get("risk_assessment"),
-            recommendations=result.get("recommendations")
+            recommendations=result.get("recommendations"),
+            trends=result.get("trends")
         )
         
     except Exception as e:
@@ -244,7 +245,8 @@ Emphasize real-time data analysis and statistical evidence.
             rising_trends=result.get("rising_trends"),
             epidemiological_signals=result.get("epidemiological_signals"),
             risk_assessment=result.get("risk_assessment"),
-            recommendations=result.get("recommendations")
+            recommendations=result.get("recommendations"),
+            trends=result.get("trends")
         )
         
     except Exception as e:
