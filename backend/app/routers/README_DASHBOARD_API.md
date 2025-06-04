@@ -26,7 +26,7 @@ const signalsCount = response.epidemiological_signals.length;
 ## Base URL
 
 ```
-http://localhost:8000/dashboard
+http://localhost:8001/dashboard
 ```
 
 ## Request/Response Models
@@ -234,7 +234,59 @@ Generate comprehensive epidemiological analysis using the ReAct agent with real-
 }
 ```
 
-### 7. Async Generation
+### 7. Generate Strategies from Alert
+
+**POST** `/generate-strategies`
+
+Generate multiple strategy variations based on an alert using Claude with extended thinking and policy document integration.
+
+**Request Body:**
+```json
+{
+    "name": "COVID-19 Surge Alert - Seattle Metro",
+    "description": "Significant increase in COVID-19 hospitalizations and ICU capacity nearing 85%",
+    "risk_score": 7,
+    "risk_reason": "High hospitalization rate combined with new variant detection",
+    "location": "Washington State",
+    "latitude": "47.6062",
+    "longitude": "-122.3321"
+}
+```
+
+**Response:**
+```json
+[
+    {
+        "short_description": "Emergency Response Protocol Activation",
+        "full_description": "Immediate activation of emergency response protocols including surge capacity planning, resource reallocation, and coordinated multi-agency response. Timeline: 0-24 hours. Responsible: Emergency Operations Center...",
+        "alert_id": "placeholder"
+    },
+    {
+        "short_description": "Enhanced Surveillance and Monitoring",
+        "full_description": "Implement structured monitoring system with daily reporting, contact tracing enhancement, and epidemiological investigation. Timeline: 1-7 days. Responsible: Public Health Department...",
+        "alert_id": "placeholder"
+    },
+    {
+        "short_description": "Community Prevention and Education",
+        "full_description": "Deploy preventive measures including public health advisories, community education campaigns, and early warning systems. Timeline: 2-14 days. Responsible: Communications Team...",
+        "alert_id": "placeholder"
+    },
+    {
+        "short_description": "Long-term Resilience Building",
+        "full_description": "Strategic capacity building including healthcare system strengthening, policy development, and infrastructure improvements. Timeline: 1-6 months. Responsible: Strategic Planning Department...",
+        "alert_id": "placeholder"
+    }
+]
+```
+
+**Features:**
+- Uses Claude Sonnet 4.0 with extended thinking capabilities
+- Integrates with policy documents for compliance guidance
+- Generates exactly 4 strategy variations with different severity levels
+- Strategies include: Immediate Response, Moderate Response, Preventive Response, Long-term Response
+- Each strategy includes specific actions, timelines, responsible parties, and success metrics
+
+### 8. Async Generation
 
 **POST** `/generate/async`
 
@@ -343,6 +395,19 @@ curl -X POST http://localhost:8000/dashboard/epidemiological-analysis \
   -d '{
     "query": "Analyze COVID trends in the Pacific Northwest",
     "agent_type": "react"
+  }'
+
+# Generate strategies from alert
+curl -X POST http://localhost:8001/dashboard/generate-strategies \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Hospital Capacity Alert",
+    "description": "ICU capacity at 90% in metropolitan area",
+    "risk_score": 8,
+    "risk_reason": "Critical healthcare capacity with surge potential",
+    "location": "New York",
+    "latitude": "40.7128",
+    "longitude": "-74.0060"
   }'
 ```
 

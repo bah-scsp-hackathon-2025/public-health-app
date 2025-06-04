@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 import sys
 import os
 from datetime import datetime
+from typing import List
 
 # Add the necessary paths for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))  # Add backend dir
@@ -10,7 +11,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'mcp'))  
 # Import the agents using the correct path
 from app.agents.health_dashboard_agent import PublicHealthDashboardAgent
 from app.agents.health_dashboard_react_agent import PublicHealthReActAgent
+from app.agents.strategy_generation_agent import StrategyGenerationAgent
 from app.models.dashboard import DashboardRequest, DashboardResponse, DashboardStatus
+from app.models.alert import AlertCreate
+from app.models.strategy import StrategyCreate
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -138,3 +142,34 @@ async def get_trends_summary():
     """Generate a dashboard focused on health risk trends only"""
     request = DashboardRequest()
     return await assemble_dashboard(request)
+
+
+@router.post("/generate-strategies", response_model=List[StrategyCreate])
+async def generate_strategies_from_alert(alert: AlertCreate):
+    """
+    Generate multiple strategy variations based on an alert using Claude with extended thinking.
+    
+    Takes an Alert model as input and generates at least four strategy variations with different 
+    severity levels and approaches. Uses policy documents for context and compliance.
+    
+    The strategies will vary in:
+    - Severity level (immediate, moderate, preventive, long-term)
+    - Response approach (containment, mitigation, communication, resource allocation)
+    - Target audience (public, healthcare workers, officials)
+    """
+    try:
+        # Initialize the strategy generation agent
+        agent = StrategyGenerationAgent()
+        
+        # Generate strategies using the agent
+        strategies = await agent.generate_strategies(alert)
+        
+        return strategies
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Strategy generation failed: {str(e)}"
+        )
+
+
