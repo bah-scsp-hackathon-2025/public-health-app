@@ -15,7 +15,17 @@ function Chart({ data }) {
         }} 
       />
           <YAxis />
-          <Tooltip />
+          <Tooltip 
+        labelFormatter={(label) => {
+          const date = new Date(label);
+          return date.toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric"
+          });
+        }}
+        formatter={(value, name) => [`${value}`, name]} // optional: format the value label
+      />
           <Legend />
           <Line type="monotone" dataKey="value" stroke="#8884d8" />
         </LineChart>
