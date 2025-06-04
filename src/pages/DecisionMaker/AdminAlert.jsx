@@ -126,7 +126,7 @@ useEffect(() => {
           minHeight: "80px" ,
            background: "white"
         }}>
-          Details
+          {alert.description}
         </div>
       </div>
 
