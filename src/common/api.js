@@ -140,6 +140,7 @@ export const updatePolicy = async (policy_id, policyData) => {
       },
       body: JSON.stringify(policyData),
     });
+    console.log(response)
     return response.json();
   } catch (error) {
     console.error("Error updating policy:", error);
@@ -154,17 +155,6 @@ export const fetchSummary = async () => {
     return data;
   } catch (error) {
     console.error("Error getting summary:", error);
-    return [];
-  }
-};
-
-export const fetchTrends= async () => {
-  try {
-    const response = await fetch(`http://localhost:8000/trends/`);
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error getting trends:", error);
     return [];
   }
 };

@@ -7,7 +7,7 @@
 
 .column {
   flex: 1;
-  max-width: 400px;
+  max-width: 600px;
 }
 
 .data-card {
@@ -20,13 +20,13 @@
   transition: transform 0.2s ease;
   color: black;
 }
-
+/* 
 .data-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
   background: lightgrey;
   cursor: pointer;
-}
+} */
 
 
 .column h2 {

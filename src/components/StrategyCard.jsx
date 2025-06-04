@@ -1,5 +1,5 @@
-import './StrategyCard.css'
 import { generatePolicyFromStrategy } from "../common/api";
+import './StrategyCard.module.css';
 
 
 function StrategyCard({strategy, onClick}) {
@@ -9,6 +9,7 @@ function StrategyCard({strategy, onClick}) {
     console.log(result);
   }
 
+
     return (
         <div style={{display: "flex", flexDirection:"row"}}>
         <div onClick={onClick} style={{border: "1px solid black", width: "80%", minHeight: "50px", 
@@ -17,7 +18,7 @@ function StrategyCard({strategy, onClick}) {
             <div>{strategy.full_description}</div>
         </div>
         <div style={{display: "flex", alignItems:"center"}}>
-        <button onClick={generatePolicy}>Generate policy</button>
+            <button onClick={() => generatePolicy()}>Generate Policy For Strategy</button>
         </div>
         </div>
     )

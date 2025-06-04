@@ -47,7 +47,7 @@ async def get_alerts(location: str, db: Session = Depends(get_db)):
     location = location.replace("_", " ").lower()
     alerts = db.query(Alert).filter(Alert.location.lower() == location).all()
     if alerts is None:
-        raise HTTPException(status_code=404, detail="Alerts not found")
+        alerts = []
     return alerts
 
 

@@ -1,10 +1,10 @@
 import { ArrowBigLeftDash } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from 'react-router-dom';
-import { useState, useEffect } from "react";
+import { fetchAlert, fetchPoliciesByAlert } from "../../common/api";
+import PolicyCard from "../../components/PolicyCard";
 import RegularNav from "../../components/RegularNav";
 import styles from './Alert.module.css';
-import { fetchAlert, fetchApprovedPoliciesByAlert } from "../../common/api";
-import PolicyCard from "../../components/PolicyCard";
 
 function Alert() {
   const { id } = useParams();
@@ -18,7 +18,7 @@ function Alert() {
     const [policies, setPolicies] = useState([]);
     useEffect(() => {
       const getPolicies = async () => {
-        const result = await fetchApprovedPoliciesByAlert(id);
+        const result = await fetchPoliciesByAlert(id);
         setPolicies(result);
       };
       getPolicies();

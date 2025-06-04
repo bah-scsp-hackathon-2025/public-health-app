@@ -1,0 +1,50 @@
+button {
+    background: lightblue;
+    height: 50%; 
+    margin-left: 10px;
+    background: lightblue;
+    border-radius: 5px;
+}
+
+button:hover{
+    cursor: pointer;
+    background: white;
+}
+
+.cardContainer{
+    display: flex;
+    flex-direction: row;
+}
+
+.card:hover{
+    background: white;
+}
+
+.card {
+    border: 1px solid black;
+    width: 80%;
+    min-height: 50px; 
+    padding: 10px;
+    border-radius: 10px;
+    gap: 10px;
+    background: white; 
+    margin-bottom: 10px;
+    transition: transform 0.2s ease;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+}
+
+/* .card:hover{
+    background: lightblue;
+    cursor: pointer;
+    transform: translateY(-4px);
+} */
+
+strong {
+    color: #191970;
+    font-size: 20px;
+}
+
+.details {
+    font-size: 15px;
+    margin-top: 10px
+}
