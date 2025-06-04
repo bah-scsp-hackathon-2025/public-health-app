@@ -122,7 +122,7 @@ async def get_policies_by_status_by_alert(status_: str, alert_id: str, db: Sessi
         (Policy.alert_id == alert_id) & (Policy.approved == approved)
     ).all()
     if db_policies is None:
-        raise HTTPException(status_code=404, detail="Policies not found")
+        db_policies = []
     return db_policies
 
 
@@ -130,7 +130,7 @@ async def get_policies_by_status_by_alert(status_: str, alert_id: str, db: Sessi
 async def get_policies_by_alert(alert_id: str, db: Session = Depends(get_db)):
     db_policies = db.query(Policy).filter(Policy.alert_id == alert_id).all()
     if db_policies is None:
-        raise HTTPException(status_code=404, detail="Policies not found")
+        db_policies = []
     return db_policies
 
 
@@ -139,5 +139,5 @@ async def get_policies_by_status(status_: str, db: Session = Depends(get_db)):
     approved = True if status_ == "approved" else False
     db_policies = db.query(Policy).filter(Policy.approved == approved).all()
     if db_policies is None:
-        raise HTTPException(status_code=404, detail="Policies not found")
+        db_policies = []
     return db_policies
