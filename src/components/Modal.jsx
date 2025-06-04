@@ -27,7 +27,7 @@ const styles = {
   },
   modal: {
     background: "#fff",
-    width: "400px",
+    width: "700px",
     // height: "500px",
     padding: "24px 20px",
     borderRadius: "10px",
