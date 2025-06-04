@@ -286,7 +286,6 @@ def detect_rising_trend(
             "analysis_details": {
                 "window_size": window_size,
                 "min_log_slope": min_log_slope,
-                "smoothing_applied": smooth,
                 "data_points_analyzed": len(df),
                 "value_column": value_column,
                 "date_column": date_column
