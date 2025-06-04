@@ -1,11 +1,11 @@
-import './ScenarioCard.css'
+import './StrategyCard.css'
 import { generatePolicyFromStrategy } from "../common/api";
 
 
-function ScenarioCard({scenario, onClick}) {
+function StrategyCard({strategy, onClick}) {
 
   async function generatePolicy () {
-    const result = await generatePolicyFromStrategy(scenario.id);
+    const result = await generatePolicyFromStrategy(strategy.id);
     console.log(result);
   }
 
@@ -13,8 +13,8 @@ function ScenarioCard({scenario, onClick}) {
         <div style={{display: "flex", flexDirection:"row"}}>
         <div onClick={onClick} style={{border: "1px solid black", width: "80%", minHeight: "50px", 
             padding: "10px", borderRadius: "10px", gap: "10px", background:"lightgrey", marginBottom: "10px"}}>
-            <strong>{scenario.short_description}</strong>
-            <div>{scenario.full_description}</div>
+            <strong>{strategy.short_description}</strong>
+            <div>{strategy.full_description}</div>
         </div>
         <div style={{display: "flex", alignItems:"center"}}>
         <button onClick={generatePolicy}>Generate policy</button>
@@ -23,4 +23,4 @@ function ScenarioCard({scenario, onClick}) {
     )
 }
 
-export default ScenarioCard
+export default StrategyCard
