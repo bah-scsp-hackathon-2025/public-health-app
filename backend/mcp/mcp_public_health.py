@@ -75,13 +75,7 @@ def fetch_epi_signal(
         start_time (str, optional): The start time for the data query. Format: YYYYMMDD
         end_time (str, optional): The end time for the data query. Format: YYYYMMDD
         Accepted values depend on geo_type:
-        - "county": 5-digit FIPS codes (e.g., "06037" for Los Angeles County).
-        - "hrr": Hospital Referral Region numbers (1-457).
-        - "hhs": HHS region numbers (1-10).
-        - "msa": Metropolitan Statistical Area codes (CBSA ID).
-        - "dma": Nielsen Designated Market Area codes.
         - "state": 2-letter state codes (e.g., "ny", "ca", "dc", "pr").
-        - "nation": ISO country code ("us" only).
 
     Returns:
         json: A JSON containing the fetched signal data, with additional metadata columns. 
