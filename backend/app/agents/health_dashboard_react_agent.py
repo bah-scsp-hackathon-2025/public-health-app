@@ -681,9 +681,8 @@ Respond with either:
             return {"error_message": f"Tool output processing failed: {str(e)}"}
     
     def _parse_epi_signal_output(self, content: str, tool_args: Dict[str, Any] = None) -> Optional[EpiSignalData]:
-        """Parse epidemiological signal data from tool output"""
+        """Parse epidemiological signal data from tool output with actual data extraction"""
         try:
-            # Try to extract signal information from content and tool args
             import json
             import re
             
@@ -719,21 +718,91 @@ Respond with either:
             if tool_args.get("geo_value"):
                 geo_areas.append(tool_args["geo_value"].upper())
             
-            logger.debug(f"✅ Parsed epi signal: {signal_name} for {geo_areas or ['US']}")
+            # Parse actual time series data from content
+            data_points = []
+            current_value = None
+            trend_direction = "unknown"
+            data_quality = "high"
+            
+            logger.debug(f"🔍 Parsing epi signal content: {content[:200]}...")
+            
+            try:
+                # Try to parse the content as JSON array (time series data)
+                if content.strip().startswith('[') and content.strip().endswith(']'):
+                    data_points = json.loads(content)
+                    logger.debug(f"✅ Parsed {len(data_points)} data points from JSON array")
+                elif content.strip().startswith('{') and content.strip().endswith('}'):
+                    # Single data point or wrapped response
+                    data_obj = json.loads(content)
+                    if isinstance(data_obj, list):
+                        data_points = data_obj
+                    elif isinstance(data_obj, dict) and "data" in data_obj:
+                        data_points = data_obj["data"]
+                    else:
+                        data_points = [data_obj]
+                    logger.debug(f"✅ Parsed {len(data_points)} data points from JSON object")
+                
+                # Extract current value and calculate trend
+                if data_points and len(data_points) > 0:
+                    # Get the most recent value
+                    if isinstance(data_points[-1], dict) and "value" in data_points[-1]:
+                        current_value = data_points[-1]["value"]
+                    
+                    # Calculate trend direction from first and last values
+                    if len(data_points) >= 2:
+                        try:
+                            first_val = float(data_points[0].get("value", 0))
+                            last_val = float(data_points[-1].get("value", 0))
+                            
+                            if last_val > first_val * 1.05:  # 5% increase threshold
+                                trend_direction = "rising"
+                            elif last_val < first_val * 0.95:  # 5% decrease threshold
+                                trend_direction = "declining"
+                            else:
+                                trend_direction = "stable"
+                                
+                            logger.debug(f"✅ Calculated trend: {trend_direction} ({first_val:.2f} → {last_val:.2f})")
+                        except (ValueError, TypeError):
+                            trend_direction = "unknown"
+                    
+                    # Assess data quality based on completeness
+                    null_count = sum(1 for dp in data_points if dp.get("value") is None)
+                    if null_count == 0:
+                        data_quality = "high"
+                    elif null_count < len(data_points) * 0.1:  # Less than 10% nulls
+                        data_quality = "medium"
+                    else:
+                        data_quality = "low"
+                        
+            except json.JSONDecodeError as e:
+                logger.debug(f"⚠️ Could not parse content as JSON: {e}")
+                # Try to extract basic info from text
+                value_matches = re.findall(r'"value":\s*([0-9.-]+)', content)
+                if value_matches:
+                    try:
+                        current_value = float(value_matches[-1])  # Last value
+                        data_quality = "medium"
+                        logger.debug(f"✅ Extracted current value from text: {current_value}")
+                    except ValueError:
+                        pass
+            
+            logger.debug(f"✅ Parsed epi signal: {signal_name} for {geo_areas or ['US']}, current_value={current_value}, trend={trend_direction}")
             
             return EpiSignalData(
                 signal_name=signal_name,
                 display_name=signal_display_names.get(signal_name, signal_name),
                 description=f"Epidemiological data for {signal_display_names.get(signal_name, signal_name)}",
-                geographic_areas=geo_areas or ["US"],  # Use from args or default
-                data_points=[],  # Could extract from content if needed
-                trend_direction="unknown",
-                data_quality="high",
+                geographic_areas=geo_areas or ["US"],
+                data_points=data_points[:10] if data_points else [],  # Limit to first 10 for storage
+                current_value=current_value,
+                trend_direction=trend_direction,
+                data_quality=data_quality,
                 fetch_timestamp=datetime.now().isoformat()
             )
             
         except Exception as e:
             logger.warning(f"⚠️ Could not parse epi signal output: {str(e)}")
+            logger.debug(f"🔍 Content that failed to parse: {content[:200]}...")
             return None
     
     def _parse_trend_analysis_output(self, content: str, tool_args: Dict[str, Any] = None) -> Optional[TrendAnalysisData]:
