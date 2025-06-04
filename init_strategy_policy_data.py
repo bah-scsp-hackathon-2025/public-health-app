@@ -22,7 +22,7 @@ for strategy in strategies:
     result = requests.post(f"{API_URL}/strategies/", json=strategy)
     print(result.json())
 
-with open("documents/data/strategies.ndjson", "r") as f:
+with open("documents/data/policy_drafts.jsonl", "r") as f:
     policies = [json.loads(line) for line in f.read().splitlines()]
 
 for policy in policies:
