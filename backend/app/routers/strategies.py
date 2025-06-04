@@ -22,17 +22,17 @@ async def generate_strategies(alert_id: str, db: Session = Depends(get_db)):
     # dummy data
     strategies = [
         StrategyCreate(
-            short_description=alert.name + " 1",
+            short_description=alert.name + " Strategy 1",
             full_description=alert.description,
             alert_id=alert_id,
         ),
         StrategyCreate(
-            short_description=alert.name + " 2",
+            short_description=alert.name + " Strategy 2",
             full_description=alert.description,
             alert_id=alert_id,
         ),
         StrategyCreate(
-            short_description=alert.name + " 3",
+            short_description=alert.name + " Strategy 3",
             full_description=alert.description,
             alert_id=alert_id,
         ),

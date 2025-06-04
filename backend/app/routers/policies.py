@@ -105,10 +105,10 @@ async def generate_policy(strategy_id: str, db: Session = Depends(get_db)):
     policy = PolicyCreate(
         title=db_strategy.short_description,
         content=db_strategy.full_description,
-        author="bri",
+        author="BAH",
         alert_id="1",
         approved=False,
-        strategy_id="2",
+        strategy_id=strategy_id,
     )
 
     db_policy = add_policy_to_db(policy, db)
