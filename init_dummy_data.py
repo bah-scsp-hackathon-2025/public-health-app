@@ -46,7 +46,7 @@ for alert in alert_data:
     result = requests.post(f"{API_URL}/alerts/", json=alert)
     print(result.json())
 
-# get the id of the last alert created to use for  the strategies
+# get the id of the last alert created to use for the strategies
 alert_id = result.json()["id"]
 
 # create strategies for the last alert
@@ -68,16 +68,20 @@ strategies = [
     },
 ]
 for strategy in strategies:
-    result = requests.post(f"{API_URL}/policies/strategy/", json=strategy)
+    result = requests.post(f"{API_URL}/strategies/", json=strategy)
     print(result.json())
 
+# get  the id of the last strategy created to use for the approved policy
+strategy_id = result.json()["id"]
 
+# create approved policy
 approved_policy = {
     "title": "Travel Restrictions",
     "author": "CDC",
     "content": "Restrict travel to and from affected areas to limit disease spread.",
     "approved": True,
     "alert_id": alert_id,
+    "strategy_id": strategy_id,
 }
 result = requests.post(f"{API_URL}/policies/", json=approved_policy)
 print(result.json())

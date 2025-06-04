@@ -20,6 +20,18 @@ export const fetchAlert = async (alert_id) => {
   }
 };
 
+export const fetchAlertByLocation = async (location) => {
+  try {
+    // Updating spaces to be underscores
+    const response = await fetch(`http://localhost:8000/alerts/${location.replace(" ", "_")}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error getting alert:", error);
+    return [];
+  }
+};
+
 export const createAlert = async (alertData) => {
   try {
     const response = await fetch("http://localhost:8000/alerts/", {
@@ -39,7 +51,7 @@ export const createAlert = async (alertData) => {
 export const fetchStrategiesByAlert = async (alert_id) => {
   try {
     const response = await fetch(
-      `http://localhost:8000/policies/strategies/alert/${alert_id}`
+      `http://localhost:8000/strategies/alert/${alert_id}`
     );
     const data = await response.json();
     return data;
@@ -52,7 +64,7 @@ export const fetchStrategiesByAlert = async (alert_id) => {
 export const generateStrategiesByAlert = async (alert_id) => {
   try {
     const response = await fetch(
-      `http://localhost:8000/policies/generate/${alert_id}`
+      `http://localhost:8000/strategies/generate/${alert_id}`
     );
     const data = await response.json();
     return data;
@@ -65,7 +77,7 @@ export const generateStrategiesByAlert = async (alert_id) => {
 export const generatePolicyFromStrategy = async (strategy_id) => {
   try {
     const response = await fetch(
-      `http://localhost:8000/policies/draft/${strategy_id}`
+      `http://localhost:8000/policies/generate/${strategy_id}`
     );
     const data = await response.json();
     return data;
@@ -108,10 +120,20 @@ export const fetchApprovedPoliciesByAlert = async (alert_id) => {
   }
 };
 
-
-export const updatePolicy = async (policyData) => {
+export const fetchPoliciesByAlert = async (alert_id) => {
   try {
-    const response = await fetch("http://localhost:8000/policies/", {
+    const response = await fetch(`http://localhost:8000/policies/${alert_id}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error getting approved policies:", error);
+    return [];
+  }
+};
+
+export const updatePolicy = async (policy_id, policyData) => {
+  try {
+    const response = await fetch(`http://localhost:8000/policies/${policy_id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
