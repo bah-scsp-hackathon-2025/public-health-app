@@ -2,14 +2,13 @@ import requests
 
 API_URL = "http://localhost:8000"
 
-
 # Create some alerts
 alert_data = [
     {
         "name": "Alert for New York",
         "description": "High hospitalization rate",
-        "risk_score": 45,
-        "risk_reason": "High hospitalization rate",
+        "risk_score": 75,
+        "risk_reason": "Hospitals are full and a lot of people are sick and spreading germs",
         "location": "New York",
         "latitude": "40.7128",
         "longitude": "-74.006",
@@ -18,7 +17,7 @@ alert_data = [
         "name": "Alert for Los Angeles",
         "description": "Moderate COVID cases",
         "risk_score": 58,
-        "risk_reason": "Moderate COVID cases",
+        "risk_reason": "Mid-range risk given COVID cases",
         "location": "California",
         "latitude": "34.0522",
         "longitude": "-118.2437",
@@ -27,7 +26,7 @@ alert_data = [
         "name": "Alert for Chicago",
         "description": "Vaccination drive ongoing",
         "risk_score": 3,
-        "risk_reason": "Vaccination drive ongoing",
+        "risk_reason": "Vaccination drive causes low risk",
         "location": "Illinois",
         "latitude": "41.8781",
         "longitude": "-87.6298",
@@ -35,8 +34,8 @@ alert_data = [
     {
         "name": "Alert for Houston",
         "description": "New variant detected",
-        "risk_score": 23,
-        "risk_reason": "New variant detected",
+        "risk_score": 60,
+        "risk_reason": "Mid-range given no increased threat, but be cautious with new strand",
         "location": "Texas",
         "latitude": "29.7604",
         "longitude": "-95.3698",

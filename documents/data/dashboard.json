@@ -48,15 +48,6 @@
       "longitude": "-98.5795"
     },
     {
-      "name": "No Alert Generated - Insufficient Evidence",
-      "description": "While there are rising trends in COVID-like symptoms and anosmia/ageusia search terms, the data lacks crucial epidemiological context. The signal is labeled as 'unknown_signal' with unspecified location (UNKNOWN) and time period. Additionally, hospital admissions remain stable, which indicates that the rising symptomatic trends may not translate to severe disease requiring immediate public health action. WHO policy documents emphasize evidence-based approaches and recommend maintaining existing surveillance and response capabilities rather than issuing alerts for uncertain or moderate trends.",
-      "risk_score": 0,
-      "risk_reason": "Cannot assess risk without proper geographic, temporal, and epidemiological context. Unknown signal type and stable hospital admissions do not warrant alert generation.",
-      "location": "Unknown",
-      "latitude": "N/A",
-      "longitude": "N/A"
-    },
-    {
       "name": "Insufficient Data for Alert Generation",
       "description": "The current trend detection results show unknown signal strength, unknown risk level, and 0 rising periods out of 0 total periods analyzed. While there are reports of rising COVID-like symptoms and anosmia/ageusia search trends, the absence of concrete trend data prevents the generation of a meaningful public health alert. According to WHO policy guidelines, alerts should be based on robust epidemiological evidence and clear trend patterns. The available data suggests some concerning symptoms may be increasing, but without proper trend validation, risk assessment cannot be accurately performed.",
       "risk_score": 2,

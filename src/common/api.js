@@ -148,13 +148,24 @@ export const updatePolicy = async (policy_id, policyData) => {
   }
 };
 
-export const fetchSummary = async () => {
+export const fetchSummaries = async () => {
   try {
-    const response = await fetch(`http://localhost:8000/summary/`);
+    const response = await fetch(`http://localhost:8000/summaries/`);
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error getting summary:", error);
+    console.error("Error getting summaries:", error);
+    return [];
+  }
+};
+
+export const fetchTrends = async () => {
+  try {
+    const response = await fetch(`http://localhost:8000/trends/`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error getting trends:", error);
     return [];
   }
 };

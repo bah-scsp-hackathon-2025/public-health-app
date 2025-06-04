@@ -44,7 +44,7 @@ def get_all_alerts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db
 
 
 @router.get("/state/{location}", response_model=List[AlertResponse])
-async def get_alerts(location: str, db: Session = Depends(get_db)):
+async def get_alerts_by_state(location: str, db: Session = Depends(get_db)):
     location = location.replace("_", " ").lower()
     alerts = db.query(Alert).filter(func.lower(Alert.location) == location).all()
     if alerts is None:

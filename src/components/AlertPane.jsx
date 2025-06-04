@@ -4,7 +4,7 @@ function AlertCard({ alert, onClick }) {
   return (
     <div onClick={onClick} className={styles.alertCard}>
       <strong>{alert.name}</strong>
-      <div>{alert.description}</div>
+      <div>{alert.description.slice(0, 100)}...</div>
     </div>
   );
 }

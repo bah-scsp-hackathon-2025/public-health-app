@@ -1,6 +1,6 @@
 import { MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
-import { fetchAlertByLocation, fetchAlerts, fetchSummary } from "../../common/api";
+import { fetchAlertByLocation, fetchAlerts, fetchSummaries } from "../../common/api";
 import Chart from '../../components/Chart';
 import Map from '../../components/Map';
 import RegularAlertPane from "../../components/RegularAlertPane";
@@ -73,8 +73,12 @@ function Dashboard() {
     const [summary, setSummary] = useState([]);
       useEffect(() => {
         const getSummary = async () => {
-          const result = await fetchSummary();
-          setSummary(result);
+          const result = await fetchSummaries();
+          if (result) {
+            setSummary(result[0]);
+          } else {
+            setSummary({"description": ""});
+          }
         };
         getSummary();
       }, []);
@@ -143,7 +147,7 @@ function Dashboard() {
         <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: "50px"}}>
         <div style={{ background: "#f0f0f0", width: "80%", border: "1px solid black",  padding: "20px",
         boxSizing: "border-box", height: "80%"}}>
-            {summary.description}
+            {summary.description}...
         </div>
         </div>
 
