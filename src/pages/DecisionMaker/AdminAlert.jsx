@@ -174,7 +174,7 @@ useEffect(() => {
           <h1 style={{ borderBottom: "1px solid black" , textAlign: "center"}}>
             Generated Strategies
           </h1>
-          <p style={{textAlign: "center"}}>View and evaluate the generated strategies. Then, select a strategy to generate a draft policy document</p>
+          <p style={{textAlign: "center"}}>View and evaluate the generated strategies. Then, select a strategy to generate a draft policy document.</p>
           <div style={{ width: "80%", marginLeft: "75px"}}>
      
         <div style={{display: "flex", flexDirection: "column", alignItems: "center", width: "100%"}}>

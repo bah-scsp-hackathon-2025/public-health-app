@@ -111,7 +111,7 @@ export const fetchDraftPolicies = async () => {
 
 export const fetchApprovedPoliciesByAlert = async (alert_id) => {
   try {
-    const response = await fetch(`http://localhost:8000/policies/approved/${alert_id}`);
+    const response = await fetch(`http://localhost:8000/policies/approved/alert/${alert_id}`);
     const data = await response.json();
     return data;
   } catch (error) {
