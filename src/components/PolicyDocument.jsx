@@ -14,7 +14,6 @@ function PolicyDocument({ policy }) {
         {policy.content}
       </p>
     </div>
-
   );
 }
 

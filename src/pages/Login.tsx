@@ -13,7 +13,7 @@ function Login () {
   };
 
   const goToRegularDashboard = () => {
-     navigate(`/dashboard`);
+     navigate(`/dashboard`, { state: { showVideo: true } });
   };
 
     return (
