@@ -21,9 +21,7 @@ async def test_standard_agent():
     try:
         agent1 = PublicHealthDashboardAgent()
         
-        result = await agent1.generate_dashboard(
-            "Analyze the current public health situation with focus on emerging threats and provide detailed risk assessment"
-        )
+        result = await agent1.assemble_dashboard()
         
         print("✅ Standard Agent Result:")
         print(f"Success: {result.get('success')}")
@@ -49,9 +47,7 @@ async def test_react_agent():
     try:
         agent2 = PublicHealthReActAgent()
         
-        result = await agent2.generate_dashboard(
-            "Use epidemiological tools to analyze COVID trends and hospital capacity"
-        )
+        result = await agent2.assemble_dashboard()
         
         print("✅ ReAct Agent Result:")
         print(f"Success: {result.get('success')}")

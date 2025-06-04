@@ -67,9 +67,7 @@ async def test_react_agent_analysis():
         
         start_time = datetime.now()
         
-        result = await agent.generate_dashboard(
-            "Analyze COVID-19 trends in the United States focusing on case data and symptoms"
-        )
+        result = await agent.assemble_dashboard()
         
         end_time = datetime.now()
         duration = (end_time - start_time).total_seconds()
@@ -192,7 +190,7 @@ async def test_integration_scenarios():
             agent = PublicHealthReActAgent()
             
             start_time = datetime.now()
-            result = await agent.generate_dashboard(scenario['query'])
+            result = await agent.assemble_dashboard()
             duration = (datetime.now() - start_time).total_seconds()
             
             success = result.get('success', False)

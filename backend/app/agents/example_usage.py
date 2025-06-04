@@ -34,9 +34,7 @@ async def main():
     try:
         # Generate a dashboard
         print("🔄 Generating dashboard...")
-        result = await agent.generate_dashboard(
-            "Generate a comprehensive public health dashboard with current alerts and trends"
-        )
+        result = await agent.assemble_dashboard()
         
         if result.get('success'):
             print("✅ Dashboard generated successfully!")

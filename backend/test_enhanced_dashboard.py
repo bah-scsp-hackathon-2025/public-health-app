@@ -26,9 +26,7 @@ async def test_enhanced_standard_agent():
     
     try:
         agent = PublicHealthDashboardAgent()
-        result = await agent.generate_dashboard(
-            'Generate comprehensive health dashboard with detailed trend analysis and alert prioritization'
-        )
+        result = await agent.assemble_dashboard()
         
         print("✅ Dashboard generated successfully!")
         print(f"📊 Alerts: {len(result.get('alerts', []))} alerts with analysis")
@@ -83,9 +81,7 @@ async def test_enhanced_react_agent():
     
     try:
         agent = PublicHealthReActAgent()
-        result = await agent.generate_dashboard(
-            'Analyze epidemiological trends and generate dashboard with rising trend detection'
-        )
+        result = await agent.assemble_dashboard()
         
         print("✅ ReAct Dashboard generated successfully!")
         print(f"📊 Alerts: {len(result.get('alerts', []))} alerts")

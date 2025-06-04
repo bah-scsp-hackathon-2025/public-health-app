@@ -46,7 +46,7 @@ http://localhost:8000/dashboard
 {
     "success": true,
     "dashboard_summary": "📊 **PUBLIC HEALTH DASHBOARD SUMMARY**...",
-    "timestamp": "2024-01-15T10:30:00Z",
+    "timestamp": "2021-01-15T10:30:00Z",
     "error": null,
     "generation_time_seconds": 12.5,
     "agent_type": "react",
@@ -104,7 +104,7 @@ http://localhost:8000/dashboard
     "agent_available": true,
     "mcp_server_accessible": true,
     "anthropic_api_available": true,
-    "timestamp": "2024-01-15T10:30:00Z"
+    "timestamp": "2021-01-15T10:30:00Z"
 }
 ```
 
@@ -129,7 +129,7 @@ Generate a customized public health dashboard.
 {
     "success": true,
     "dashboard_summary": "📊 **PUBLIC HEALTH DASHBOARD SUMMARY**\n\n🚨 **CURRENT SITUATION**...",
-    "timestamp": "2024-01-15T10:30:00Z",
+    "timestamp": "2021-01-15T10:30:00Z",
     "generation_time_seconds": 15.3,
     "agent_type": "react",
     "alerts": [
@@ -177,7 +177,7 @@ Check the status of dashboard generation services.
     "agent_available": true,
     "mcp_server_accessible": true,
     "anthropic_api_available": true,
-    "timestamp": "2024-01-15T10:30:00Z"
+    "timestamp": "2021-01-15T10:30:00Z"
 }
 ```
 
@@ -224,7 +224,7 @@ Generate comprehensive epidemiological analysis using the ReAct agent with real-
 {
     "success": true,
     "dashboard_summary": "🔬 **EPIDEMIOLOGICAL ANALYSIS**...",
-    "timestamp": "2024-01-15T10:30:00Z",
+    "timestamp": "2021-01-15T10:30:00Z",
     "generation_time_seconds": 45.2,
     "agent_type": "ReAct-Epidemiological",
     "tools_used": ["fetch_epi_signal", "detect_rising_trend"],
@@ -247,7 +247,7 @@ Start dashboard generation as a background task.
 {
     "message": "Dashboard generation started in background",
     "task_id": "dashboard_20240115_103000",
-    "timestamp": "2024-01-15T10:30:00Z"
+    "timestamp": "2021-01-15T10:30:00Z"
 }
 ```
 
@@ -290,7 +290,7 @@ All endpoints return structured error responses:
 {
     "success": false,
     "error": "Dashboard generation failed: Connection timeout",
-    "timestamp": "2024-01-15T10:30:00Z",
+    "timestamp": "2021-01-15T10:30:00Z",
     "generation_time_seconds": 5.0
 }
 ```

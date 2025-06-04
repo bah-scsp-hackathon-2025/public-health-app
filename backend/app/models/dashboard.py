@@ -5,14 +5,14 @@ from pydantic import BaseModel, Field
 class DashboardRequest(BaseModel):
     """Request model for dashboard generation"""
     start_date: Optional[str] = Field(
-        default=None,
+        default="2020-02-01",
         description="Start date for data analysis in YYYY-MM-DD format. If not provided, uses appropriate default period.",
-        example="2024-01-01"
+        example="2020-02-01"
     )
     end_date: Optional[str] = Field(
-        default=None,
+        default="2022-02-01",
         description="End date for data analysis in YYYY-MM-DD format. If not provided, uses current date.",
-        example="2024-01-31"
+        example="2022-02-01"
     )
     agent_type: Optional[str] = Field(
         default="react",

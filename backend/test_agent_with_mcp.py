@@ -30,9 +30,7 @@ async def test_agent_with_mcp():
         print(f"   ✅ Agent created with LLM: {agent.llm is not None}")
         
         print("\n2. Testing dashboard generation...")
-        result = await agent.generate_dashboard(
-            "Generate comprehensive public health dashboard"
-        )
+        result = await agent.assemble_dashboard()
         
         print(f"   ✅ Dashboard generated successfully")
         print(f"   📊 Alerts: {result.get('alerts_count', 0)}")

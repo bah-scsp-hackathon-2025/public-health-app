@@ -113,7 +113,7 @@ async def test_agent_without_llm():
         agent.llm = MockLLM()
         
         # Test the workflow
-        result = await agent.generate_dashboard("Test dashboard with mock LLM")
+        result = await agent.assemble_dashboard()
         
         print("✅ Agent workflow completed")
         print(f"✅ Alerts processed: {result['alerts_count']}")
@@ -162,9 +162,7 @@ async def test_basic_workflow():
     try:
         agent = PublicHealthDashboardAgent()
         
-        result = await agent.generate_dashboard(
-            "Generate a basic public health dashboard with current health alerts"
-        )
+        result = await agent.assemble_dashboard()
         
         print("✅ Basic workflow test completed")
         print(f"Success: {result.get('success', False)}")
@@ -250,9 +248,7 @@ async def demo_interactive_features():
             agent = PublicHealthDashboardAgent()
     
     # Generate dashboard
-    result = await agent.generate_dashboard(
-        "Generate dashboard focusing on high severity alerts in California"
-    )
+    result = await agent.assemble_dashboard()
     
     # Use the result
     dashboard_html = result["dashboard_summary"]

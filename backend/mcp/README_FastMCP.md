@@ -110,8 +110,8 @@ curl -X POST http://localhost:8000/mcp/call \
       "mental_health_calls",
       "foodborne_illness_reports"
     ],
-    "start_date": "2024-01-01",
-    "end_date": "2024-02-12"
+    "start_date": "2021-01-01",
+    "end_date": "2021-02-12"
   }
 }
 ```
@@ -189,7 +189,7 @@ curl -X POST http://localhost:8000/mcp/call \
       "severity": "HIGH",
       "state": "CA",
       "county": "Los Angeles",
-      "timestamp": "2024-01-15T14:30:00Z",
+      "timestamp": "2021-01-15T14:30:00Z",
       "alert_type": "OUTBREAK",
       "affected_population": 15000,
       "source": "LA County Health Department"
@@ -197,7 +197,7 @@ curl -X POST http://localhost:8000/mcp/call \
   ],
   "metadata": {
     "server": "FastMCP Public Health Server",
-    "timestamp": "2024-01-15T10:30:00Z",
+    "timestamp": "2021-01-15T10:30:00Z",
     "total_available_alerts": 8
   }
 }
@@ -222,7 +222,7 @@ curl -X POST http://localhost:8000/mcp/call \
       "unit": "calls_per_100k",
       "data_points": [
         {
-          "date": "2024-01-01",
+          "date": "2021-01-01",
           "value": 23.1,
           "change_percent": 12.4
         }
@@ -232,7 +232,7 @@ curl -X POST http://localhost:8000/mcp/call \
   "metadata": {
     "server": "FastMCP Public Health Server",
     "data_source": "Mock Public Health Data",
-    "last_updated": "2024-01-15T10:30:00Z",
+    "last_updated": "2021-01-15T10:30:00Z",
     "total_trend_types": 1,
     "transport": "SSE"
   }

@@ -52,9 +52,9 @@ async def test_langfuse_tracing():
         agent = PublicHealthReActAgent()
         
         # This will be traced in Langfuse via callback handlers
-        result = await agent.generate_dashboard(
-            start_date="2024-01-01",
-            end_date="2024-01-31"
+        result = await agent.assemble_dashboard(
+            start_date="2020-03-01",
+            end_date="2021-04-30"
         )
         
         print(f"\n📊 Dashboard generation completed:")

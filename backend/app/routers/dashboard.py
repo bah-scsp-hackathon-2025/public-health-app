@@ -18,15 +18,15 @@ from app.models.dashboard import DashboardRequest, DashboardResponse, DashboardS
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
-@router.post("/generate", response_model=DashboardResponse)
-async def generate_dashboard(request: DashboardRequest):
+@router.post("/assemble", response_model=DashboardResponse)
+async def assemble_dashboard(request: DashboardRequest):
     """
-    Generate a public health dashboard summary using the LangGraph agent.
+    Assemble a public health dashboard summary using the LangGraph agent.
     
     This endpoint creates a dashboard agent and uses it to:
     1. Fetch health alerts and trends from the MCP server
     2. Analyze the data for patterns and insights
-    3. Generate comprehensive dashboard summaries
+    3. Assemble dashboard summary
     4. Provide actionable insights for public health officials
     
     The agent uses Anthropic Claude for enhanced reasoning and analysis.
@@ -42,7 +42,7 @@ async def generate_dashboard(request: DashboardRequest):
             agent = PublicHealthDashboardAgent()
             
         # Generate the dashboard with date parameters
-        result = await agent.generate_dashboard(
+        result = await agent.assemble_dashboard(
             start_date=request.start_date,
             end_date=request.end_date
         )
@@ -148,7 +148,7 @@ async def generate_dashboard_async(request: DashboardRequest, background_tasks: 
             else:
                 agent = PublicHealthDashboardAgent()
             
-            result = await agent.generate_dashboard(
+            result = await agent.assemble_dashboard(
                 start_date=request.start_date,
                 end_date=request.end_date
             )
@@ -173,21 +173,21 @@ async def generate_dashboard_async(request: DashboardRequest, background_tasks: 
 async def get_alerts_summary():
     """Generate a dashboard focused on current alerts only"""
     request = DashboardRequest()
-    return await generate_dashboard(request)
+    return await assemble_dashboard(request)
 
 
 @router.get("/trends-summary", response_model=DashboardResponse) 
 async def get_trends_summary():
     """Generate a dashboard focused on health risk trends only"""
     request = DashboardRequest()
-    return await generate_dashboard(request)
+    return await assemble_dashboard(request)
 
 
 @router.get("/emergency-summary", response_model=DashboardResponse)
 async def get_emergency_summary():
     """Generate a dashboard for emergency response scenarios"""
     request = DashboardRequest()
-    return await generate_dashboard(request)
+    return await assemble_dashboard(request)
 
 
 @router.post("/epidemiological-analysis", response_model=DashboardResponse)
@@ -224,7 +224,7 @@ Emphasize real-time data analysis and statistical evidence.
 """
         
         # Generate the analysis
-        result = await agent.generate_dashboard(epi_request)
+        result = await agent.assemble_dashboard(epi_request)
         
         # Calculate generation time
         generation_time = (datetime.now() - start_time).total_seconds()

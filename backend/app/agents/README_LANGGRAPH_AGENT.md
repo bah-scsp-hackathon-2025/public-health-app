@@ -75,9 +75,7 @@ from health_dashboard_agent import PublicHealthDashboardAgent
 agent = PublicHealthDashboardAgent()
 
 # Generate dashboard
-result = await agent.generate_dashboard(
-    "Generate comprehensive public health dashboard for current situation"
-)
+result = await agent.assemble_dashboard()
 
 # Use the results
 print(result["dashboard_summary"])
@@ -87,10 +85,8 @@ print(f"Processed {result['alerts_count']} alerts and {result['trends_count']} t
 ### Targeted Requests
 
 ```python
-# Focus on specific aspects
-result = await agent.generate_dashboard("Focus on high severity alerts in California")
-result = await agent.generate_dashboard("Analyze respiratory illness trends")
-result = await agent.generate_dashboard("Emergency response priorities for Texas")
+# Focus on specific dates
+result = await agent.assemble_dashboard(...)
 ```
 
 ### Interactive CLI
@@ -170,7 +166,7 @@ agent = PublicHealthDashboardAgent()
 
 @app.route('/api/dashboard')
 async def get_dashboard():
-    result = await agent.generate_dashboard()
+    result = await agent.assemble_dashboard()
     return jsonify({
         'summary': result['dashboard_summary'],
         'alerts_count': result['alerts_count'],
@@ -189,19 +185,11 @@ from health_dashboard_agent import PublicHealthDashboardAgent
 async def daily_health_report():
     agent = PublicHealthDashboardAgent()
     
-    # Generate different report types
-    reports = [
-        ("Executive Summary", "Generate executive-level health status overview"),
-        ("Regional Focus", "Analyze regional health disparities and hotspots"),
-        ("Trend Analysis", "Focus on emerging health trends and patterns")
-    ]
+    result = await agent.assemble_dashboard()
     
-    for report_name, request in reports:
-        result = await agent.generate_dashboard(request)
-        
-        # Save to file, send email, post to Slack, etc.
-        with open(f"reports/{report_name}_{datetime.now().strftime('%Y%m%d')}.md", 'w') as f:
-            f.write(result['dashboard_summary'])
+    # Save to file, send email, post to Slack, etc.
+    with open(f"reports/{datetime.now().strftime('%Y%m%d')}.md", 'w') as f:
+        f.write(result['dashboard_summary'])
 
 # Schedule with cron or asyncio
 asyncio.run(daily_health_report())
@@ -217,9 +205,7 @@ async def post_health_update(channel_id: str):
     agent = PublicHealthDashboardAgent()
     slack_client = AsyncWebClient(token=os.environ["SLACK_BOT_TOKEN"])
     
-    result = await agent.generate_dashboard(
-        "Generate brief health status update for Slack"
-    )
+    result = await agent.assemble_dashboard()
     
     await slack_client.chat_postMessage(
         channel=channel_id,
@@ -385,12 +371,11 @@ class PublicHealthDashboardAgent:
                  mcp_host: str = "localhost", 
                  mcp_port: int = 8000)
     
-    async def generate_dashboard(self, request: str) -> Dict:
+    async def assemble_dashboard(self) -> Dict:
         """
         Generate dashboard summary from health data.
         
-        Args:
-            request: Natural language description of dashboard requirements
+        Args: None
             
         Returns:
             Dict with keys: dashboard_summary, alerts_count, trends_count, 

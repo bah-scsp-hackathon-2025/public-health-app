@@ -34,9 +34,7 @@ async def test_comprehensive_integration():
     # Test 2: Basic dashboard generation
     print('\n2️⃣ Testing Basic Dashboard Generation...')
     try:
-        result = await agent.generate_dashboard(
-            "Generate a comprehensive public health dashboard focusing on current alerts and emerging trends"
-        )
+        result = await agent.assemble_dashboard()
         print('   ✅ Basic dashboard generation successful!')
         
         if 'alerts_data' in result and result['alerts_data']:
@@ -85,9 +83,7 @@ async def test_react_agent():
         from app.agents.health_dashboard_react_agent import PublicHealthReActAgent
         agent = PublicHealthReActAgent()
         
-        result = await agent.generate_dashboard(
-            "Use epidemiological tools to analyze COVID trends and create a comprehensive dashboard"
-        )
+        result = await agent.assemble_dashboard()
         
         # Display results
         print("\n📊 REACT DASHBOARD SUMMARY:")

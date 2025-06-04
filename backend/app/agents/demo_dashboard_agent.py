@@ -159,9 +159,7 @@ async def demo_dashboard_agent():
     print("-" * 60)
     
     # Generate dashboard
-    result = await agent.generate_dashboard(
-        "Generate a comprehensive public health dashboard focusing on current alerts and emerging trends"
-    )
+    result = await agent.assemble_dashboard()
     
     # Display results
     print("\n" + "=" * 80)
@@ -219,7 +217,7 @@ async def demo_interactive_requests():
         print(f"\n📋 {request_name}:")
         print("-" * 40)
         
-        result = await agent.generate_dashboard(request_text)
+        result = await agent.assemble_dashboard()
         
         # Show abbreviated summary
         summary_lines = result["dashboard_summary"].split('\n')[:8]
