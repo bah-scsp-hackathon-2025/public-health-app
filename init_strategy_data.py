@@ -19,8 +19,3 @@ for strategy in strategies:
         strategy["alert_id"] = alert_ids[2]
     result = requests.post(f"{API_URL}/strategies/", json=strategy)
     print(result.json())
-
-policies = []
-for policy in policies:
-    result = requests.post(f"{API_URL}/policies/", json=policy)
-    print(result.json())

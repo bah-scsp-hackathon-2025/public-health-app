@@ -17,13 +17,3 @@ print(result.json())
 for trend in data["trends"]:
     result = requests.post(f"{API_URL}/trends", json={"data": json.dumps(trend["data"])})
     print(result.json())
-
-strategies = []
-for strategy in strategies:
-    result = requests.post(f"{API_URL}/strategies/", json=strategy)
-    print(result.json())
-
-policies = []
-for policy in policies:
-    result = requests.post(f"{API_URL}/policies/", json=policy)
-    print(result.json())
