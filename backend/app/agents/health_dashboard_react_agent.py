@@ -28,9 +28,6 @@ from pydantic import BaseModel, Field
 from operator import add
 from typing import Dict, List, Optional, Annotated, Any, TypedDict
 
-# Import models
-from app.models.trend import TrendResponse
-
 # Langfuse imports
 from langfuse.callback import CallbackHandler
 
@@ -1185,7 +1182,7 @@ An error occurred while generating the epidemiological dashboard:
         return formatted_signals
 
     def _format_trends_from_fetch_data(self, state: Dict) -> List[Dict]:
-        """Format trends from raw fetch_epi_signal data into TrendResponse objects"""
+        """Format trends from raw fetch_epi_signal data with flattened structure and parsed result"""
         trends = []
         
         fetch_data_list = state.get("fetch_epi_signal_data", [])
@@ -1193,17 +1190,33 @@ An error occurred while generating the epidemiological dashboard:
         
         for fetch_data in fetch_data_list:
             try:
-                # Create TrendResponse object with the raw data
-                trend_response = TrendResponse(data=fetch_data)
-                trends.append(trend_response.dict())
+                # Extract the basic structure (flattened, no "data" wrapper)
+                trend_item = {
+                    "tool_args": fetch_data.get("tool_args", {}),
+                    "result": fetch_data.get("result"),
+                    "timestamp": fetch_data.get("timestamp")
+                }
                 
-                logger.debug(f"Created TrendResponse for fetch_epi_signal data from {fetch_data.get('timestamp', 'unknown')}")
+                # Parse the JSON string in the "result" field
+                result_str = trend_item.get("result")
+                if isinstance(result_str, str):
+                    try:
+                        import json
+                        parsed_result = json.loads(result_str)
+                        trend_item["result"] = parsed_result
+                        logger.debug(f"Parsed JSON result with {len(parsed_result) if isinstance(parsed_result, list) else 1} data points")
+                    except json.JSONDecodeError as json_err:
+                        logger.warning(f"⚠️ Could not parse result JSON: {json_err}")
+                        # Keep the original string if parsing fails
+                
+                trends.append(trend_item)
+                logger.debug(f"Created flattened trend data from {fetch_data.get('timestamp', 'unknown')}")
                 
             except Exception as e:
-                logger.warning(f"⚠️ Could not create TrendResponse from fetch data: {str(e)}")
+                logger.warning(f"⚠️ Could not format fetch data: {str(e)}")
                 continue
         
-        logger.debug(f"✅ Formatted {len(trends)} trends from {len(fetch_data_list)} fetch_epi_signal results")
+        logger.debug(f"✅ Formatted {len(trends)} flattened trends from {len(fetch_data_list)} fetch_epi_signal results")
         return trends
 
 
