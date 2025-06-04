@@ -1,6 +1,6 @@
 import { MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
-import { fetchAlertByLocation, fetchAlerts, fetchSummaries } from "../../common/api";
+import { fetchAlertByLocation, fetchAlerts, fetchSummaries, fetchTrends } from "../../common/api";
 import Chart from '../../components/Chart';
 import Map from '../../components/Map';
 import RegularAlertPane from "../../components/RegularAlertPane";
@@ -83,6 +83,17 @@ function Dashboard() {
         getSummary();
       }, []);
 
+      const [trends, setTrends] = useState([]);
+      useEffect(() => {
+        const getTrends = async () => {
+          const result = await fetchTrends();
+          let trend_data = result.map(({ trend }) => JSON.parse(trend.data));
+          console.log(trend_data);
+          setTrends(trend_data);
+        };
+        getTrends();
+      }, []);
+      console.log(trends);
 
       const [alerts, setAlerts] = useState([]);
       async function getAlerts(state) {
