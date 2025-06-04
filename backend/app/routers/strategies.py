@@ -58,7 +58,7 @@ def get_strategy_by_id(strategy_id: str, db: Session = Depends(get_db)):
 async def get_strategies_by_alert(alert_id: str, db: Session = Depends(get_db)):
     strategies = db.query(Strategy).filter(Strategy.alert_id == alert_id).all()
     if strategies is None:
-        raise HTTPException(status_code=404, detail="Strategy not found")
+        strategies = []
     return strategies
 
 
