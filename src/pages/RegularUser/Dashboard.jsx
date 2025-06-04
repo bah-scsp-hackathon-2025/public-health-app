@@ -308,22 +308,51 @@ useEffect(() => {
 
 
 
-      <div style={{display: "flex", justifyContent: "center", marginBottom: "40px"}}>
-        <MapPin/>
-          <div style={{marginRight: "20px", fontWeight: "bold", fontSize: "20px", padding: "5px"}}>Select Your Location</div>
-          <select value={selectedState} onChange={onChange}
-            style={{
-            fontSize: "15px",       // larger text
-            padding: "5px",        // larger click area
-            height: "30px",         // increase height
-            minWidth: "250px",      // optional: wider dropdown
-            borderRadius: "5px"     // optional: rounded corners
-        }}>
-            {US_STATE_AND_TERRITORY_NAMES.map((name) =>
-                <option style={{fontSize: "20px", height:"50px"}}>{name}</option>
-            )}
-          </select>
-      </div>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: "40px", alignItems: "center" }}>
+  <MapPin />
+  <div style={{ marginRight: "20px", fontWeight: "bold", fontSize: "20px", padding: "5px" }}>
+    Select Your Location
+  </div>
+  <select
+    value={selectedState}
+    onChange={onChange}
+    style={{
+      fontSize: "15px",
+      padding: "5px",
+      height: "30px",
+      minWidth: "250px",
+      borderRadius: "5px",
+    }}
+  >
+    {/* Optionally add a default empty option */}
+    <option value="">All States</option>
+    {US_STATE_AND_TERRITORY_NAMES.map((name) => (
+      <option key={name} style={{ fontSize: "20px", height: "50px" }} value={name}>
+        {name}
+      </option>
+    ))}
+  </select>
+
+  {/* Clear button */}
+  <button
+    onClick={() => {
+      setSelectedState("");
+      getAlerts("");  // reset alerts to default/all
+    }}
+    style={{
+      marginLeft: "15px",
+      padding: "5px 15px",
+      fontSize: "16px",
+      cursor: "pointer",
+      borderRadius: "5px",
+      border: "1px solid #ccc",
+      backgroundColor: "#f5f5f5",
+    }}
+  >
+    Clear State Filter
+  </button>
+</div>
+
 
     
 
