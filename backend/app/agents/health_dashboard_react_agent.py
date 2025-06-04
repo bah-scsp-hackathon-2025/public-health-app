@@ -637,7 +637,7 @@ Respond with either:
                 
                 # Process fetch_epi_signal outputs
                 if tool_name == "fetch_epi_signal":
-                    signal_data = self._parse_epi_signal_output(tool_content)
+                    signal_data = self._parse_epi_signal_output(tool_content, tool_result.get("tool_args", {}))
                     if signal_data:
                         new_epi_signals.append(signal_data.dict())
                         logger.debug(f"Stored epidemiological signal: {signal_data.signal_name}")
@@ -659,7 +659,7 @@ Respond with either:
                 
                 # Process detect_rising_trend outputs
                 elif tool_name == "detect_rising_trend":
-                    trend_data = self._parse_trend_analysis_output(tool_content)
+                    trend_data = self._parse_trend_analysis_output(tool_content, tool_result.get("tool_args", {}))
                     if trend_data:
                         new_trend_analyses.append(trend_data.dict())
                         logger.debug(f"Stored trend analysis: {trend_data.signal_name}")
@@ -680,32 +680,52 @@ Respond with either:
             logger.error(f"❌ Error processing tool output: {str(e)}")
             return {"error_message": f"Tool output processing failed: {str(e)}"}
     
-    def _parse_epi_signal_output(self, content: str) -> Optional[EpiSignalData]:
+    def _parse_epi_signal_output(self, content: str, tool_args: Dict[str, Any] = None) -> Optional[EpiSignalData]:
         """Parse epidemiological signal data from tool output"""
         try:
-            # Try to extract signal information from content
+            # Try to extract signal information from content and tool args
             import json
             import re
             
-            # Look for signal name
-            signal_name = "unknown_signal"
-            for known_signal in ["confirmed_7dav_incidence_prop", "smoothed_wcli", "smoothed_adj_cli"]:
-                if known_signal in content:
-                    signal_name = known_signal
-                    break
+            if tool_args is None:
+                tool_args = {}
+            
+            # Get signal name from tool arguments first (most reliable)
+            signal_name = tool_args.get("signal", "unknown_signal")
+            
+            # If not in tool args, look in content
+            if signal_name == "unknown_signal":
+                known_signals = [
+                    "confirmed_7dav_incidence_prop", 
+                    "smoothed_wcli", 
+                    "smoothed_adj_cli",
+                    "smoothed_whh_cmnty_cli"
+                ]
+                for known_signal in known_signals:
+                    if known_signal in content.lower():
+                        signal_name = known_signal
+                        break
             
             # Map signal names to display names
             signal_display_names = {
                 "confirmed_7dav_incidence_prop": "COVID-19 Case Rates",
                 "smoothed_wcli": "COVID-Like Symptoms",
                 "smoothed_adj_cli": "COVID-Related Doctor Visits",
+                "smoothed_whh_cmnty_cli": "Weekly Hospital Admissions (CLI)",
             }
+            
+            # Extract geographic info from tool args
+            geo_areas = []
+            if tool_args.get("geo_value"):
+                geo_areas.append(tool_args["geo_value"].upper())
+            
+            logger.debug(f"✅ Parsed epi signal: {signal_name} for {geo_areas or ['US']}")
             
             return EpiSignalData(
                 signal_name=signal_name,
                 display_name=signal_display_names.get(signal_name, signal_name),
                 description=f"Epidemiological data for {signal_display_names.get(signal_name, signal_name)}",
-                geographic_areas=["US"],  # Default for Delphi data
+                geographic_areas=geo_areas or ["US"],  # Use from args or default
                 data_points=[],  # Could extract from content if needed
                 trend_direction="unknown",
                 data_quality="high",
@@ -716,7 +736,7 @@ Respond with either:
             logger.warning(f"⚠️ Could not parse epi signal output: {str(e)}")
             return None
     
-    def _parse_trend_analysis_output(self, content: str) -> Optional[TrendAnalysisData]:
+    def _parse_trend_analysis_output(self, content: str, tool_args: Dict[str, Any] = None) -> Optional[TrendAnalysisData]:
         """Parse trend analysis data from tool output"""
         try:
             import json
@@ -726,37 +746,109 @@ Respond with either:
             rising_periods = 0
             total_periods = 0
             signal_name = "unknown_signal"
+            trend_strength = "medium"
             
-            # Look for JSON patterns
-            json_match = re.search(r'\{[^{}]*"rising_periods"[^{}]*\}', content)
-            if json_match:
-                trend_data = json.loads(json_match.group())
-                rising_periods = trend_data.get("rising_periods", 0)
-                total_periods = trend_data.get("total_periods", 0)
+            logger.debug(f"🔍 Parsing trend analysis content: {content[:200]}...")
             
-            # Determine risk level
+            # First try to parse the entire content as JSON (if it's a JSON response)
+            try:
+                if content.strip().startswith('{') and content.strip().endswith('}'):
+                    trend_data = json.loads(content)
+                    rising_periods = trend_data.get("rising_periods", 0)
+                    total_periods = trend_data.get("total_periods", 0)
+                    signal_name = trend_data.get("signal", trend_data.get("signal_name", "unknown_signal"))
+                    if "status" in trend_data and trend_data["status"] == "success":
+                        logger.debug(f"✅ Parsed complete JSON: {rising_periods}/{total_periods} rising periods")
+                else:
+                    raise json.JSONDecodeError("Not a complete JSON", content, 0)
+                    
+            except json.JSONDecodeError:
+                # Try to find JSON patterns in the content
+                json_patterns = [
+                    r'\{[^{}]*"rising_periods"[^{}]*"total_periods"[^{}]*\}',  # Most specific
+                    r'\{[^{}]*"rising_periods"[^{}]*\}',  # Less specific
+                    r'\{.*?"rising_periods".*?\}',  # Even more flexible
+                ]
+                
+                for pattern in json_patterns:
+                    json_match = re.search(pattern, content, re.DOTALL)
+                    if json_match:
+                        try:
+                            trend_data = json.loads(json_match.group())
+                            rising_periods = trend_data.get("rising_periods", 0)
+                            total_periods = trend_data.get("total_periods", 0)
+                            signal_name = trend_data.get("signal", trend_data.get("signal_name", "unknown_signal"))
+                            logger.debug(f"✅ Extracted from JSON pattern: {rising_periods}/{total_periods} rising periods")
+                            break
+                        except json.JSONDecodeError:
+                            continue
+                
+                # If JSON parsing fails, try to extract numbers from text
+                if rising_periods == 0 and total_periods == 0:
+                    rising_match = re.search(r'rising[_\s]*periods?[:\s]*(\d+)', content, re.IGNORECASE)
+                    total_match = re.search(r'total[_\s]*periods?[:\s]*(\d+)', content, re.IGNORECASE)
+                    
+                    if rising_match:
+                        rising_periods = int(rising_match.group(1))
+                    if total_match:
+                        total_periods = int(total_match.group(1))
+                    
+                    logger.debug(f"✅ Extracted from text patterns: {rising_periods}/{total_periods} periods")
+            
+            # Try to extract signal name from tool arguments first, then content
+            if tool_args is None:
+                tool_args = {}
+                
+            # Get signal name from tool args (most reliable source)
+            signal_name = tool_args.get("signal", signal_name)
+            
+            # If still unknown, try to extract from content patterns
+            if signal_name == "unknown_signal":
+                signal_patterns = [
+                    "confirmed_7dav_incidence_prop",
+                    "smoothed_wcli", 
+                    "smoothed_adj_cli",
+                    "smoothed_whh_cmnty_cli"
+                ]
+                for pattern in signal_patterns:
+                    if pattern in content.lower():
+                        signal_name = pattern
+                        break
+            
+            # Determine risk level and trend strength
             if total_periods > 0:
                 rise_ratio = rising_periods / total_periods
                 if rise_ratio > 0.7:
                     risk_level = "high"
+                    trend_strength = "strong"
                 elif rise_ratio > 0.4:
                     risk_level = "medium"
+                    trend_strength = "moderate"
                 else:
                     risk_level = "low"
+                    trend_strength = "weak"
             else:
                 risk_level = "unknown"
+                trend_strength = "unknown"
+            
+            logger.debug(f"✅ Parsed trend analysis: signal={signal_name}, rising={rising_periods}, total={total_periods}, risk={risk_level}")
             
             return TrendAnalysisData(
                 signal_name=signal_name,
                 rising_periods=rising_periods,
                 total_periods=total_periods,
+                trend_strength=trend_strength,
                 risk_level=risk_level,
                 analysis_timestamp=datetime.now().isoformat(),
-                statistical_evidence={"rising_ratio": rising_periods / max(total_periods, 1)}
+                statistical_evidence={
+                    "rising_ratio": rising_periods / max(total_periods, 1),
+                    "raw_content_sample": content[:100] + "..." if len(content) > 100 else content
+                }
             )
             
         except Exception as e:
             logger.warning(f"⚠️ Could not parse trend analysis output: {str(e)}")
+            logger.debug(f"🔍 Content that failed to parse: {content[:200]}...")
             return None
     
     async def _final_analysis_node(self, state: Dict[str, Any]) -> Dict[str, Any]:
