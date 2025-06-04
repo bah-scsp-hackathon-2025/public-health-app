@@ -1538,14 +1538,16 @@ An error occurred while generating the epidemiological dashboard:
                         logger.warning(f"⚠️ Could not parse result JSON: {json_err}")
                         # Keep the original string if parsing fails
                 
-                trends.append(trend_item)
-                logger.debug(f"Created flattened trend data from {fetch_data.get('timestamp', 'unknown')}")
+                # Wrap in TrendResponse format (data field required by model)
+                trend_response = {"data": trend_item}
+                trends.append(trend_response)
+                logger.debug(f"Created TrendResponse with parsed data from {fetch_data.get('timestamp', 'unknown')}")
                 
             except Exception as e:
                 logger.warning(f"⚠️ Could not format fetch data: {str(e)}")
                 continue
         
-        logger.debug(f"✅ Formatted {len(trends)} flattened trends from {len(fetch_data_list)} fetch_epi_signal results")
+        logger.debug(f"✅ Formatted {len(trends)} TrendResponse objects from {len(fetch_data_list)} fetch_epi_signal results")
         return trends
 
 
