@@ -74,22 +74,34 @@ class StrategyGenerationAgent:
             raise
     
     async def _get_policy_file_ids(self) -> List[str]:
-        """Get policy document file IDs from Anthropic API"""
+        """Get policy and strategy document file IDs from Anthropic API"""
         try:
             files_response = self.anthropic_client.files.list()
             
-            # Filter for policy documents
+            # Filter for policy and strategy documents
             policy_files = []
-            for file in files_response.data:
-                if file.filename and 'policy' in file.filename.lower():
-                    policy_files.append(file.id)
-                    logger.debug(f"Found policy file: {file.filename}")
+            strategy_files = []
             
-            logger.info(f"Retrieved {len(policy_files)} policy documents")
-            return policy_files
+            for file in files_response.data:
+                if file.filename:
+                    filename_lower = file.filename.lower()
+                    if 'policy' in filename_lower:
+                        policy_files.append(file.id)
+                        logger.debug(f"Found policy file: {file.filename}")
+                    elif any(pattern in filename_lower for pattern in ['strategy', 'paho', 'who', 'epidemic', 'outbreak', 'preparedness', 'response']):
+                        strategy_files.append(file.id)
+                        logger.debug(f"Found strategy file: {file.filename}")
+            
+            # Combine both types of documents
+            all_document_files = policy_files + strategy_files
+            
+            logger.info(f"Retrieved {len(policy_files)} policy documents and {len(strategy_files)} strategy documents")
+            logger.info(f"Total documents available for strategy generation: {len(all_document_files)}")
+            
+            return all_document_files
             
         except Exception as e:
-            logger.warning(f"Could not fetch policy files: {e}")
+            logger.warning(f"Could not fetch document files: {e}")
             return []
     
     def _build_strategy_generation_prompt(self, alert: AlertCreate, policy_file_ids: List[str]) -> str:
@@ -104,8 +116,8 @@ ALERT INFORMATION:
 - Location: {alert.location}
 - Coordinates: {alert.latitude}, {alert.longitude}
 
-POLICY DOCUMENTS: {len(policy_file_ids)} COVID-19 policy briefs are attached.
-Reference these documents for guidance on response protocols and compliance requirements.
+REFERENCE DOCUMENTS: {len(policy_file_ids)} policy and strategy documents are attached.
+Reference these documents for guidance on response protocols, evidence-based strategies, and compliance requirements.
 
 STRATEGY GENERATION REQUIREMENTS:
 Generate exactly 4 strategies with varying approaches:
@@ -129,12 +141,12 @@ The strategies should complement each other and provide a comprehensive response
     
     async def _call_claude_for_strategies(self, strategy_prompt: str, policy_file_ids: List[str]) -> str:
         """Make the Claude API call for strategy generation"""
-        system_prompt = """You are a Public Health Strategy Generator AI with access to official policy documents. Your task is to generate multiple strategic response variations based on alert information.
+        system_prompt = """You are a Public Health Strategy Generator AI with access to official policy and strategy documents. Your task is to generate multiple strategic response variations based on alert information.
 
 CRITICAL REQUIREMENTS:
 1. Generate exactly 4 distinct strategy variations with different severity levels and approaches
 2. Each strategy must be actionable and evidence-based
-3. Reference policy documents to ensure compliance with official guidelines
+3. Reference policy and strategy documents to ensure compliance with official guidelines and proven methodologies
 4. Vary the response approach, timeline, and target audience for each strategy
 
 STRATEGY VARIATION FRAMEWORK:
