@@ -161,7 +161,7 @@ class PublicHealthReActAgent:
                 temperature=1.0,
                 max_tokens=64000,  # Must be greater than thinking.budget_tokens
                 thinking={"type": "enabled", "budget_tokens": 8000},
-                betas=["extended-cache-ttl-2025-04-11", "files-api-2025-04-14"],
+                betas=["files-api-2025-04-14"],
                 api_key=anthropic_key
             )
             # Initialize direct Anthropic client for Files API with SSL configuration
@@ -312,7 +312,8 @@ Decision rules:
 - If you have signal data but no trend analysis, use detect_rising_trend
 - If you have both signals and trends, proceed to final analysis
 - If analysis_complete is True, proceed to final analysis
-- DO NOT generate or create any data, only rely on the tools
+- DO NOT generate or create any data, MUST only rely on the tools to get any signals and trends and data points
+- You MUST use the tools, and ONLY the tools as a data source for signals and trends and data points
 
 Respond with either:
 1. Tool calls to gather initial or more data
@@ -609,7 +610,7 @@ Use the structured data provided to create specific, evidence-based insights tha
             files_llm = ChatAnthropic(
                 model="claude-sonnet-4-20250514",
                 temperature=1.0,
-                max_tokens=4000,
+                max_tokens=64000,
                 betas=["files-api-2025-04-14"],
                 api_key=self.anthropic_client.api_key
             )
@@ -778,9 +779,9 @@ An error occurred while generating the epidemiological dashboard:
         logger.debug(f"Agent configuration - MCP: {self.mcp_host}:{self.mcp_port}")
         
         # Build the dashboard generation request with date context
-        dashboard_request = "Assemble a public health dashboard with obtained data and epidemiological analysis"
+        dashboard_request = "Assemble a public health dashboard"
         if start_date or end_date:
-            date_context = f" focusing on data"
+            date_context = f" on data from external datasets"
             if start_date:
                 date_context += f" from {start_date}"
             if end_date:
