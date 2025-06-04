@@ -131,7 +131,7 @@ def detect_rising_trend(
     date_column: str = "time_value",
     window_size: int = 7,
     min_log_slope: float = 0.01,
-    smooth: bool = True
+    #smooth: bool = True
 ) -> dict:
     """
     Detects rising trends in a time series using rolling linear regression on the log-transformed values.
@@ -148,7 +148,6 @@ def detect_rising_trend(
         date_column (str, optional): Column with date values (default: "time_value").
         window_size (int, optional): Size of the rolling window (in time steps).
         min_log_slope (float, optional): Minimum slope (on log scale) to qualify as rising trend.
-        smooth (bool, optional): Whether to apply a 3-day rolling average before log transform.
 
     Returns:
         dict: {
@@ -200,7 +199,7 @@ def detect_rising_trend(
             }
         
         # Convert date column to datetime
-        df[date_column] = pd.to_datetime(df[date_column])
+        df[date_column] = pd.to_datetime(df[date_column], format='%Y-%m-%d')
         
         # Sort by date
         df = df.sort_values(date_column)
@@ -218,11 +217,11 @@ def detect_rising_trend(
             }
         
         # Apply smoothing if requested
-        if smooth:
-            df[f'{value_column}_smoothed'] = df[value_column].rolling(window=3, center=True).mean()
-            analysis_column = f'{value_column}_smoothed'
-        else:
-            analysis_column = value_column
+        # if smooth:
+        #     df[f'{value_column}_smoothed'] = df[value_column].rolling(window=3, center=True).mean()
+        #     analysis_column = f'{value_column}_smoothed'
+        # else:
+        analysis_column = value_column
         
         # Remove any zero or negative values for log transformation
         df = df[df[analysis_column] > 0]
