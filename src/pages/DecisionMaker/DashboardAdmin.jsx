@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchSummary } from "../../common/api";
+import { fetchSummaries } from "../../common/api";
 import AdminNav from "../../components/AdminNav";
 import AlertPane from "../../components/AlertPane";
 import Chart from "../../components/Chart";
@@ -29,11 +29,16 @@ function AdminDashboard() {
   const [summary, setSummary] = useState([]);
   useEffect(() => {
     const getSummary = async () => {
-      const result = await fetchSummary();
-      setSummary(result);
+      const result = await fetchSummaries();
+      if (result) {
+        setSummary(result[0]);
+      } else {
+        setSummary({"description": ""});
+      }
     };
     getSummary();
   }, []);
+
 
   return (
     <div style={{ display: "flex", flexDirection: "column", marginTop: "0%" }}>
@@ -75,7 +80,7 @@ function AdminDashboard() {
             height: "80%",
           }}
         >
-          {summary.description}
+          {summary.description}...
         </div>
       </div>
 

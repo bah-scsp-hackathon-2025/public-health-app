@@ -1,0 +1,29 @@
+import requests
+import json
+
+
+API_URL = "http://localhost:8000"
+
+with open("documents/data/dashboard.json", "r") as f:
+    data = json.load(f)
+
+for alert in data["alerts"]:
+    result = requests.post(f"{API_URL}/alerts/", json=alert)
+    print(result.json())
+
+result = requests.post(f"{API_URL}/summaries/", json={"description": data["dashboard_summary"]})
+print(result.json())
+
+for trend in data["trends"]:
+    result = requests.post(f"{API_URL}/trends", json={"data": json.dumps(trend["data"])})
+    print(result.json())
+
+strategies = []
+for strategy in strategies:
+    result = requests.post(f"{API_URL}/strategies/", json=strategy)
+    print(result.json())
+
+policies = []
+for policy in policies:
+    result = requests.post(f"{API_URL}/policies/", json=policy)
+    print(result.json())
