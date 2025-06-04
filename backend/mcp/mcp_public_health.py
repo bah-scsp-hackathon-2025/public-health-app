@@ -109,7 +109,7 @@ def fetch_epi_signal(
         "geo_type": geo_type,
         "time_values": start_time + "-" + end_time,  # Combine start_time and end_time
         "as_of": end_time,  # Use the end_time as the 'as_of' date
-        "geo_value": "*",
+        "geo_value": {"ny", "ca", "fl", "dc"},
     }
     response = requests.get(BASE_URL, params=params, verify=False) # Disable SSL verification for testing purposes
     if as_json:
