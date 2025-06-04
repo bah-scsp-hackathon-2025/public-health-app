@@ -119,6 +119,19 @@ useEffect(() => {
    
 <div style={{ backgroundColor: "#191970", padding: "40px", border: "1px solid black", borderRadius: "20px" }}>
   <div style={{ marginBottom: "20px" }}>
+    <label style={{ color: "white", marginBottom: "5px", display: "block" }}>Alert Name</label>
+    <div style={{
+      border: "1px solid black",
+      borderRadius: "10px",
+      padding: "10px",
+      minHeight: "80px",
+      background: "white"
+    }}>
+      {alert.name}
+    </div>
+  </div>
+
+    <div style={{ marginBottom: "20px" }}>
     <label style={{ color: "white", marginBottom: "5px", display: "block" }}>Alert Description</label>
     <div style={{ 
       border: "1px solid black", 
@@ -130,7 +143,6 @@ useEffect(() => {
       {alert.description}
     </div>
   </div>
-
   <div style={{ display: "flex", gap: "10px" }}>
     <div style={{ flex: "1" }}>
       <label style={{ color: "white", marginBottom: "5px", display: "block" }}>Risk Score</label>
