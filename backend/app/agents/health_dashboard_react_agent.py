@@ -18,10 +18,10 @@ import os
 import ssl
 from datetime import datetime
 
-from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
+from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage, ToolMessage
 from langchain_anthropic import ChatAnthropic
 from langgraph.graph import StateGraph, END
-from langgraph.prebuilt import ToolNode
+# from langgraph.prebuilt import ToolNode  # Not using separate tool node anymore
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from pydantic import BaseModel, Field
@@ -114,6 +114,10 @@ class ReActState(TypedDict):
     # Tool data storage
     epi_signals: List[Dict[str, Any]]  # Store as dicts for JSON compatibility
     trend_analyses: List[Dict[str, Any]]  # Store as dicts for JSON compatibility
+    
+    # Tool execution state
+    tool_results: List[Dict[str, Any]]  # Raw tool results from reasoning node
+    has_tool_results: bool  # Flag to indicate if tool results need processing
     
     # Analysis state
     reasoning_steps: List[str]
@@ -243,12 +247,11 @@ class PublicHealthReActAgent:
             logger.debug("✅ LangGraph ReAct workflow created")
         
     def _build_react_workflow(self) -> StateGraph:
-        """Build the custom LangGraph ReAct workflow"""
+        """Build the custom LangGraph ReAct workflow with unified reasoning+tools node"""
         workflow = StateGraph(ReActState)
         
-        # Add nodes
+        # Add nodes (reasoning now handles tools directly)
         workflow.add_node("reasoning", self._reasoning_node)
-        workflow.add_node("tools", ToolNode(self.tools))
         workflow.add_node("process_tool_output", self._process_tool_output_node)
         workflow.add_node("final_analysis", self._final_analysis_node)
         workflow.add_node("error_handler", self._error_handler_node)
@@ -256,19 +259,16 @@ class PublicHealthReActAgent:
         # Define the workflow flow
         workflow.set_entry_point("reasoning")
         
-        # Reasoning node decides whether to use tools or finish
+        # Reasoning node decides whether to process tool output, finish, or handle error
         workflow.add_conditional_edges(
             "reasoning",
             self._should_continue_or_finish,
             {
-                "tools": "tools",
+                "process_tools": "process_tool_output",
                 "final_analysis": "final_analysis",
                 "error": "error_handler"
             }
         )
-        
-        # After tool execution, process the output
-        workflow.add_edge("tools", "process_tool_output")
         
         # After processing tool output, go back to reasoning
         workflow.add_edge("process_tool_output", "reasoning")
@@ -280,7 +280,7 @@ class PublicHealthReActAgent:
         return workflow.compile(checkpointer=MemorySaver())
     
     async def _reasoning_node(self, state: Dict[str, Any]) -> Dict[str, Any]:
-        """Reasoning node - LLM decides what to do next"""
+        """Unified reasoning node - LLM decides what to do next and executes tools directly"""
         logger.debug("🧠 REASONING NODE: Analyzing situation and deciding next action")
         
         try:
@@ -326,47 +326,129 @@ Respond with either:
             # Add conversation context
             messages = [system_msg] + state["messages"]
             
-            # Get LLM response with Langfuse callback if available
+            # Bind tools to the LLM and get response with Langfuse callback if available
+            llm_with_tools = self.llm.bind_tools(self.tools)
             callbacks = [self.langfuse_handler] if self.langfuse_handler else []
             config = {"callbacks": callbacks} if callbacks else {}
-            response = await self.llm.ainvoke(messages, config=config)
+            response = await llm_with_tools.ainvoke(messages, config=config)
             
-            # Update state with reasoning
-            new_state = state.copy()
-            new_state["messages"] = state["messages"] + [response]
-            new_state["reasoning_steps"] = state.get("reasoning_steps", []) + [f"Reasoning step: {response.content[:100]}..."]
+            # Prepare state updates
+            reasoning_step = f"Reasoning step: {response.content[:100]}..."
             
-            logger.debug(f"Reasoning response: {response.content[:200]}...")
-            return new_state
+            # Check if the LLM made tool calls
+            if response.tool_calls:
+                logger.debug(f"🔧 LLM requested {len(response.tool_calls)} tool calls")
+                
+                # Execute tools directly and create tool result messages
+                tool_results = []
+                tool_messages = []
+                
+                for tool_call in response.tool_calls:
+                    logger.debug(f"Executing tool: {tool_call['name']} with args: {tool_call['args']}")
+                    
+                    # Find the tool by name
+                    tool = next((t for t in self.tools if t.name == tool_call['name']), None)
+                    if tool:
+                        try:
+                            # Execute the tool
+                            result = await tool.ainvoke(tool_call['args'])
+                            tool_result = {
+                                "tool_call_id": tool_call.get('id', f"call_{tool_call['name']}"),
+                                "tool_name": tool_call['name'],
+                                "tool_args": tool_call['args'],
+                                "result": result
+                            }
+                            tool_results.append(tool_result)
+                            
+                            # Create ToolMessage for the conversation
+                            tool_message = ToolMessage(
+                                content=str(result),
+                                tool_call_id=tool_call.get('id', f"call_{tool_call['name']}"),
+                                name=tool_call['name']
+                            )
+                            tool_messages.append(tool_message)
+                            
+                            logger.debug(f"✅ Tool {tool_call['name']} executed successfully")
+                        except Exception as e:
+                            logger.error(f"❌ Tool {tool_call['name']} failed: {str(e)}")
+                            error_result = f"Error: {str(e)}"
+                            tool_result = {
+                                "tool_call_id": tool_call.get('id', f"call_{tool_call['name']}"),
+                                "tool_name": tool_call['name'],
+                                "tool_args": tool_call['args'],
+                                "result": error_result
+                            }
+                            tool_results.append(tool_result)
+                            
+                            # Create ToolMessage for the error
+                            tool_message = ToolMessage(
+                                content=error_result,
+                                tool_call_id=tool_call.get('id', f"call_{tool_call['name']}"),
+                                name=tool_call['name']
+                            )
+                            tool_messages.append(tool_message)
+                    else:
+                        logger.error(f"❌ Tool {tool_call['name']} not found")
+                        error_result = f"Error: Tool {tool_call['name']} not found"
+                        tool_result = {
+                            "tool_call_id": tool_call.get('id', f"call_{tool_call['name']}"),
+                            "tool_name": tool_call['name'],
+                            "tool_args": tool_call['args'],
+                            "result": error_result
+                        }
+                        tool_results.append(tool_result)
+                        
+                        # Create ToolMessage for the error
+                        tool_message = ToolMessage(
+                            content=error_result,
+                            tool_call_id=tool_call.get('id', f"call_{tool_call['name']}"),
+                            name=tool_call['name']
+                        )
+                        tool_messages.append(tool_message)
+                
+                # Return partial state update - LangGraph will merge automatically
+                logger.debug(f"✅ Stored {len(tool_results)} tool results and added {len(tool_messages)} tool messages to conversation")
+                return {
+                    "messages": [response] + tool_messages,
+                    "tool_results": tool_results,
+                    "has_tool_results": True,
+                    "reasoning_steps": [reasoning_step]
+                }
+            else:
+                # No tool calls made, just add the response
+                logger.debug("💭 No tool calls made, proceeding with reasoning only")
+                return {
+                    "messages": [response],
+                    "has_tool_results": False,
+                    "reasoning_steps": [reasoning_step]
+                }
             
         except Exception as e:
             logger.error(f"❌ Error in reasoning node: {str(e)}")
-            error_state = state.copy()
-            error_state["error_message"] = f"Reasoning failed: {str(e)}"
-            return error_state
+            return {"error_message": f"Reasoning failed: {str(e)}"}
     
     def _should_continue_or_finish(self, state: Dict[str, Any]) -> str:
-        """Determine whether to continue with tools, finish, or handle error"""
+        """Determine whether to process tool results, finish, or handle error"""
         if state.get("error_message"):
             return "error"
         
+        # Check if we have tool results to process
+        if state.get("has_tool_results"):
+            return "process_tools"
+            
         # Check if we should finish analysis
         if state.get("analysis_complete") or "ANALYSIS_COMPLETE" in str(state["messages"][-1].content):
             return "final_analysis"
-        
-        # Check if the last message contains tool calls
-        last_message = state["messages"][-1]
-        if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
-            return "tools"
         
         # Check for sufficient data to conclude
         if len(state.get("epi_signals", [])) >= 2 and len(state.get("trend_analyses", [])) >= 1:
             return "final_analysis"
         
-        # If reasoning suggests tool use, continue with tools
-        last_content = str(last_message.content).lower()
-        if any(tool_name in last_content for tool_name in ["fetch_epi_signal", "detect_rising_trend"]):
-            return "tools"
+        # If we have some signals but no trends, continue reasoning to get trends
+        if (len(state.get("epi_signals", [])) > 0 and 
+            len(state.get("trend_analyses", [])) == 0):
+            # Continue reasoning to analyze trends (will trigger tool calls)
+            return "final_analysis"  # Let reasoning decide if more tools needed
         
         # Default to final analysis if unclear
         return "final_analysis"
@@ -376,44 +458,57 @@ Respond with either:
         logger.debug("🔧 PROCESSING TOOL OUTPUT: Extracting and storing structured data")
         
         try:
-            new_state = state.copy()
+            # Process tool results from the reasoning node
+            tool_results = state.get("tool_results", [])
+            if not tool_results:
+                logger.debug("No tool results to process")
+                return {"has_tool_results": False}
             
-            # Get the last tool message
-            tool_messages = [msg for msg in state["messages"] if hasattr(msg, 'name')]
-            if not tool_messages:
-                return new_state
+            logger.debug(f"Processing {len(tool_results)} tool results")
             
-            last_tool_message = tool_messages[-1]
-            tool_name = getattr(last_tool_message, 'name', 'unknown')
-            tool_content = str(last_tool_message.content)
+            # Collect updates to return
+            new_tools_used = []
+            new_epi_signals = []
+            new_trend_analyses = []
             
-            logger.debug(f"Processing output from tool: {tool_name}")
+            for tool_result in tool_results:
+                tool_name = tool_result.get("tool_name", "unknown")
+                tool_content = str(tool_result.get("result", ""))
+                
+                logger.debug(f"Processing output from tool: {tool_name}")
+                
+                # Track new tools used
+                if tool_name not in state.get("tools_used", []):
+                    new_tools_used.append(tool_name)
+                
+                # Process fetch_epi_signal outputs
+                if tool_name == "fetch_epi_signal":
+                    signal_data = self._parse_epi_signal_output(tool_content)
+                    if signal_data:
+                        new_epi_signals.append(signal_data.dict())
+                        logger.debug(f"Stored epidemiological signal: {signal_data.signal_name}")
+                
+                # Process detect_rising_trend outputs
+                elif tool_name == "detect_rising_trend":
+                    trend_data = self._parse_trend_analysis_output(tool_content)
+                    if trend_data:
+                        new_trend_analyses.append(trend_data.dict())
+                        logger.debug(f"Stored trend analysis: {trend_data.signal_name}")
             
-            # Update tools used
-            if tool_name not in new_state.get("tools_used", []):
-                new_state["tools_used"] = new_state.get("tools_used", []) + [tool_name]
+            logger.debug(f"✅ Processed all tool results. New signals: {len(new_epi_signals)}, New trends: {len(new_trend_analyses)}")
             
-            # Process fetch_epi_signal outputs
-            if tool_name == "fetch_epi_signal":
-                signal_data = self._parse_epi_signal_output(tool_content)
-                if signal_data:
-                    new_state["epi_signals"] = new_state.get("epi_signals", []) + [signal_data.dict()]
-                    logger.debug(f"Stored epidemiological signal: {signal_data.signal_name}")
-            
-            # Process detect_rising_trend outputs
-            elif tool_name == "detect_rising_trend":
-                trend_data = self._parse_trend_analysis_output(tool_content)
-                if trend_data:
-                    new_state["trend_analyses"] = new_state.get("trend_analyses", []) + [trend_data.dict()]
-                    logger.debug(f"Stored trend analysis: {trend_data.signal_name}")
-            
-            return new_state
+            # Return partial state update
+            return {
+                "tool_results": [],  # Clear tool results after processing
+                "has_tool_results": False,
+                "tools_used": new_tools_used,  # LangGraph will append to existing list
+                "epi_signals": new_epi_signals,  # LangGraph will append to existing list
+                "trend_analyses": new_trend_analyses  # LangGraph will append to existing list
+            }
             
         except Exception as e:
             logger.error(f"❌ Error processing tool output: {str(e)}")
-            error_state = state.copy()
-            error_state["error_message"] = f"Tool output processing failed: {str(e)}"
-            return error_state
+            return {"error_message": f"Tool output processing failed: {str(e)}"}
     
     def _parse_epi_signal_output(self, content: str) -> Optional[EpiSignalData]:
         """Parse epidemiological signal data from tool output"""
@@ -540,7 +635,6 @@ Use the structured data provided to create specific, evidence-based insights tha
                 response = await self.llm.ainvoke(messages, config=config)
             
             # Build structured outputs from state data
-            final_state = state.copy()
             
             # Extract text content from Claude response (handle thinking + text format)
             dashboard_text = ""
@@ -557,20 +651,18 @@ Use the structured data provided to create specific, evidence-based insights tha
             else:
                 dashboard_text = str(response)
             
-            final_state["dashboard_summary"] = dashboard_text
-            final_state["risk_assessment"] = self._build_risk_assessment_from_state(state)
-            final_state["recommendations"] = self._build_recommendations_from_state(state)
-            final_state["analysis_complete"] = True
-            final_state["messages"] = state["messages"] + [response]
-            
             logger.debug("✅ Final analysis completed successfully")
-            return final_state
+            return {
+                "dashboard_summary": dashboard_text,
+                "risk_assessment": self._build_risk_assessment_from_state(state),
+                "recommendations": self._build_recommendations_from_state(state),
+                "analysis_complete": True,
+                "messages": [response]  # LangGraph will handle accumulation with 'add' annotation
+            }
             
         except Exception as e:
             logger.error(f"❌ Error in final analysis: {str(e)}")
-            error_state = state.copy()
-            error_state["error_message"] = f"Final analysis failed: {str(e)}"
-            return error_state
+            return {"error_message": f"Final analysis failed: {str(e)}"}
     
     async def _get_policy_file_ids(self) -> List[str]:
         """Get file IDs for policy documents from Anthropic Files API"""
@@ -751,8 +843,8 @@ Use the structured data provided to create specific, evidence-based insights tha
         """Handle errors in the workflow"""
         error_msg = state.get("error_message") or "Unknown error occurred"
         
-        error_state = state.copy()
-        error_state["dashboard_summary"] = f"""
+        return {
+            "dashboard_summary": f"""
 ⚠️ **Dashboard Generation Error**
 
 An error occurred while generating the epidemiological dashboard:
@@ -768,8 +860,7 @@ An error occurred while generating the epidemiological dashboard:
 - Verify API credentials
 - Review system logs for detailed error information
 """
-        
-        return error_state
+        }
 
     async def assemble_dashboard(self, start_date: Optional[str] = "2020-02-01", end_date: Optional[str] = "2022-02-01") -> Dict:
         """Generate a dashboard summary using LangGraph ReAct workflow with typed data storage"""
@@ -800,6 +891,8 @@ An error occurred while generating the epidemiological dashboard:
                 "current_request": dashboard_request,
                 "epi_signals": [],
                 "trend_analyses": [],
+                "tool_results": [],
+                "has_tool_results": False,
                 "reasoning_steps": [],
                 "tools_used": [],
                 "analysis_complete": False,
