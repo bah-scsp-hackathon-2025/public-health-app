@@ -107,11 +107,11 @@ class PublicHealthDashboardAgent:
         self.llm = None
         if anthropic_key and anthropic_key.startswith('sk-ant-'):
             self.llm = ChatAnthropic(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-4-20250514", # "claude-3-7-sonnet-20250219"
                 temperature=1.0,
                 max_tokens=64000,  # Must be greater than thinking.budget_tokens
                 thinking={"type": "enabled", "budget_tokens": 8000},
-                betas=["extended-cache-ttl-2025-04-11", "files-api-2025-04-14"],
+                betas=["files-api-2025-04-14"],
                 api_key=anthropic_key
             )
         else:
@@ -845,9 +845,9 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
         logger.debug(f"Agent configuration - MCP: {self.mcp_host}:{self.mcp_port}")
         
         # Build the dashboard generation request with date context
-        dashboard_request = "Generate comprehensive public health dashboard"
+        dashboard_request = "Assemble a public health dashboard"
         if start_date or end_date:
-            date_context = f" focusing on data"
+            date_context = f" on data from external datasets"
             if start_date:
                 date_context += f" from {start_date}"
             if end_date:
