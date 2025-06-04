@@ -19,7 +19,7 @@ function Login () {
     return (
         <div className={styles.headerContainer}>
             <LoginBar></LoginBar>
-        <h1>Welcome to public health sentinel</h1>
+        <h1>Welcome to Public Health Sentinel</h1>
 
         <div style={{width: "40%", height: "50%", background: "lightgrey", marginTop: "60px", border: "1px solid black"}}>
                <h2 style={{ textAlign: "left"}}>I am a...</h2>
