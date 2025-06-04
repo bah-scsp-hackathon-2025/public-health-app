@@ -129,21 +129,6 @@ async def get_dashboard_status():
         )
 
 
-# Specific dashboard endpoints for common use cases
-@router.get("/alerts-summary", response_model=DashboardResponse)
-async def get_alerts_summary():
-    """Generate a dashboard focused on current alerts only"""
-    request = DashboardRequest()
-    return await assemble_dashboard(request)
-
-
-@router.get("/trends-summary", response_model=DashboardResponse) 
-async def get_trends_summary():
-    """Generate a dashboard focused on health risk trends only"""
-    request = DashboardRequest()
-    return await assemble_dashboard(request)
-
-
 @router.post("/generate-strategies", response_model=List[StrategyCreate])
 async def generate_strategies_from_alert(alert: AlertCreate):
     """
