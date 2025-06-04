@@ -114,7 +114,10 @@ def fetch_epi_signal(
     response = requests.get(BASE_URL, params=params, verify=False) # Disable SSL verification for testing purposes
     if as_json:
         response.raise_for_status()
-        return response.json()
+        json_response = response.json()
+        # Limit the json response to 'time_value' and 'value' keys:
+        json_response = {k: v for k, v in json_response.items() if k in ['time_value', 'value']}
+        return json_response
     
 
 @mcp.tool()
