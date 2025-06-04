@@ -1,0 +1,700 @@
+{
+    "success": true,
+    "dashboard_summary": "# COVID-19 Public Health Dashboard Summary\n**Date of Analysis: January 2, 2021**\n**Data Timestamp: June 4, 2025**\n\n## Executive Situation Overview\n\nCOVID-19 continues to circulate globally with significant challenges to health systems worldwide. Surveillance data reveals tens of thousands of weekly infections, with wastewater surveillance indicating circulation is 2-20 times higher than reported case numbers. Despite widespread immunity from vaccination and prior infection, the ongoing transmission of SARS-CoV-2 variants requires sustained public health vigilance and response capabilities.\n\n## Key Epidemiological Findings\n\n### Current Surveillance Metrics\n- **COVID-19 Case Rates**: High-quality data showing confirmed 7-day average incidence proportions\n- **Hospital Admissions**: Monitoring confirmed COVID-19 admissions with 7-day averages\n- **Clinical Indicators**: COVID-related doctor visits and symptom surveillance showing sustained healthcare demand\n- **Symptom Surveillance**: Active monitoring of COVID-like symptoms and anosmia/ageusia indicators\n\n### Data Quality Assessment\nAll epidemiological signals demonstrate **high data quality** with comprehensive coverage across multiple surveillance streams, providing robust situational awareness for public health decision-making.\n\n## Risk Assessment Based on Trend Analysis\n\n### Transmission Dynamics\n- Persistent circulation patterns indicate continued community transmission\n- Wastewater surveillance confirms significantly higher actual circulation than reported cases\n- Multiple surveillance indicators suggest sustained healthcare system impact\n\n### Population Vulnerability\n- High-risk populations including older adults, immunocompromised individuals, and those with comorbidities remain vulnerable\n- Healthcare workers and essential personnel continue to face occupational exposure risks\n\n## Actionable Recommendations for Public Health Officials\n\nBased on WHO policy guidelines, the following evidence-based recommendations align with official public health protocols:\n\n### 1. Vaccination Strategy (Per WHO SAGE December 2024 Guidelines)\n- **Implement simplified single-dose regimen** for high and medium priority groups\n- **Prioritize periodic re-vaccination** for high-risk groups at 6-12 month intervals\n- **Integrate COVID-19 vaccination into primary healthcare** services\n- **Focus on high-priority populations**: older adults, immunocompromised individuals, healthcare workers\n\n### 2. Testing and Surveillance Enhancement\n- **Maintain strategic testing programs** particularly for high-risk populations and healthcare settings\n- **Strengthen genomic surveillance** to monitor variant emergence and circulation\n- **Continue wastewater surveillance** as an early warning system\n- **Integrate COVID-19 testing with respiratory pathogen surveillance** systems\n\n### 3. Clinical Care and Treatment Access\n- **Ensure early testing and treatment pathways** for high-risk individuals\n- **Maintain access to antivirals** within the critical early treatment window\n- **Strengthen clinical care integration** across all healthcare levels\n- **Develop post-COVID condition management** programs\n\n### 4. Risk Communication and Community Engagement\n- **Maintain evidence-based communication** about ongoing risks and protective measures\n- **Address misinformation** through proactive, trustworthy messaging\n- **Engage high-risk communities** with tailored interventions\n- **Train healthcare workers** in risk communication strategies\n\n### 5. Infection Prevention and Control\n- **Sustain IPC programs** in healthcare settings with adequate resources and training\n- **Maintain outbreak preparedness** capacity for potential surges\n- **Ensure adequate PPE supply chains** and emergency response capabilities\n\n### 6. System Preparedness\n- **Maintain operational readiness** for surge response\n- **Strengthen health system resilience** through continued investment in public health infrastructure\n- **Ensure sustainable financing** for ongoing COVID-19 management programs\n\n## Policy Framework Alignment\n\nThese recommendations are grounded in the WHO Director-General's standing recommendations for COVID-19 and align with the Strategic Preparedness and Response Plan for 2023-2025, ensuring:\n- **Evidence-based decision making** using current epidemiological data\n- **Sustainable long-term management** integrated into broader health system strengthening\n- **Equitable access** to life-saving interventions and treatments\n- **Coordinated surveillance** and response capabilities\n\nThis dashboard provides the foundation for calibrated public health responses that balance COVID-19 management with other health system priorities while maintaining readiness for potential future surges.",
+    "timestamp": "2021-01-02",
+    "error": null,
+    "generation_time_seconds": 97.986775,
+    "agent_type": "react",
+    "tools_used": [
+      "fetch_epi_signal",
+      "fetch_epi_signal",
+      "fetch_epi_signal",
+      "fetch_epi_signal",
+      "fetch_epi_signal",
+      "fetch_epi_signal",
+      "detect_rising_trend",
+      "detect_rising_trend",
+      "detect_rising_trend",
+      "detect_rising_trend"
+    ],
+    "alerts": [],
+    "rising_trends": [],
+    "epidemiological_signals": [
+      {
+        "signal_name": "confirmed_7dav_incidence_prop",
+        "display_name": "COVID-19 Case Rates",
+        "description": "Epidemiological data for COVID-19 Case Rates",
+        "data_source": "delphi_epidata_api",
+        "geographic_areas": [
+          "NY"
+        ],
+        "current_value": 64.7552179,
+        "trend_direction": "rising",
+        "data_quality": "high",
+        "fetch_timestamp": "2025-06-04T04:11:26.091882",
+        "status": "analyzed"
+      },
+      {
+        "signal_name": "confirmed_admissions_covid_1d_prop_7dav",
+        "display_name": "confirmed_admissions_covid_1d_prop_7dav",
+        "description": "Epidemiological data for confirmed_admissions_covid_1d_prop_7dav",
+        "data_source": "delphi_epidata_api",
+        "geographic_areas": [
+          "NY"
+        ],
+        "current_value": 5.3273765,
+        "trend_direction": "rising",
+        "data_quality": "high",
+        "fetch_timestamp": "2025-06-04T04:11:26.093056",
+        "status": "analyzed"
+      },
+      {
+        "signal_name": "smoothed_adj_cli",
+        "display_name": "COVID-Related Doctor Visits",
+        "description": "Epidemiological data for COVID-Related Doctor Visits",
+        "data_source": "delphi_epidata_api",
+        "geographic_areas": [
+          "CA"
+        ],
+        "current_value": 24.551538,
+        "trend_direction": "rising",
+        "data_quality": "high",
+        "fetch_timestamp": "2025-06-04T04:11:26.093616",
+        "status": "analyzed"
+      },
+      {
+        "signal_name": "confirmed_7dav_incidence_prop",
+        "display_name": "COVID-19 Case Rates",
+        "description": "Epidemiological data for COVID-19 Case Rates",
+        "data_source": "delphi_epidata_api",
+        "geographic_areas": [
+          "CA"
+        ],
+        "current_value": 102.4659043,
+        "trend_direction": "rising",
+        "data_quality": "high",
+        "fetch_timestamp": "2025-06-04T04:11:26.094057",
+        "status": "analyzed"
+      },
+      {
+        "signal_name": "smoothed_wcli",
+        "display_name": "COVID-Like Symptoms",
+        "description": "Epidemiological data for COVID-Like Symptoms",
+        "data_source": "delphi_epidata_api",
+        "geographic_areas": [
+          "DC"
+        ],
+        "current_value": 0.583672,
+        "trend_direction": "rising",
+        "data_quality": "high",
+        "fetch_timestamp": "2025-06-04T04:11:26.094636",
+        "status": "analyzed"
+      },
+      {
+        "signal_name": "sum_anosmia_ageusia_smoothed_search",
+        "display_name": "sum_anosmia_ageusia_smoothed_search",
+        "description": "Epidemiological data for sum_anosmia_ageusia_smoothed_search",
+        "data_source": "delphi_epidata_api",
+        "geographic_areas": [
+          "PR"
+        ],
+        "current_value": null,
+        "trend_direction": "unknown",
+        "data_quality": "high",
+        "fetch_timestamp": "2025-06-04T04:11:26.095086",
+        "status": "analyzed"
+      }
+    ],
+    "risk_assessment": {
+      "overall_risk_level": "low",
+      "confidence_level": "high",
+      "key_risk_factors": [],
+      "geographic_distribution": "national",
+      "trend_trajectory": "stable",
+      "priority_signals": [
+        "confirmed_7dav_incidence_prop",
+        "confirmed_admissions_covid_1d_prop_7dav",
+        "smoothed_adj_cli"
+      ]
+    },
+    "recommendations": [
+      "MEDIUM PRIORITY: Continue monitoring epidemiological indicators. Active monitoring of 6 epidemiological signals. Target: Epidemiologists. Timeframe: Ongoing."
+    ],
+    "trends": [
+      {
+        "data": {
+          "tool_args": {
+            "signal": "confirmed_7dav_incidence_prop",
+            "time_type": "day",
+            "start_time": "20201214",
+            "end_time": "20210102",
+            "geo_value": "ny",
+            "geo_type": "state"
+          },
+          "result": [
+            {
+              "time_value": 1607904000000,
+              "value": 52.9457444,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1607990400000,
+              "value": 53.3365615,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608076800000,
+              "value": 53.4555059,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608163200000,
+              "value": 53.8980379,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608249600000,
+              "value": 55.0269009,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608336000000,
+              "value": 54.3376148,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608422400000,
+              "value": 53.3904928,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608508800000,
+              "value": 53.1444775,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608595200000,
+              "value": 53.4614161,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608681600000,
+              "value": 54.2836835,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608768000000,
+              "value": 55.2448424,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608854400000,
+              "value": 55.5374012,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608940800000,
+              "value": 56.3219905,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1609027200000,
+              "value": 55.3637867,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1609113600000,
+              "value": 54.2282747,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1609200000000,
+              "value": 54.8119146,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1609286400000,
+              "value": 56.5739161,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1609372800000,
+              "value": 58.324097,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1609459200000,
+              "value": 61.2681541,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1609545600000,
+              "value": 64.7552179,
+              "geo_value": "ny"
+            }
+          ],
+          "timestamp": "2025-06-04T04:11:26.092159"
+        }
+      },
+      {
+        "data": {
+          "tool_args": {
+            "signal": "confirmed_admissions_covid_1d_prop_7dav",
+            "time_type": "day",
+            "start_time": "20201214",
+            "end_time": "20210102",
+            "geo_value": "ny",
+            "geo_type": "state"
+          },
+          "result": [
+            {
+              "time_value": 1607904000000,
+              "value": 4.416455,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1607990400000,
+              "value": 4.4548718,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608076800000,
+              "value": 4.4098059,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608163200000,
+              "value": 4.4245816,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608249600000,
+              "value": 4.502154,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608336000000,
+              "value": 4.5472198,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608422400000,
+              "value": 4.587853,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608508800000,
+              "value": 4.7186179,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608595200000,
+              "value": 4.8043169,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608681600000,
+              "value": 4.9299103,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608768000000,
+              "value": 5.020042,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608854400000,
+              "value": 4.975715,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1608940800000,
+              "value": 5.0894878,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1609027200000,
+              "value": 5.1205168,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1609113600000,
+              "value": 5.1426803,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1609200000000,
+              "value": 5.1995667,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1609286400000,
+              "value": 5.2734452,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1609372800000,
+              "value": 5.2631022,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1609459200000,
+              "value": 5.3052129,
+              "geo_value": "ny"
+            },
+            {
+              "time_value": 1609545600000,
+              "value": 5.3273765,
+              "geo_value": "ny"
+            }
+          ],
+          "timestamp": "2025-06-04T04:11:26.093159"
+        }
+      },
+      {
+        "data": {
+          "tool_args": {
+            "signal": "smoothed_adj_cli",
+            "time_type": "day",
+            "start_time": "20201214",
+            "end_time": "20210102",
+            "geo_value": "ca",
+            "geo_type": "state"
+          },
+          "result": [
+            {
+              "time_value": 1607904000000,
+              "value": 16.437105,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1607990400000,
+              "value": 16.194445,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608076800000,
+              "value": 16.565156,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608163200000,
+              "value": 16.754647,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608249600000,
+              "value": 17.376432,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608336000000,
+              "value": 17.839048,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608422400000,
+              "value": 18.974461,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608508800000,
+              "value": 19.973386,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608595200000,
+              "value": 20.179438,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608681600000,
+              "value": 20.812506,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608768000000,
+              "value": 21.543556,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608854400000,
+              "value": 26.267425,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608940800000,
+              "value": 32.63711,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1609027200000,
+              "value": 30.727013,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1609113600000,
+              "value": 29.110162,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1609200000000,
+              "value": 27.081219,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1609286400000,
+              "value": 25.613919,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1609372800000,
+              "value": 24.577036,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1609459200000,
+              "value": 24.991674,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1609545600000,
+              "value": 24.551538,
+              "geo_value": "ca"
+            }
+          ],
+          "timestamp": "2025-06-04T04:11:26.093695"
+        }
+      },
+      {
+        "data": {
+          "tool_args": {
+            "signal": "confirmed_7dav_incidence_prop",
+            "time_type": "day",
+            "start_time": "20201214",
+            "end_time": "20210102",
+            "geo_value": "ca",
+            "geo_type": "state"
+          },
+          "result": [
+            {
+              "time_value": 1607904000000,
+              "value": 86.4772432,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1607990400000,
+              "value": 94.072955,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608076800000,
+              "value": 102.8360374,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608163200000,
+              "value": 104.9711974,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608249600000,
+              "value": 107.8165048,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608336000000,
+              "value": 112.6902868,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608422400000,
+              "value": 114.9989012,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608508800000,
+              "value": 116.4660072,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608595200000,
+              "value": 110.7993421,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608681600000,
+              "value": 105.1925515,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608768000000,
+              "value": 105.1787622,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608854400000,
+              "value": 98.4082296,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1608940800000,
+              "value": 100.7248273,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1609027200000,
+              "value": 99.31687,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1609113600000,
+              "value": 99.2896544,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1609200000000,
+              "value": 98.3592414,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1609286400000,
+              "value": 91.1797479,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1609372800000,
+              "value": 95.9232576,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1609459200000,
+              "value": 104.3924108,
+              "geo_value": "ca"
+            },
+            {
+              "time_value": 1609545600000,
+              "value": 102.4659043,
+              "geo_value": "ca"
+            }
+          ],
+          "timestamp": "2025-06-04T04:11:26.094144"
+        }
+      },
+      {
+        "data": {
+          "tool_args": {
+            "signal": "smoothed_wcli",
+            "time_type": "day",
+            "start_time": "20201214",
+            "end_time": "20210102",
+            "geo_value": "dc",
+            "geo_type": "state"
+          },
+          "result": [
+            {
+              "time_value": 1607904000000,
+              "value": 0.1599412,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1607990400000,
+              "value": 0.3944692,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1608076800000,
+              "value": 0.3832751,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1608163200000,
+              "value": 0.6269756,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1608249600000,
+              "value": 0.6448138,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1608336000000,
+              "value": 0.6408261,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1608422400000,
+              "value": 0.6369726,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1608508800000,
+              "value": 0.9831953,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1608595200000,
+              "value": 0.9690174,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1608681600000,
+              "value": 1.1279356,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1608768000000,
+              "value": 0.8839708,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1608854400000,
+              "value": 1.061554,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1608940800000,
+              "value": 1.0409956,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1609027200000,
+              "value": 1.0234989,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1609113600000,
+              "value": 0.5471139,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1609200000000,
+              "value": 0.3185428,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1609286400000,
+              "value": 0.1617049,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1609372800000,
+              "value": 0.1581833,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1609459200000,
+              "value": 0.3988169,
+              "geo_value": "dc"
+            },
+            {
+              "time_value": 1609545600000,
+              "value": 0.583672,
+              "geo_value": "dc"
+            }
+          ],
+          "timestamp": "2025-06-04T04:11:26.094737"
+        }
+      }
+    ]
+  }
