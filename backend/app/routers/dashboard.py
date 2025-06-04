@@ -1,10 +1,7 @@
-from typing import Optional
-from fastapi import APIRouter, HTTPException, status, BackgroundTasks
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, HTTPException, status
 import sys
 import os
 from datetime import datetime
-import asyncio
 
 # Add the necessary paths for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))  # Add backend dir
