@@ -332,7 +332,7 @@ Decision rules:
 - You MUST use the tools, and ONLY the tools as a data source for signals and trends and data points
 
 EXAMPLE TOOL CALL (with correct date format):
-fetch_epi_signal(signal="confirmed_7dav_incidence_prop", time_type="day", geo_type="nation", start_time="{start_date_tool}", end_time="{end_date_tool}")
+fetch_epi_signal(signal="confirmed_7dav_incidence_prop", time_type="day", geo_type="state", start_time="{start_date_tool}", end_time="{end_date_tool}")
 
 Respond with either:
 1. Tool calls to gather initial or more data (respecting call limits and date constraints)
@@ -670,7 +670,7 @@ Respond with either:
             
             # Look for signal name
             signal_name = "unknown_signal"
-            for known_signal in ["confirmed_7dav_incidence_prop", "smoothed_wcli", "smoothed_adj_cli", "deaths_7dav_incidence_prop"]:
+            for known_signal in ["confirmed_7dav_incidence_prop", "smoothed_wcli", "smoothed_adj_cli"]:
                 if known_signal in content:
                     signal_name = known_signal
                     break
@@ -680,7 +680,6 @@ Respond with either:
                 "confirmed_7dav_incidence_prop": "COVID-19 Case Rates",
                 "smoothed_wcli": "COVID-Like Symptoms",
                 "smoothed_adj_cli": "COVID-Related Doctor Visits",
-                "deaths_7dav_incidence_prop": "COVID-19 Death Rates"
             }
             
             return EpiSignalData(
