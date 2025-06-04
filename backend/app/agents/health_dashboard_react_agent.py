@@ -319,14 +319,14 @@ Current state analysis:
 - Epidemiological signals collected: {signal_count}
 - Trend analyses completed: {trend_count}
 - Tools used so far: {tools_used}
-- Tool call limits: fetch_epi_signal ({fetch_calls}/5), detect_rising_trend ({trend_calls}/5)
+- Tool call limits: fetch_epi_signal ({fetch_calls}/6), detect_rising_trend ({trend_calls}/6)
 
 Decision rules:
-- If no data collected yet, start with fetch_epi_signal for key indicators (max 5 calls)
-- If you have signal data but no trend analysis, use detect_rising_trend (max 5 calls)
+- If no data collected yet, start with fetch_epi_signal for key indicators (max 6 calls)
+- If you have signal data but no trend analysis, use detect_rising_trend (max 6 calls)
 - If you have both signals and trends, proceed to final analysis
 - If analysis_complete is True, proceed to final analysis
-- If tool call limits reached (5 each), proceed to final analysis with available data
+- If tool call limits reached (6 each), proceed to final analysis with available data
 - ALWAYS use start_time={start_date_tool} and end_time={end_date_tool} in ALL tool calls
 - DO NOT generate or create any data, MUST only rely on the tools to get any signals and trends and data points
 - You MUST use the tools, and ONLY the tools as a data source for signals and trends and data points
@@ -377,10 +377,10 @@ Respond with either:
                     current_count = current_counts.get(tool_name, 0)
                     
                     # Check if we're already at limit for this tool
-                    if current_count >= 5:
-                        logger.warning(f"⚠️ Skipping {tool_name} call - limit reached (5/5)")
+                    if current_count >= 6:
+                        logger.warning(f"⚠️ Skipping {tool_name} call - limit reached (6/6)")
                         # Create an error message for the skipped call
-                        error_result = f"Tool call skipped: {tool_name} limit reached (5/5)"
+                        error_result = f"Tool call skipped: {tool_name} limit reached (6/6)"
                         tool_result = {
                             "tool_call_id": tool_call.get('id', f"call_{tool_call['name']}"),
                             "tool_name": tool_name,
@@ -532,7 +532,7 @@ Respond with either:
         trend_count = tool_counts.get("detect_rising_trend", 0)
         
         # If all tool limits reached, proceed to final analysis
-        if fetch_count >= 5 and trend_count >= 5:
+        if fetch_count >= 6 and trend_count >= 6:
             logger.warning("⚠️ All tool call limits reached, proceeding to final analysis")
             return "final_analysis"
         
@@ -543,7 +543,7 @@ Respond with either:
         # If we have some signals but no trends, and trend tool not maxed out, continue reasoning
         if (len(state.get("epi_signals", [])) > 0 and 
             len(state.get("trend_analyses", [])) == 0 and
-            trend_count < 5):
+            trend_count < 6):
             # Continue reasoning to analyze trends (will trigger tool calls)
             return "final_analysis"  # Let reasoning decide if more tools needed
         
