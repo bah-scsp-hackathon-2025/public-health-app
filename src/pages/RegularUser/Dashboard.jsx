@@ -363,9 +363,19 @@ useEffect(() => {
         </div>
     </div>
 
-        <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: "50px"}}>
+        <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: "50px",  marginBottom: "50px"}}>
         <div style={{ background: "#f0f0f0", width: "80%", border: "1px solid black",  padding: "20px",
         boxSizing: "border-box", height: "80%"}}>
+                  <h2
+          style={{
+            color: "#191970",
+            borderBottom: "1px solid black",
+            textAlign: "center",
+            width: "100%",
+          }}
+        >
+          Summary
+          </h2>
             {summary.description}...
         </div>
         </div>

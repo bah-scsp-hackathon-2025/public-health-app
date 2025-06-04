@@ -59,7 +59,7 @@ const stateMap = {
 
   return (
     <div style={{ textAlign: "center", marginBottom: "10px" }}>
-      <h3 style={{ fontWeight: "bold", fontSize: "18px" }}>
+      <h3 style={{ fontWeight: "bold", fontSize: "25px" }}>
         {signalName}
       </h3 >
       <div style={{ fontWeight: "bold", fontSize: "16px" }}>

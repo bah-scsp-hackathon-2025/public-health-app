@@ -139,6 +139,7 @@ function AdminDashboard() {
           display: "flex",
           justifyContent: "center",
           marginTop: "50px",
+          marginBottom: "50px"
         }}
       >
         <div
@@ -151,6 +152,16 @@ function AdminDashboard() {
             height: "80%",
           }}
         >
+           <h2
+          style={{
+            color: "#191970",
+            borderBottom: "1px solid black",
+            textAlign: "center",
+            width: "100%",
+          }}
+        >
+          Summary
+          </h2>
           {summary.description}...
         </div>
       </div>
