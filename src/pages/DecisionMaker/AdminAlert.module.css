@@ -9,5 +9,10 @@
    border-radius: 5px;
    display: flex;
    flex-direction: row;
-    background: white;
+   background: white;
+}
+
+button {
+    height: 40px;
+    font-weight: bold;
 }
