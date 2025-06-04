@@ -24,8 +24,11 @@ function AlertPane() {
   useEffect(() => {
     const getAlerts = async () => {
       const result = await fetchAlerts();
-      // set alerts to be just the first 4 for now
-      setAlerts(result.slice(0, 4));
+      if (result.length > 4) {
+        setAlerts(result.slice(0, 4));
+      } else {
+        setAlerts(result);
+      }
     };
     getAlerts();
   }, []);

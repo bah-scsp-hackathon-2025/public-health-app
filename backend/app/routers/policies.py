@@ -118,16 +118,18 @@ async def generate_policy(strategy_id: str, db: Session = Depends(get_db)):
 @router.get("/{status_}/alert/{alert_id}", response_model=List[PolicyResponse])
 async def get_policies_by_status_by_alert(status_: str, alert_id: str, db: Session = Depends(get_db)):
     approved = True if status_ == "approved" else False
-    db_policies = db.query(Policy).filter(
-        (Policy.alert_id == alert_id) & (Policy.approved == approved)
-    ).all()
+    db_policies = get_policies_by_alert_from_db(alert_id, db)
     if db_policies is None:
         db_policies = []
-    return db_policies
+    return  [db_policy for db_policy in db_policies if db_policy.approved == approved]
 
 
 @router.get("/alert/{alert_id}", response_model=List[PolicyResponse])
 async def get_policies_by_alert(alert_id: str, db: Session = Depends(get_db)):
+    return get_policies_by_alert_from_db(alert_id, db)
+
+
+def get_policies_by_alert_from_db(alert_id: str, db: Session = Depends(get_db)):
     db_policies = db.query(Policy).filter(Policy.alert_id == alert_id).all()
     if db_policies is None:
         db_policies = []

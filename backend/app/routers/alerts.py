@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 from app.database import get_db
 from app.models.alert import Alert, AlertCreate, AlertUpdate, AlertResponse
 
@@ -45,7 +46,7 @@ def get_all_alerts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db
 @router.get("/state/{location}", response_model=List[AlertResponse])
 async def get_alerts(location: str, db: Session = Depends(get_db)):
     location = location.replace("_", " ").lower()
-    alerts = db.query(Alert).filter(Alert.location.lower() == location).all()
+    alerts = db.query(Alert).filter(func.lower(Alert.location) == location).all()
     if alerts is None:
         alerts = []
     return alerts

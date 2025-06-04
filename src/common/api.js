@@ -23,7 +23,7 @@ export const fetchAlert = async (alert_id) => {
 export const fetchAlertByLocation = async (location) => {
   try {
     // Updating spaces to be underscores
-    const response = await fetch(`http://localhost:8000/alerts/${location.replace(" ", "_")}`);
+    const response = await fetch(`http://localhost:8000/alerts/state/${location.replace(" ", "_").toLowerCase()}`);
     const data = await response.json();
     return data;
   } catch (error) {
@@ -111,7 +111,7 @@ export const fetchDraftPolicies = async () => {
 
 export const fetchApprovedPoliciesByAlert = async (alert_id) => {
   try {
-    const response = await fetch(`http://localhost:8000/policies/approved/${alert_id}`);
+    const response = await fetch(`http://localhost:8000/policies/approved/alert/${alert_id}`);
     const data = await response.json();
     return data;
   } catch (error) {

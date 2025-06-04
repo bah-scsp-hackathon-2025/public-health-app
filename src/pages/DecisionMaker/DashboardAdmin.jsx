@@ -67,7 +67,7 @@ function AdminDashboard() {
       >
         <div
           style={{
-            background: "lightgrey",
+            background: "#f0f0f0",
             width: "80%",
             border: "1px solid black",
             padding: "20px",
