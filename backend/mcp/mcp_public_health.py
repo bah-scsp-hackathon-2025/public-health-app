@@ -63,15 +63,12 @@ def fetch_epi_signal(
     Fetch a specific COVID-19 signal from the EpiDataContext and return a JSON.
     Args:
         signal (str): The specific signal to fetch. The options are: 
-        - smoothed_wwearing_mask_7d. -> Description: People Wearing Masks
-        - smoothed_wcovid_vaccinated_appointment_or_accept -> Description: Vaccine Acceptance.
         - sum_anosmia_ageusia_smoothed_search -> Description: COVID Symptom Searches on Google.
         - smoothed_wcli -> COVID-Like Symptoms
         - smoothed_whh_cmnty_cli -> Description: COVID-Like Symptoms in Community
         - smoothed_adj_cli -> Description: COVID-Related Doctor Visits
         - confirmed_7dav_incidence_prop -> Description: COVID Cases
         - confirmed_admissions_covid_1d_prop_7dav -> Description: COVID Hospital Admissions
-        - deaths_7dav_incidence_prop -> Description: COVID Deaths
 
         time_type (Literal["day", "week", "month"]): The time granularity of the data.
         geo_type (Literal["state", "county", "hrr", "msa"]): The geographic granularity of the data.
@@ -134,15 +131,12 @@ def detect_rising_trend(
 
     Args:
         signal_name (str): Name of the signal to detect rising trends for. The fetch_epi_signal must be called for that signal for prefetching the data. The options are: 
-        - smoothed_wwearing_mask_7d. -> Description: People Wearing Masks
-        - smoothed_wcovid_vaccinated_appointment_or_accept -> Description: Vaccine Acceptance.
         - sum_anosmia_ageusia_smoothed_search -> Description: COVID Symptom Searches on Google.
         - smoothed_wcli -> COVID-Like Symptoms
         - smoothed_whh_cmnty_cli -> Description: COVID-Like Symptoms in Community
         - smoothed_adj_cli -> Description: COVID-Related Doctor Visits
         - confirmed_7dav_incidence_prop -> Description: COVID Cases
         - confirmed_admissions_covid_1d_prop_7dav -> Description: COVID Hospital Admissions
-        - deaths_7dav_incidence_prop -> Description: COVID Deaths
         value_column (str): Column with numeric values to analyze.
         date_column (str, optional): Column with date values (default: "time_value").
         window_size (int, optional): Size of the rolling window (in time steps).
