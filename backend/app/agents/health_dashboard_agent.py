@@ -87,6 +87,12 @@ class PublicHealthDashboardAgent:
     """LangGraph agent for public health dashboard generation"""
     
     def __init__(self):
+        # Initialize MCP client
+        self.mcp_client = None
+        
+        # Initialize Langfuse callback handler
+        self.langfuse_handler = None
+
         # Initialize Langfuse tracing if configured
         self._setup_langfuse_tracing()
         # Load MCP configuration from environment variables
@@ -111,14 +117,8 @@ class PublicHealthDashboardAgent:
         else:
             print("⚠️  Anthropic API key not found or invalid. Agent will work in MCP-only mode.")
         
-        # Initialize MCP client
-        self.mcp_client = None
-        
         # Build the workflow graph
         self.workflow = self._build_workflow()
-        
-        # Initialize Langfuse callback handler
-        self.langfuse_handler = None
     
     def _setup_langfuse_tracing(self):
         """Configure Langfuse tracing for workflow observability"""
@@ -231,7 +231,7 @@ class PublicHealthDashboardAgent:
                         "severity": "MEDIUM",
                         "state": "CA",
                         "county": "Sample County",
-                        "timestamp": "2024-01-15T14:30:00Z",
+                        "timestamp": "2021-01-15T14:30:00Z",
                         "alert_type": "MONITORING",
                         "affected_population": 10000,
                         "source": "Sample Health Department"
@@ -243,7 +243,7 @@ class PublicHealthDashboardAgent:
                         "severity": "LOW",
                         "state": "NY",
                         "county": "Sample County",
-                        "timestamp": "2024-01-14T09:15:00Z",
+                        "timestamp": "2021-01-14T09:15:00Z",
                         "alert_type": "SURVEILLANCE",
                         "affected_population": 25000,
                         "source": "Sample Health Network"
@@ -255,7 +255,7 @@ class PublicHealthDashboardAgent:
                         "severity": "LOW",
                         "state": "TX",
                         "county": "Sample County",
-                        "timestamp": "2024-01-13T16:45:00Z",
+                        "timestamp": "2021-01-13T16:45:00Z",
                         "alert_type": "SEASONAL",
                         "affected_population": 15000,
                         "source": "Sample Health Services"
@@ -274,10 +274,10 @@ class PublicHealthDashboardAgent:
                         "description": "Monitoring of epidemiological signals through API integration",
                         "unit": "signal_index",
                         "data_points": [
-                            {"date": "2024-01-01", "value": 45.2, "change_percent": -2.3},
-                            {"date": "2024-01-08", "value": 47.1, "change_percent": 4.2},
-                            {"date": "2024-01-15", "value": 44.7, "change_percent": -5.1},
-                            {"date": "2024-01-22", "value": 46.4, "change_percent": 3.8}
+                            {"date": "2021-01-01", "value": 45.2, "change_percent": -2.3},
+                            {"date": "2021-01-08", "value": 47.1, "change_percent": 4.2},
+                            {"date": "2021-01-15", "value": 44.7, "change_percent": -5.1},
+                            {"date": "2021-01-22", "value": 46.4, "change_percent": 3.8}
                         ]
                     }
                 },
@@ -415,7 +415,7 @@ class PublicHealthDashboardAgent:
             return error_state
     
     async def _generate_summary_node(self, state: DashboardState) -> DashboardState:
-        """Generate dashboard summary based on analysis"""
+        """Assemble dashboard summary based on analysis"""
         logger.debug("🚀 WORKFLOW NODE: Starting _generate_summary_node")
         logger.debug(f"Input state keys: {list(state.keys())}")
         
@@ -812,7 +812,7 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
         }
     
     def _generate_basic_recommendations(self, alerts_data: Dict, trends_data: Dict) -> List[str]:
-        """Generate basic recommendations when analysis is not available"""
+        """Assemble basic recommendations when analysis is not available"""
         recommendations = []
         alerts = alerts_data.get("alerts", [])
         
@@ -837,8 +837,8 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
         
         return recommendations[:5]  # Limit to 5 recommendations
 
-    async def generate_dashboard(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict:
-        """Generate a dashboard summary"""
+    async def assemble_dashboard(self, start_date: Optional[str] = "2020-02-01", end_date: Optional[str] = "2022-02-01") -> Dict:
+        """Assemble a dashboard summary"""
         logger.info(f"🚀 LANGGRAPH WORKFLOW: Starting dashboard generation")
         logger.debug(f"Date range: {start_date} to {end_date}")
         logger.debug(f"Agent configuration - LLM: {type(self.llm).__name__ if self.llm else 'None'}")
@@ -959,9 +959,7 @@ async def test_dashboard_agent():
         agent = PublicHealthDashboardAgent()
         
         # Generate dashboard
-        result = await agent.generate_dashboard(
-            "Generate a comprehensive public health dashboard focusing on current alerts and risk trends"
-        )
+        result = await agent.assemble_dashboard()
         
         # Display results
         print("\n" + "=" * 60)
@@ -1011,7 +1009,7 @@ async def run_interactive_dashboard():
             elif not user_input:
                 user_input = "Generate standard public health dashboard"
             
-            result = await agent.generate_dashboard(user_input)
+            result = await agent.assemble_dashboard()
             
             print("\n📊 Dashboard Result:")
             print("-" * 40)

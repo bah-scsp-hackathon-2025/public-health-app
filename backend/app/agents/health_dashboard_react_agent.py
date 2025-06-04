@@ -132,6 +132,16 @@ class PublicHealthReActAgent:
     """LangGraph ReAct agent for public health dashboard generation using epidemiological data"""
     
     def __init__(self):
+        # Initialize MCP client and tools
+        self.mcp_client = None
+        self.tools = []
+        
+        # Initialize the workflow
+        self.workflow = None
+        
+        # Initialize Langfuse callback handler
+        self.langfuse_handler = None
+
         # Initialize Langfuse tracing if configured
         self._setup_langfuse_tracing()
         # Load MCP configuration from environment variables
@@ -139,7 +149,7 @@ class PublicHealthReActAgent:
         self.mcp_port = int(settings.mcp_server_port if hasattr(settings, 'mcp_server_port') else os.getenv("MCP_SERVER_PORT", "8000"))
         
         # Get API keys from settings (keep both for future use)
-        openai_key = settings.openai_api_key if settings.openai_api_key else None
+        # openai_key = settings.openai_api_key if settings.openai_api_key else None
         anthropic_key = settings.anthropic_api_key if settings.anthropic_api_key else None
         
         # Initialize with Anthropic/Claude (required for ReAct mode)
@@ -178,17 +188,7 @@ class PublicHealthReActAgent:
         else:
             print("⚠️  Anthropic API key not found or invalid. ReAct agent requires valid Anthropic API key.")
             raise ValueError("ReAct agent requires valid Anthropic API key")
-        
-        # Initialize MCP client and tools
-        self.mcp_client = None
-        self.tools = []
-        
-        # Initialize the workflow
-        self.workflow = None
-        
-        # Initialize Langfuse callback handler
-        self.langfuse_handler = None
-        
+
     def _setup_langfuse_tracing(self):
         """Configure Langfuse tracing for workflow observability"""
         try:
@@ -285,22 +285,22 @@ class PublicHealthReActAgent:
         
         try:
             # Create system message for reasoning
-            system_msg = SystemMessage(content="""You are a Public Health Data Analyst AI Agent specializing in epidemiological surveillance and dashboard generation.
+            system_msg = SystemMessage(content="""You are a Public Health Data Analyst AI Agent specializing in epidemiological surveillance and compiling data from external sources for dashboards.
 
-Your mission is to generate a comprehensive public health dashboard with current epidemiological analysis, including:
+Your mission is to assemble a comprehensive public health dashboard from the external sources and their epidemiological analysis, including:
 - Executive situation overview with key metrics and trends
-- Risk assessment based on epidemiological data and trend analysis  
+- Risk assessment based on the acquired epidemiological data and trend analysis  
 - Evidence-based recommendations for public health officials
 - Policy-compliant guidance aligned with official guidelines
 
 Available tools:
-- fetch_epi_signal: Get epidemiological data (COVID cases, symptoms, doctor visits, etc.)
+- fetch_epi_signal: Get epidemiological data (for various signals and date ranges)
 - detect_rising_trend: Analyze time series data for rising trends
 
 Analysis approach:
-1. Start by fetching key epidemiological signals (COVID cases, symptoms, healthcare utilization)
+1. Start by fetching key epidemiological signals (described by the fetch_epi_signal tool)
 2. Analyze trends using detect_rising_trend for concerning patterns
-3. Once you have sufficient data, provide comprehensive final dashboard analysis
+3. Once you have sufficient data obtained, provide comprehensive final dashboard analysis
 
 Current state analysis:
 - Epidemiological signals collected: {signal_count}
@@ -312,9 +312,10 @@ Decision rules:
 - If you have signal data but no trend analysis, use detect_rising_trend
 - If you have both signals and trends, proceed to final analysis
 - If analysis_complete is True, proceed to final analysis
+- DO NOT generate or create any data, only rely on the tools
 
 Respond with either:
-1. Tool calls to gather more data
+1. Tool calls to gather initial or more data
 2. "ANALYSIS_COMPLETE" if ready for final synthesis""".format(
                 signal_count=len(state.get("epi_signals", [])),
                 trend_count=len(state.get("trend_analyses", [])),
@@ -494,7 +495,7 @@ Respond with either:
             return None
     
     async def _final_analysis_node(self, state: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate final dashboard analysis from collected structured data"""
+        """Assemble final dashboard analysis from collected structured data"""
         logger.debug("📊 FINAL ANALYSIS: Generating dashboard from structured data")
         
         try:
@@ -504,8 +505,8 @@ Respond with either:
             # Build comprehensive prompt using structured data
             analysis_prompt = self._build_final_analysis_prompt(state, policy_file_ids)
             
-            # Generate final dashboard summary
-            system_content = """Generate a comprehensive public health dashboard summary based on the structured epidemiological data collected.
+            # Assemble final dashboard summary
+            system_content = """Assemble a public health dashboard summary based on the structured epidemiological data collected.
 
 Focus on:
 - Executive situation overview
@@ -769,7 +770,7 @@ An error occurred while generating the epidemiological dashboard:
         
         return error_state
 
-    async def generate_dashboard(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict:
+    async def assemble_dashboard(self, start_date: Optional[str] = "2020-02-01", end_date: Optional[str] = "2022-02-01") -> Dict:
         """Generate a dashboard summary using LangGraph ReAct workflow with typed data storage"""
         logger.info(f"🚀 LANGGRAPH REACT WORKFLOW: Starting epidemiological dashboard generation")
         logger.debug(f"Date range: {start_date} to {end_date}")
@@ -777,7 +778,7 @@ An error occurred while generating the epidemiological dashboard:
         logger.debug(f"Agent configuration - MCP: {self.mcp_host}:{self.mcp_port}")
         
         # Build the dashboard generation request with date context
-        dashboard_request = "Generate comprehensive public health dashboard with current epidemiological analysis"
+        dashboard_request = "Assemble a public health dashboard with obtained data and epidemiological analysis"
         if start_date or end_date:
             date_context = f" focusing on data"
             if start_date:
@@ -805,7 +806,7 @@ An error occurred while generating the epidemiological dashboard:
                 "risk_assessment": {},
                 "recommendations": [],
                 "error_message": None,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": end_date if end_date else datetime.now().isoformat()
             }
             
             logger.info("🔄 Starting LangGraph ReAct workflow...")
@@ -917,9 +918,7 @@ async def test_react_agent():
     
     agent = PublicHealthReActAgent()
     
-    result = await agent.generate_dashboard(
-        "Analyze current COVID-19 trends and generate a public health dashboard for the United States"
-    )
+    result = await agent.assemble_dashboard()
     
     print("\n" + "="*80)
     print("📊 REACT AGENT DASHBOARD RESULT")
@@ -946,20 +945,10 @@ async def run_interactive_react_dashboard():
     
     while True:
         try:
-            request = input("📝 Enter your dashboard request: ").strip()
-            
-            if request.lower() in ['exit', 'quit', 'q']:
-                print("👋 Goodbye!")
-                break
-            
-            if not request:
-                print("Please enter a request.")
-                continue
-            
-            print(f"\n🔄 Processing: {request}")
+            print(f"\n🔄 Processing:")
             print("-" * 40)
             
-            result = await agent.generate_dashboard(request)
+            result = await agent.assemble_dashboard()
             
             print("\n" + "="*60)
             print("📊 REACT DASHBOARD RESULT")  
