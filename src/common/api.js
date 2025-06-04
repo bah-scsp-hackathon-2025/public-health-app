@@ -157,3 +157,14 @@ export const fetchSummary = async () => {
     return [];
   }
 };
+
+export const fetchTrends= async () => {
+  try {
+    const response = await fetch(`http://localhost:8000/trends/`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error getting trends:", error);
+    return [];
+  }
+};

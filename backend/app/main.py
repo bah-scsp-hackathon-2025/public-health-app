@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import alerts, dashboard, policies, summary, strategies
+from app.routers import alerts, dashboard, policies, summary, strategies, trends
 from app.database import engine, Base
 
 # Create database tables
@@ -27,6 +27,7 @@ app.include_router(dashboard.router)
 app.include_router(policies.router)
 app.include_router(summary.router)
 app.include_router(strategies.router)
+app.include_router(trends.router)
 
 
 @app.get("/")
