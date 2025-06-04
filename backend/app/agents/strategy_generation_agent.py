@@ -2,35 +2,85 @@
 Strategy Generation Agent
 
 This agent handles the generation of multiple strategy variations based on public health alerts
-using Claude with extended thinking capabilities and policy document integration.
+using Claude Sonnet 4 with extended thinking capabilities, LangChain, and policy document integration.
 """
 
 import json
 import re
 import logging
+import os
 from typing import List, Optional
 from datetime import datetime
 
 from anthropic import Anthropic
+from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import SystemMessage, HumanMessage
+from langfuse import Langfuse
+from langfuse.callback import CallbackHandler
 from app.models.alert import AlertCreate
 from app.models.strategy import StrategyCreate
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
+# Initialize Langfuse
+langfuse = Langfuse(
+    secret_key=os.getenv("LANGFUSE_SECRET_KEY"),
+    public_key=os.getenv("LANGFUSE_PUBLIC_KEY"),
+    host=os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
+)
+
 
 class StrategyGenerationAgent:
     """
     Agent responsible for generating multiple strategy variations based on public health alerts.
     
-    Uses Claude Sonnet with extended thinking capabilities and integrates with policy documents
-    to ensure compliance with official guidelines.
+    Uses Claude Sonnet 4 with extended thinking capabilities via LangChain and integrates with 
+    policy documents to ensure compliance with official guidelines. Includes Langfuse tracing.
     """
     
     def __init__(self):
         """Initialize the Strategy Generation Agent"""
+        # Initialize Anthropic client for file operations only
         self.anthropic_client = Anthropic()
-        logger.info("🎯 Strategy Generation Agent initialized")
+        
+        # Initialize LangChain ChatAnthropic with Claude Sonnet 4 and file beta
+        self.chat_anthropic = ChatAnthropic(
+            model="claude-sonnet-4-20250514",
+            max_tokens=8000,
+            temperature=1.0,  # Must be 1.0 when thinking is enabled
+            thinking={"type": "enabled", "budget_tokens": 4000},
+            betas=["files-api-2025-04-14"]
+        )
+        
+        # Initialize Langfuse callback handler
+        try:
+            langfuse_secret_key = os.getenv("LANGFUSE_SECRET_KEY")
+            langfuse_public_key = os.getenv("LANGFUSE_PUBLIC_KEY")
+            langfuse_host = os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
+            
+            if langfuse_secret_key and langfuse_public_key:
+                self.langfuse_handler = CallbackHandler(
+                    secret_key=langfuse_secret_key,
+                    public_key=langfuse_public_key,
+                    host=langfuse_host,
+                    session_id=f"strategy-agent-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+                    user_id="strategy-generation-system",
+                    metadata={
+                        "agent_type": "strategy_generation",
+                        "project": "public-health-strategies",
+                        "environment": "production"
+                    }
+                )
+                logger.info("✅ Langfuse tracing enabled for strategy generation")
+            else:
+                self.langfuse_handler = None
+                logger.info("ℹ️  Langfuse tracing disabled (missing keys)")
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to setup Langfuse tracing: {str(e)}")
+            self.langfuse_handler = None
+        
+        logger.info("🎯 Strategy Generation Agent initialized with Claude Sonnet 4 + LangChain + Langfuse")
     
     async def generate_strategies(self, alert: AlertCreate) -> List[StrategyCreate]:
         """
@@ -48,6 +98,8 @@ class StrategyGenerationAgent:
         logger.info(f"🚀 Generating strategies for alert: {alert.name}")
         logger.debug(f"Alert details - Risk: {alert.risk_score}, Location: {alert.location}")
         
+        # Note: Langfuse tracing is handled by the LangChain callback in _call_claude_for_strategies
+        
         try:
             # Get policy documents for context
             policy_file_ids = await self._get_policy_file_ids()
@@ -63,10 +115,11 @@ class StrategyGenerationAgent:
             strategies = self._parse_strategies_from_response(response_text, alert)
             
             if len(strategies) < 4:
+                error_msg = f"Failed to generate required 4 strategies. Only generated {len(strategies)} strategies."
                 logger.error(f"Insufficient strategies generated: {len(strategies)}/4")
-                raise Exception(f"Failed to generate required 4 strategies. Only generated {len(strategies)} strategies.")
+                raise Exception(error_msg)
             
-            logger.info(f"✅ Successfully generated {len(strategies)} strategies")
+            logger.info(f"✅ Successfully generated {len(strategies)} strategies with LangChain + Langfuse")
             return strategies[:4]  # Return exactly 4 strategies
             
         except Exception as e:
@@ -76,7 +129,7 @@ class StrategyGenerationAgent:
     async def _get_policy_file_ids(self) -> List[str]:
         """Get policy and strategy document file IDs from Anthropic API"""
         try:
-            files_response = self.anthropic_client.files.list()
+            files_response = self.anthropic_client.beta.files.list()
             
             # Filter for policy and strategy documents
             policy_files = []
@@ -89,8 +142,12 @@ class StrategyGenerationAgent:
                         policy_files.append(file.id)
                         logger.debug(f"Found policy file: {file.filename}")
                     elif any(pattern in filename_lower for pattern in ['strategy', 'paho', 'who', 'epidemic', 'outbreak', 'preparedness', 'response']):
-                        strategy_files.append(file.id)
-                        logger.debug(f"Found strategy file: {file.filename}")
+                        # Skip MARSH document as it's very large (3.1 MB) and causes token limits
+                        if 'marsh' not in filename_lower:
+                            strategy_files.append(file.id)
+                            logger.debug(f"Found strategy file: {file.filename}")
+                        else:
+                            logger.debug(f"Skipping large MARSH document: {file.filename}")
             
             # Combine both types of documents
             all_document_files = policy_files + strategy_files
@@ -140,8 +197,12 @@ The strategies should complement each other and provide a comprehensive response
         return prompt
     
     async def _call_claude_for_strategies(self, strategy_prompt: str, policy_file_ids: List[str]) -> str:
-        """Make the Claude API call for strategy generation"""
+        """Make the Claude API call for strategy generation using LangChain with file attachments and Langfuse"""
+        from langchain_core.messages import SystemMessage, HumanMessage
+        
         system_prompt = """You are a Public Health Strategy Generator AI with access to official policy and strategy documents. Your task is to generate multiple strategic response variations based on alert information.
+
+Take time to think through each strategy carefully, considering the specific context and requirements.
 
 CRITICAL REQUIREMENTS:
 1. Generate exactly 4 distinct strategy variations with different severity levels and approaches
@@ -176,62 +237,44 @@ Each full_description should include:
 - Risk mitigation measures"""
 
         try:
+            logger.info(f"🤖 Generating strategies with Claude Sonnet 4 (documents: {len(policy_file_ids)})")
+            
+            # Create messages
+            system_msg = SystemMessage(content=system_prompt)
+            
             if policy_file_ids:
-                # Use file-attached API call
-                messages_content = [
-                    {
-                        "type": "text",
-                        "text": strategy_prompt
-                    }
-                ]
-                # Add policy documents
+                # Build content list with text and document attachments (like the ReAct agent)
+                content = [{"type": "text", "text": strategy_prompt}]
+                
+                # Add each policy/strategy document
                 for file_id in policy_file_ids:
-                    messages_content.append({
-                        "type": "document",
-                        "source": {
-                            "type": "file",
-                            "file_id": file_id
-                        }
+                    content.append({
+                        "type": "document", 
+                        "source": {"type": "file", "file_id": file_id}
                     })
-                    
-                response = self.anthropic_client.messages.create(
-                    model="claude-3-5-sonnet-20241022",
-                    max_tokens=8000,
-                    temperature=0.7,
-                    system=system_prompt,
-                    messages=[{
-                        "role": "user",
-                        "content": messages_content
-                    }]
-                )
+                
+                # Create HumanMessage with file content structure
+                human_msg = HumanMessage(content=content)
+                logger.debug(f"📎 Attached {len(policy_file_ids)} documents to message")
             else:
-                # Fallback without policy files
-                response = self.anthropic_client.messages.create(
-                    model="claude-3-5-sonnet-20241022", 
-                    max_tokens=8000,
-                    temperature=0.7,
-                    system=system_prompt,
-                    messages=[{
-                        "role": "user",
-                        "content": strategy_prompt
-                    }]
-                )
+                # Simple text message without documents
+                human_msg = HumanMessage(content=strategy_prompt)
             
-            # Extract response content
-            response_text = ""
-            if hasattr(response, 'content'):
-                if isinstance(response.content, list):
-                    for item in response.content:
-                        if hasattr(item, 'text'):
-                            response_text += item.text
-                        elif isinstance(item, dict) and item.get('type') == 'text':
-                            response_text += item.get('text', '')
-                else:
-                    response_text = str(response.content)
-            else:
-                response_text = str(response)
+            messages = [system_msg, human_msg]
             
+            # Prepare config with Langfuse callback if available
+            config = {}
+            if self.langfuse_handler:
+                config["callbacks"] = [self.langfuse_handler]
+                logger.debug("📊 Langfuse tracing enabled for this call")
+            
+            # Invoke LangChain ChatAnthropic with thinking mode and file attachments
+            response = await self.chat_anthropic.ainvoke(messages, config=config)
+            
+            response_text = response.content
             logger.debug(f"Claude response length: {len(response_text)} characters")
+            logger.info("✅ Strategy generation completed with LangChain + Langfuse")
+            
             return response_text
             
         except Exception as e:
