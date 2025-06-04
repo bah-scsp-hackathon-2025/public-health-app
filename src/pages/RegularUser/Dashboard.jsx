@@ -4,7 +4,8 @@ import Chart from '../../components/Chart';
 import Map from '../../components/Map';
 import RegularAlertPane from "../../components/RegularAlertPane";
 import RegularNav from "../../components/RegularNav";
-import { fetchSummary } from "../../common/api";
+import { fetchSummary, fetchAlertByLocation, fetchAlerts } from "../../common/api";
+
 
 const US_STATE_AND_TERRITORY_NAMES = [
   "Alabama",
@@ -78,6 +79,35 @@ function Dashboard() {
         getSummary();
       }, []);
 
+
+      const [alerts, setAlerts] = useState([]);
+      async function getAlerts(state) {
+        if (state) {
+          console.log("state selected: ", state);
+          const result = await fetchAlertByLocation(state);
+          if (result.length > 4) {
+            setAlerts(result.slice(0, 4));
+          } else {
+            setAlerts(result);
+          }
+        } else {
+          console.log("no state selected");
+          const result = await fetchAlerts();
+          if (result.length > 4) {
+            setAlerts(result.slice(0, 4));
+          } else {
+            setAlerts(result);
+          }
+        }
+      }
+      useEffect(() => {getAlerts("")}, []);
+
+      const onChange = (e) => {
+        console.log(e.target.value);
+        setSelectedState(e.target.value);
+        getAlerts(e.target.value);
+      }
+
   return (
     <div style={{display: "flex", flexDirection: "column", marginTop: "0%"}}>
       <RegularNav></RegularNav>
@@ -90,7 +120,7 @@ function Dashboard() {
       <div style={{display: "flex", justifyContent: "center", marginBottom: "40px"}}>
         <MapPin/>
           <div style={{marginRight: "20px", fontWeight: "bold", fontSize: "20px", padding: "5px"}}>Select Your Location</div>
-          <select value={selectedState} onChange={(e) => setSelectedState(e.target.value)}
+          <select value={selectedState} onChange={onChange}
             style={{
             fontSize: "15px",       // larger text
             padding: "5px",        // larger click area
@@ -109,7 +139,7 @@ function Dashboard() {
     <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
         <div style={{ display: "flex", width: "80%", gap: "50px" }}>
         <Map style={{ width: "50%" }} />
-        <RegularAlertPane style={{ width: "50%" }} />
+        <RegularAlertPane alerts={alerts} style={{ width: "50%" }} />
         </div>
     </div>
 

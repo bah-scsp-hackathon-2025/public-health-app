@@ -1,6 +1,4 @@
-import { useState, useEffect } from "react";
 import styles from './Alerts.module.css';
-import { fetchAlerts } from "../common/api";
 
 
 function AlertCard({alert, onClick}) {
@@ -14,23 +12,13 @@ function AlertCard({alert, onClick}) {
 
 import { useNavigate } from 'react-router-dom';
 
-function RegularAlertPane () {
+function RegularAlertPane ({alerts}) {
 
   const navigate = useNavigate();
 
   const goToAlert = (id) => {
      navigate(`/alert/${id}`);
   };
-
-    const [alerts, setAlerts] = useState([]);
-    useEffect(() => {
-      const getAlerts = async () => {
-        const result = await fetchAlerts();
-        // set alerts to be just the first 4 for now
-        setAlerts(result.slice(0, 4));
-      };
-      getAlerts();
-    }, []);
 
     return (
         <div style={{height: "550px", width: "600px", backgroundColor: '#f0f0f0', border: "1px solid black"}}>
