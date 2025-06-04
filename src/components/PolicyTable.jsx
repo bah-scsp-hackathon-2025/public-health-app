@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
+import { fetchApprovedPolicies, fetchDraftPolicies } from "../common/api";
 import PolicyCard from "./PolicyCard";
 import "./PolicyTable.css";
-import { fetchApprovedPolicies, fetchDraftPolicies } from "../common/api";
 
 // Divider.jsx
 const Divider = ({ vertical = false, style = {} }) => {
@@ -22,7 +22,9 @@ const Divider = ({ vertical = false, style = {} }) => {
   return <div style={{ ...baseStyle, ...style }} />;
 };
 
+
 const PolicyTable = () => {
+const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [approvedPolicies, setApprovedPolicies] = useState([]);
   useEffect(() => {
     const getApprovedPolicies = async () => {
@@ -30,7 +32,7 @@ const PolicyTable = () => {
       setApprovedPolicies(result);
     };
     getApprovedPolicies();
-  }, []);
+  }, [refreshTrigger]);
 
   const [draftPolicies, setDraftPolicies] = useState([]);
   useEffect(() => {
@@ -39,14 +41,14 @@ const PolicyTable = () => {
       setDraftPolicies(result);
     };
     getDraftPolicies();
-  }, []);
+  }, [refreshTrigger]);
 
   return (
     <div className="two-column-container">
       <div className="column">
         <h2>Draft Policies</h2>
         {draftPolicies.map((item) => (
-          <PolicyCard policy={item}></PolicyCard>
+          <PolicyCard policy={item} onUpdate={() => setRefreshTrigger((prev) => prev + 1)}></PolicyCard>
         ))}
       </div>
 

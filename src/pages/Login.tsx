@@ -21,8 +21,8 @@ function Login () {
             <LoginBar></LoginBar>
         <h1>Welcome to public health sentinel</h1>
 
-        <div style={{width: "40%", height: "50%", background: "lightgrey", marginTop: "60px"}}>
-               <h2>I am a...</h2>
+        <div style={{width: "40%", height: "50%", background: "lightgrey", marginTop: "60px", border: "1px solid black"}}>
+               <h2 style={{ textAlign: "left"}}>I am a...</h2>
 
                <div className={styles.userTypeContainer}>
                 <div className={styles.userType}>

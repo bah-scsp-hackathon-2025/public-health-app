@@ -1,9 +1,29 @@
 import { useEffect, useState } from "react";
+import { fetchSummary } from "../../common/api";
 import AdminNav from "../../components/AdminNav";
 import AlertPane from "../../components/AlertPane";
 import Chart from "../../components/Chart";
 import Map from "../../components/Map";
-import { fetchSummary } from "../../common/api";
+
+function YouTubeEmbed() {
+  return (
+    <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+      <iframe
+        src="https://www.youtube.com/embed/YdbQ1d0OBt0"
+        title="YouTube video"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+        }}
+      />
+    </div>
+  );
+}
 
 function AdminDashboard() {
   const [summary, setSummary] = useState([]);
@@ -82,7 +102,9 @@ function AdminDashboard() {
         <Chart />
         <Chart />
       </div>
-    </div>
+      <YouTubeEmbed></YouTubeEmbed>
+</div>
+  
   );
 }
 
