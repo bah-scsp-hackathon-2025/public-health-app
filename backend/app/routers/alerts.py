@@ -42,6 +42,15 @@ def get_all_alerts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db
     return alerts
 
 
+@router.get("/state/{location}", response_model=List[AlertResponse])
+async def get_alerts(location: str, db: Session = Depends(get_db)):
+    location = location.replace("_", " ").lower()
+    alerts = db.query(Alert).filter(Alert.location.lower() == location).all()
+    if alerts is None:
+        raise HTTPException(status_code=404, detail="Alerts not found")
+    return alerts
+
+
 @router.get("/{alert_id}", response_model=AlertResponse)
 async def get_alert(alert_id: str, db: Session = Depends(get_db)):
     return get_alert_by_id(alert_id, db)
