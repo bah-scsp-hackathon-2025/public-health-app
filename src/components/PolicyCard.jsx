@@ -73,7 +73,7 @@ function PolicyCard({ policy, onUpdate }) {
                 <h3>{policy.title}</h3>
                 <textarea 
                 onChange={(e) => updateText(e)}
-                style={{overflow: "auto", minWidth: "300px", minHeight: "400px"}}
+                style={{overflow: "auto", minWidth: "600px", minHeight: "400px"}}
                 value={contentText}></textarea>
             </div>
             {changes &&
@@ -87,7 +87,7 @@ function PolicyCard({ policy, onUpdate }) {
         </Modal>}
 
      {openApproveModal && 
-        <Modal height="200px" show={openApproveModal} 
+        <Modal height="150px" show={openApproveModal} 
         onClose={() => setOpenApproveModal(false)}>
             <div>
                 <h3>Confirm Approval for Policy</h3>
