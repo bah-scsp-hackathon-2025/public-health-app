@@ -83,7 +83,6 @@ function Dashboard() {
       const [alerts, setAlerts] = useState([]);
       async function getAlerts(state) {
         if (state) {
-          console.log("state selected: ", state);
           const result = await fetchAlertByLocation(state);
           if (result.length > 4) {
             setAlerts(result.slice(0, 4));
@@ -91,7 +90,6 @@ function Dashboard() {
             setAlerts(result);
           }
         } else {
-          console.log("no state selected");
           const result = await fetchAlerts();
           if (result.length > 4) {
             setAlerts(result.slice(0, 4));
@@ -103,7 +101,6 @@ function Dashboard() {
       useEffect(() => {getAlerts("")}, []);
 
       const onChange = (e) => {
-        console.log(e.target.value);
         setSelectedState(e.target.value);
         getAlerts(e.target.value);
       }
