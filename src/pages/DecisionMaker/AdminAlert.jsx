@@ -71,6 +71,8 @@ useEffect(() => {
 
   console.log(policiesForAlert)
 
+  console.log(strategies)
+
   return (
     <div
       style={{
@@ -193,7 +195,7 @@ useEffect(() => {
            <p style={{textAlign: "center"}}>No policies have been generated yet for this alert.</p>
            }
           <div style={{ width: "80%", marginLeft: "75px"}}>
-     {policiesForAlert.length == 0 ?
+    
         <div style={{display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginLeft: "15%"}}>
         {strategies.map((strategy) => (
         <div key={strategy.id} style={{width: "100%"}}>
@@ -207,7 +209,7 @@ useEffect(() => {
     </div>
         ))
       } </div>
-      : <div></div>} 
+      : <div></div>
 
         </div>
       </div>

@@ -376,6 +376,13 @@ useEffect(() => {
         >
           Summary
           </h2>
+          <div>
+               {summary.description && (
+                    <div 
+                      dangerouslySetInnerHTML={{ __html: marked(summary.description) }}
+                    />
+                  )}
+          </div>
             {summary.description}...
         </div>
         </div>

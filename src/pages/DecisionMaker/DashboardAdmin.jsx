@@ -1,3 +1,4 @@
+import { marked } from 'marked';
 import { useEffect, useState } from "react";
 import { fetchSummaries, fetchTrends } from "../../common/api";
 import AdminNav from "../../components/AdminNav";
@@ -162,7 +163,13 @@ function AdminDashboard() {
         >
           Summary
           </h2>
-          {summary.description}...
+          <div>
+      {summary.description && (
+        <div 
+          dangerouslySetInnerHTML={{ __html: marked(summary.description) }}
+        />
+      )}
+    </div>
         </div>
       </div>
 
