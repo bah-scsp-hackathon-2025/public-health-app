@@ -595,12 +595,18 @@ Respond with either:
                     return (has_json_structure or has_data_fields) and len(result_str) > 50
                     
             elif tool_name == "detect_rising_trend":
-                # Check if we got trend analysis data
+                # Check if we got trend analysis data - be more flexible with structure
                 if isinstance(result, dict):
-                    has_trend_keys = any(key in result for key in ["rising_periods", "total_periods", "status"])
-                    return has_trend_keys and result.get("status") == "success"
+                    # Check for common trend analysis indicators
+                    has_analysis_keys = any(key in result for key in ["rising_periods", "total_periods", "status", "trend", "periods"])
+                    has_success = result.get("status") == "success" if "status" in result else True  # Default to True if no status
+                    return has_analysis_keys and has_success
                 elif isinstance(result, str):
-                    return "rising_periods" in result_str and "success" in result_str
+                    # Look for trend analysis content indicators
+                    trend_indicators = ["rising", "trend", "period", "analysis", "increase", "decrease"]
+                    has_trend_content = any(indicator in result_str.lower() for indicator in trend_indicators)
+                    has_substantial_content = len(result_str) > 50
+                    return has_trend_content and has_substantial_content
             
             # Default: if result is substantial (>50 chars) and not just error message
             return len(result_str) > 50 and not any(pattern in result_str for pattern in error_patterns)
@@ -662,18 +668,30 @@ Respond with either:
                     else:
                         logger.debug(f"fetch_epi_signal call has_data=False, not storing for trends")
                 
-                # Process detect_rising_trend outputs
+                # Process detect_rising_trend outputs - ALWAYS attempt to parse, regardless of has_data flag
                 elif tool_name == "detect_rising_trend":
+                    logger.debug(f"🔍 Processing detect_rising_trend result (has_data={has_data}): {tool_content[:300]}...")
+                    
+                    # Always try to parse trend analysis, even if has_data=False
                     trend_data = self._parse_trend_analysis_output(tool_content, tool_result.get("tool_args", {}))
                     if trend_data:
                         new_trend_analyses.append(trend_data.dict())
                         logger.debug(f"Stored trend analysis: {trend_data.signal_name}")
                         
                         # Generate alert for this trend detection
-                        alert = await self._generate_alert_for_trend(trend_data, tool_result.get("tool_args", {}), state)
-                        if alert:
-                            new_alerts.append(alert)
-                            logger.debug(f"🚨 Generated alert: {alert.get('name', 'Unknown')} (risk: {alert.get('risk_score', 0)})")
+                        logger.debug(f"🚨 Attempting to generate alert for trend: {trend_data.signal_name}")
+                        try:
+                            alert = await self._generate_alert_for_trend(trend_data, tool_result.get("tool_args", {}), state)
+                            if alert:
+                                new_alerts.append(alert)
+                                logger.debug(f"✅ Generated alert: {alert.get('name', 'Unknown')} (risk: {alert.get('risk_score', 0)})")
+                            else:
+                                logger.warning(f"⚠️ Alert generation returned None for trend: {trend_data.signal_name}")
+                        except Exception as e:
+                            logger.error(f"❌ Alert generation failed for {trend_data.signal_name}: {str(e)}")
+                    else:
+                        logger.warning(f"⚠️ Failed to parse trend analysis from detect_rising_trend output")
+                        logger.debug(f"🔍 Raw tool content for failed parse: {tool_content[:500]}...")
             
             logger.debug(f"✅ Processed all tool results. New signals: {len(new_epi_signals)}, New trends: {len(new_trend_analyses)}, New fetch data: {len(new_fetch_epi_signal_data)}, New alerts: {len(new_alerts)}")
             
@@ -835,11 +853,13 @@ Respond with either:
             try:
                 if content.strip().startswith('{') and content.strip().endswith('}'):
                     trend_data = json.loads(content)
-                    rising_periods = trend_data.get("rising_periods", 0)
+                    raw_rising_periods = trend_data.get("rising_periods", 0)
+                    # Convert list to count if it's a list
+                    rising_periods = len(raw_rising_periods) if isinstance(raw_rising_periods, list) else raw_rising_periods
                     total_periods = trend_data.get("total_periods", 0)
                     signal_name = trend_data.get("signal", trend_data.get("signal_name", "unknown_signal"))
                     if "status" in trend_data and trend_data["status"] == "success":
-                        logger.debug(f"✅ Parsed complete JSON: {rising_periods}/{total_periods} rising periods")
+                        logger.debug(f"✅ Parsed complete JSON: {rising_periods}/{total_periods} rising periods (raw: {raw_rising_periods})")
                 else:
                     raise json.JSONDecodeError("Not a complete JSON", content, 0)
                     
@@ -856,10 +876,12 @@ Respond with either:
                     if json_match:
                         try:
                             trend_data = json.loads(json_match.group())
-                            rising_periods = trend_data.get("rising_periods", 0)
+                            raw_rising_periods = trend_data.get("rising_periods", 0)
+                            # Convert list to count if it's a list
+                            rising_periods = len(raw_rising_periods) if isinstance(raw_rising_periods, list) else raw_rising_periods
                             total_periods = trend_data.get("total_periods", 0)
                             signal_name = trend_data.get("signal", trend_data.get("signal_name", "unknown_signal"))
-                            logger.debug(f"✅ Extracted from JSON pattern: {rising_periods}/{total_periods} rising periods")
+                            logger.debug(f"✅ Extracted from JSON pattern: {rising_periods}/{total_periods} rising periods (raw: {raw_rising_periods})")
                             break
                         except json.JSONDecodeError:
                             continue
@@ -914,6 +936,9 @@ Respond with either:
             
             logger.debug(f"✅ Parsed trend analysis: signal={signal_name}, rising={rising_periods}, total={total_periods}, risk={risk_level}")
             
+            if rising_periods == 0 and total_periods == 0:
+                logger.warning(f"⚠️ Trend analysis has zero periods - this may not trigger alert generation")
+            
             return TrendAnalysisData(
                 signal_name=signal_name,
                 rising_periods=rising_periods,
@@ -934,6 +959,8 @@ Respond with either:
     
     async def _generate_alert_for_trend(self, trend_data: TrendAnalysisData, tool_args: Dict[str, Any], state: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Generate an alert based on trend analysis results using LLM"""
+        logger.info(f"🚨 ALERT GENERATION STARTED for trend: {trend_data.signal_name}")
+        logger.debug(f"🔍 Trend data: rising={trend_data.rising_periods}, total={trend_data.total_periods}, risk={trend_data.risk_level}")
         try:
             logger.debug(f"🚨 Generating alert for trend: {trend_data.signal_name} with {trend_data.rising_periods}/{trend_data.total_periods} rising periods")
             
@@ -1003,27 +1030,45 @@ Use the policy documents provided to ensure your recommendations and risk assess
             import re
             
             # Try to extract JSON from response
-            json_match = re.search(r'\{[^{}]*"name"[^{}]*\}', response_text, re.DOTALL)
-            if json_match:
-                try:
-                    alert_data = json.loads(json_match.group())
-                    
-                    # Validate required fields
-                    required_fields = ["name", "description", "risk_score", "risk_reason", "location", "latitude", "longitude"]
-                    if all(field in alert_data for field in required_fields):
-                        # Create AlertCreate object to validate structure
-                        alert_create = AlertCreate(**alert_data)
+            logger.debug(f"🔍 Alert LLM response: {response_text[:500]}...")
+            
+            # Try multiple JSON extraction patterns
+            json_patterns = [
+                r'\{[^{}]*"name"[^{}]*"description"[^{}]*"risk_score"[^{}]*\}',  # Most specific
+                r'\{[^{}]*"name"[^{}]*\}',  # Less specific
+                r'\{.*?"name".*?\}',  # Very flexible
+            ]
+            
+            for pattern in json_patterns:
+                json_match = re.search(pattern, response_text, re.DOTALL)
+                if json_match:
+                    try:
+                        alert_data = json.loads(json_match.group())
+                        logger.debug(f"🔍 Extracted JSON: {alert_data}")
                         
-                        logger.debug(f"✅ Generated alert: {alert_create.name} (risk score: {alert_create.risk_score})")
-                        return alert_create.dict()
-                    else:
+                        # Validate required fields
+                        required_fields = ["name", "description", "risk_score", "risk_reason", "location", "latitude", "longitude"]
                         missing_fields = [f for f in required_fields if f not in alert_data]
-                        logger.warning(f"⚠️ Alert missing required fields: {missing_fields}")
                         
-                except json.JSONDecodeError as e:
-                    logger.warning(f"⚠️ Could not parse alert JSON: {e}")
-            else:
-                logger.warning(f"⚠️ No valid JSON found in alert response: {response_text[:200]}...")
+                        if len(missing_fields) == 0:
+                            # Create AlertCreate object to validate structure
+                            alert_create = AlertCreate(**alert_data)
+                            logger.debug(f"✅ Generated alert: {alert_create.name} (risk score: {alert_create.risk_score})")
+                            return alert_create.dict()
+                        else:
+                            logger.warning(f"⚠️ Alert missing required fields: {missing_fields}")
+                            logger.debug(f"🔍 Available fields: {list(alert_data.keys())}")
+                            
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"⚠️ Could not parse alert JSON from pattern {pattern}: {e}")
+                        continue
+                    except Exception as e:
+                        logger.warning(f"⚠️ Error creating AlertCreate object: {e}")
+                        logger.debug(f"🔍 Failed alert data: {alert_data}")
+                        continue
+                        
+            logger.warning(f"⚠️ No valid JSON found in alert response. Full response: {response_text}")
+            logger.debug(f"🔍 Tried {len(json_patterns)} JSON extraction patterns")
             
             return None
             

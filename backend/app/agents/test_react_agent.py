@@ -15,7 +15,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'mcp'))
 
-from health_dashboard_react_agent import PublicHealthReActAgent
+from .health_dashboard_react_agent import PublicHealthReActAgent
 
 
 async def test_react_agent_basic():
