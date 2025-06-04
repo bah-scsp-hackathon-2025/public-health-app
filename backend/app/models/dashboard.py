@@ -1,6 +1,8 @@
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 from .trend import TrendResponse
+from .alert import AlertCreate
+from .strategy import StrategyCreate
 
 
 class DashboardRequest(BaseModel):
@@ -64,4 +66,18 @@ class DashboardStatus(BaseModel):
     agent_available: bool
     mcp_server_accessible: bool
     anthropic_api_available: bool
-    timestamp: str 
+    timestamp: str
+
+
+class PolicyDraftRequest(BaseModel):
+    """Request model for policy draft generation"""
+    strategy: StrategyCreate = Field(
+        description="The selected strategy to implement as a policy"
+    )
+    alert: AlertCreate = Field(
+        description="The original alert that triggered the strategy"
+    )
+    author: Optional[str] = Field(
+        default="AI Policy Generator",
+        description="Author name for the policy draft"
+    ) 

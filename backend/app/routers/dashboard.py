@@ -12,9 +12,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'mcp'))  
 from app.agents.health_dashboard_agent import PublicHealthDashboardAgent
 from app.agents.health_dashboard_react_agent import PublicHealthReActAgent
 from app.agents.strategy_generation_agent import StrategyGenerationAgent
-from app.models.dashboard import DashboardRequest, DashboardResponse, DashboardStatus
+from app.agents.policy_draft_generation_agent import PolicyDraftGenerationAgent
+from app.models.dashboard import DashboardRequest, DashboardResponse, DashboardStatus, PolicyDraftRequest
 from app.models.alert import AlertCreate
 from app.models.strategy import StrategyCreate
+from app.models.policy import PolicyCreate
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -155,6 +157,55 @@ async def generate_strategies_from_alert(alert: AlertCreate):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Strategy generation failed: {str(e)}"
+        )
+
+
+@router.post("/generate-policy-draft", response_model=PolicyCreate)
+async def generate_policy_draft(request: PolicyDraftRequest):
+    """
+    Generate a comprehensive policy draft based on a selected strategy and its corresponding alert.
+    
+    Takes both the selected strategy and the original alert as input to generate a formal policy 
+    document that implements the strategy while addressing the specific alert context.
+    
+    The generated policy includes:
+    - Executive Summary
+    - Background and Rationale (referencing both alert and strategy)
+    - Policy Objectives and Scope
+    - Implementation Guidelines and Requirements
+    - Roles and Responsibilities
+    - Monitoring and Evaluation framework
+    - Compliance and Enforcement mechanisms
+    
+    Uses Claude Sonnet 4 with extended thinking and references policy/strategy documents for 
+    compliance with official guidelines and evidence-based approaches.
+    """
+    start_time = datetime.now()
+    
+    try:
+        # Initialize the policy draft generation agent
+        agent = PolicyDraftGenerationAgent()
+        
+        # Generate policy draft using both strategy and alert context
+        policy_draft = await agent.generate_policy_draft(
+            strategy=request.strategy,
+            alert=request.alert,
+            author=request.author
+        )
+        
+        return policy_draft
+        
+    except Exception as e:
+        generation_time = (datetime.now() - start_time).total_seconds()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": f"Policy draft generation failed: {str(e)}",
+                "generation_time_seconds": generation_time,
+                "timestamp": datetime.now().isoformat(),
+                "strategy_id": request.strategy.alert_id if request.strategy else None,
+                "alert_name": request.alert.name if request.alert else None
+            }
         )
 
 
