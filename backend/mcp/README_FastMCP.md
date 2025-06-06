@@ -51,7 +51,7 @@ chmod +x mcp_public_health_fastmcp.py
 ```bash
 python mcp_public_health_fastmcp.py
 ```
-The server will start on `http://localhost:8000` with SSE transport.
+The server will start on `http://localhost:8001` with SSE transport.
 
 **Development Mode:**
 ```bash
@@ -67,7 +67,7 @@ python test_server.py
 
 **Quick Test via curl:**
 ```bash
-curl -X POST http://localhost:8000/mcp/call \
+curl -X POST http://localhost:8001/mcp/call \
   -H "Content-Type: application/json" \
   -d '{
     "method": "call_tool",
@@ -145,7 +145,7 @@ curl -X POST http://localhost:8000/mcp/call \
       "command": "python",
       "args": ["/path/to/mcp_public_health_fastmcp.py"],
       "env": {
-        "MCP_PORT": "8000"
+        "MCP_PORT": "8001"
       }
     }
   }
@@ -158,7 +158,7 @@ curl -X POST http://localhost:8000/mcp/call \
 {
   "mcpServers": {
     "public-health-fastmcp": {
-      "url": "http://localhost:8000/sse",
+      "url": "http://localhost:8001/sse",
       "transport": "sse"
     }
   }
@@ -287,7 +287,7 @@ python mcp_public_health_fastmcp.py
 
 ### Production (with Uvicorn)
 ```bash
-uvicorn mcp_public_health_fastmcp:mcp --host 0.0.0.0 --port 8000
+uvicorn mcp_public_health_fastmcp:mcp --host 0.0.0.0 --port 8001
 ```
 
 ### Docker (Optional)
@@ -297,7 +297,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY mcp_public_health_fastmcp.py .
-EXPOSE 8000
+EXPOSE 8001
 CMD ["python", "mcp_public_health_fastmcp.py"]
 ```
 

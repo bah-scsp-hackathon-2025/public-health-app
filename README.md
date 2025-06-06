@@ -48,19 +48,21 @@ source venv/bin/activate
 ### 2. Start Services
 
 **Option A: Using VS Code Tasks (Recommended)**
+
 - Open Command Palette (`Cmd+Shift+P`)
 - Run `Tasks: Run Task`
 - Select "Start FastMCP Server"
 - Optionally run "Start FastAPI App"
 
 **Option B: Command Line**
+
 ```bash
 # Start FastMCP server (terminal 1)
 cd backend/mcp
 source venv/bin/activate
-python3 -m uvicorn mcp_public_health:app --host 0.0.0.0 --port 8000
+python3 -m uvicorn mcp_public_health:app --host 0.0.0.0 --port 8001
 
-# Start FastAPI app (terminal 2) 
+# Start FastAPI app (terminal 2)
 cd backend
 source mcp/venv/bin/activate
 python3 start_fastapi.py
@@ -92,18 +94,21 @@ python3 test_dashboard_api.py
 The workspace includes comprehensive VS Code configurations:
 
 ### Debug Configurations
+
 - **Debug FastMCP Server**: Debug the MCP server
 - **Debug Dashboard Agent**: Debug the LangGraph agent interactively
 - **Debug Dashboard Agent Tests**: Debug the test suite
 - **Debug FastAPI App**: Debug the main web application
 
 ### Tasks
+
 - **Start FastMCP Server**: Launch the MCP server
-- **Start FastAPI App**: Launch the web application  
+- **Start FastAPI App**: Launch the web application
 - **Run Dashboard Agent Tests**: Execute agent test suite
 - **Install Dependencies**: Install Python packages
 
 ### Usage
+
 1. Open the workspace in VS Code
 2. Press `F5` to see debug options
 3. Use `Cmd+Shift+P` → "Tasks: Run Task" for build tasks
@@ -112,12 +117,14 @@ The workspace includes comprehensive VS Code configurations:
 ## 🧪 Development Workflow
 
 ### 1. Agent Development
+
 ```bash
 cd backend/app/agents
 PYTHONPATH=../../mcp:../.. python3 health_dashboard_agent.py interactive
 ```
 
-### 2. MCP Server Development  
+### 2. MCP Server Development
+
 ```bash
 cd backend/mcp
 source venv/bin/activate
@@ -125,6 +132,7 @@ python3 mcp_public_health.py
 ```
 
 ### 3. Web API Development
+
 ```bash
 cd backend
 source mcp/venv/bin/activate
@@ -134,32 +142,35 @@ python3 start_fastapi.py
 ## 📚 Key Components
 
 ### LangGraph Agents (`backend/app/agents/`)
+
 Intelligent agents built with LangGraph for health data analysis:
+
 - **PublicHealthDashboardAgent**: Generates executive dashboards
 - Supports OpenAI GPT-4 and Anthropic Claude
 - Comprehensive test suite and demo examples
 
 ### FastMCP Server (`backend/mcp/`)
+
 Model Context Protocol server providing health data tools:
+
 - Public health alerts retrieval
-- Health risk trends analysis  
+- Health risk trends analysis
 - RESTful API with SSE transport
 
 ### FastAPI Application (`backend/app/`)
+
 Web application providing REST APIs:
+
 - Health data endpoints
 - Agent integration APIs
 - Modern async Python architecture
 
 ## 🔌 API Endpoints
 
-- **FastMCP Server**: `http://localhost:8000`
-  - SSE endpoint: `http://localhost:8000/sse`
-  - Health check: `http://localhost:8000/health`
+- **FastAPI App**: `http://localhost:8000` (configurable via `FASTAPI_HOST` and `FASTAPI_PORT`)
 
-- **FastAPI App**: `http://localhost:8001` (configurable via `FASTAPI_HOST` and `FASTAPI_PORT`)
-  - API docs: `http://localhost:8001/docs`
-  - Health check: `http://localhost:8001/health`
+  - API docs: `http://localhost:8000/docs`
+  - Health check: `http://localhost:8000/health`
   - **Dashboard endpoints**:
     - `POST /dashboard/generate` - Generate custom dashboard
     - `GET /dashboard/status` - Check agent status
@@ -167,6 +178,10 @@ Web application providing REST APIs:
     - `GET /dashboard/trends-summary` - Trends-focused dashboard
     - `GET /dashboard/emergency-summary` - Emergency response dashboard
     - `POST /dashboard/generate/async` - Async dashboard generation
+
+- **FastMCP Server**: `http://localhost:8001`
+  - SSE endpoint: `http://localhost:8001/sse`
+  - Health check: `http://localhost:8001/health`
 
 ## 🌟 Features
 
@@ -192,4 +207,4 @@ Web application providing REST APIs:
 
 ## 📄 License
 
-See project license for details. 
+See project license for details.

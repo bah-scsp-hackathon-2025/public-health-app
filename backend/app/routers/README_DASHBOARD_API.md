@@ -9,7 +9,7 @@ The Dashboard API provides endpoints for generating comprehensive public health 
 All endpoints now return both human-readable dashboard summaries and structured data for programmatic use:
 
 - **`alerts`**: Detailed alert information with priority scoring and risk assessment
-- **`rising_trends`**: Statistical trend analysis with significance indicators  
+- **`rising_trends`**: Statistical trend analysis with significance indicators
 - **`epidemiological_signals`**: Real-time health indicators from multiple data sources
 - **`risk_assessment`**: Overall risk evaluation with confidence levels
 - **`recommendations`**: Actionable recommendations with priority and target audience
@@ -17,6 +17,7 @@ All endpoints now return both human-readable dashboard summaries and structured 
 This dual approach provides both executive-level summaries and machine-readable data for integration into other systems.
 
 **Getting Counts**: Alert and trend counts can be derived from the array lengths:
+
 ```javascript
 const alertsCount = response.alerts.length;
 const trendsCount = response.rising_trends.length;
@@ -26,7 +27,7 @@ const signalsCount = response.epidemiological_signals.length;
 ## Base URL
 
 ```
-http://localhost:8001/dashboard
+http://localhost:8000/dashboard
 ```
 
 ## Request/Response Models
@@ -35,8 +36,8 @@ http://localhost:8001/dashboard
 
 ```json
 {
-    "query": "Generate comprehensive public health dashboard for current situation",
-    "agent_type": "react"  // optional: "standard" or "react"
+  "query": "Generate comprehensive public health dashboard for current situation",
+  "agent_type": "react" // optional: "standard" or "react"
 }
 ```
 
@@ -44,56 +45,56 @@ http://localhost:8001/dashboard
 
 ```json
 {
-    "success": true,
-    "dashboard_summary": "📊 **PUBLIC HEALTH DASHBOARD SUMMARY**...",
-    "timestamp": "2021-01-15T10:30:00Z",
-    "error": null,
-    "generation_time_seconds": 12.5,
-    "agent_type": "react",
-    "tools_used": ["fetch_epi_signal", "detect_rising_trend"],
-    
-    // Enhanced structured data (populated with actual data)
-    "alerts": [
-        {
-            "id": "alert_001",
-            "title": "COVID-19 Outbreak Alert",
-            "severity": "HIGH",
-            "state": "CA",
-            "affected_population": 45000,
-            "analysis": {
-                "priority_score": 85,
-                "risk_level": "high"
-            }
-        }
-    ],
-    "rising_trends": [
-        {
-            "signal_name": "confirmed_7dav_incidence_prop",
-            "trend_direction": "rising",
-            "rising_periods": 3,
-            "risk_level": "medium"
-        }
-    ],
-    "epidemiological_signals": [
-        {
-            "signal_name": "smoothed_wcli",
-            "display_name": "COVID-Like Symptoms",
-            "trend_direction": "rising",
-            "data_source": "delphi_epidata_api"
-        }
-    ],
-    "risk_assessment": {
-        "overall_risk_level": "medium",
-        "confidence_level": "high",
-        "geographic_distribution": "regional"
-    },
-    "recommendations": [
-        {
-            "priority": "high",
-            "action": "Enhance surveillance in affected areas",
-            "target_audience": "Public Health Officials"
-        }
-    ]
+  "success": true,
+  "dashboard_summary": "📊 **PUBLIC HEALTH DASHBOARD SUMMARY**...",
+  "timestamp": "2021-01-15T10:30:00Z",
+  "error": null,
+  "generation_time_seconds": 12.5,
+  "agent_type": "react",
+  "tools_used": ["fetch_epi_signal", "detect_rising_trend"],
+
+  // Enhanced structured data (populated with actual data)
+  "alerts": [
+    {
+      "id": "alert_001",
+      "title": "COVID-19 Outbreak Alert",
+      "severity": "HIGH",
+      "state": "CA",
+      "affected_population": 45000,
+      "analysis": {
+        "priority_score": 85,
+        "risk_level": "high"
+      }
+    }
+  ],
+  "rising_trends": [
+    {
+      "signal_name": "confirmed_7dav_incidence_prop",
+      "trend_direction": "rising",
+      "rising_periods": 3,
+      "risk_level": "medium"
+    }
+  ],
+  "epidemiological_signals": [
+    {
+      "signal_name": "smoothed_wcli",
+      "display_name": "COVID-Like Symptoms",
+      "trend_direction": "rising",
+      "data_source": "delphi_epidata_api"
+    }
+  ],
+  "risk_assessment": {
+    "overall_risk_level": "medium",
+    "confidence_level": "high",
+    "geographic_distribution": "regional"
+  },
+  "recommendations": [
+    {
+      "priority": "high",
+      "action": "Enhance surveillance in affected areas",
+      "target_audience": "Public Health Officials"
+    }
+  ]
 }
 ```
 
@@ -101,10 +102,10 @@ http://localhost:8001/dashboard
 
 ```json
 {
-    "agent_available": true,
-    "mcp_server_accessible": true,
-    "anthropic_api_available": true,
-    "timestamp": "2021-01-15T10:30:00Z"
+  "agent_available": true,
+  "mcp_server_accessible": true,
+  "anthropic_api_available": true,
+  "timestamp": "2021-01-15T10:30:00Z"
 }
 ```
 
@@ -117,51 +118,53 @@ http://localhost:8001/dashboard
 Generate a customized public health dashboard.
 
 **Request Body:**
+
 ```json
 {
-    "query": "Focus on high severity alerts in California and trending health metrics",
-    "agent_type": "react"
+  "query": "Focus on high severity alerts in California and trending health metrics",
+  "agent_type": "react"
 }
 ```
 
 **Response:**
+
 ```json
 {
-    "success": true,
-    "dashboard_summary": "📊 **PUBLIC HEALTH DASHBOARD SUMMARY**\n\n🚨 **CURRENT SITUATION**...",
-    "timestamp": "2021-01-15T10:30:00Z",
-    "generation_time_seconds": 15.3,
-    "agent_type": "react",
-    "alerts": [
-        {
-            "id": "alert_001",
-            "title": "High Severity Health Alert",
-            "severity": "HIGH",
-            "state": "CA",
-            "affected_population": 50000,
-            "analysis": {
-                "priority_score": 90,
-                "risk_level": "critical"
-            }
-        }
-    ],
-    "rising_trends": [
-        {
-            "signal_name": "respiratory_visits",
-            "trend_direction": "rising",
-            "risk_level": "high"
-        }
-    ],
-    "risk_assessment": {
-        "overall_risk_level": "high",
-        "geographic_distribution": "regional"
-    },
-    "recommendations": [
-        {
-            "priority": "urgent",
-            "action": "Deploy additional testing resources"
-        }
-    ]
+  "success": true,
+  "dashboard_summary": "📊 **PUBLIC HEALTH DASHBOARD SUMMARY**\n\n🚨 **CURRENT SITUATION**...",
+  "timestamp": "2021-01-15T10:30:00Z",
+  "generation_time_seconds": 15.3,
+  "agent_type": "react",
+  "alerts": [
+    {
+      "id": "alert_001",
+      "title": "High Severity Health Alert",
+      "severity": "HIGH",
+      "state": "CA",
+      "affected_population": 50000,
+      "analysis": {
+        "priority_score": 90,
+        "risk_level": "critical"
+      }
+    }
+  ],
+  "rising_trends": [
+    {
+      "signal_name": "respiratory_visits",
+      "trend_direction": "rising",
+      "risk_level": "high"
+    }
+  ],
+  "risk_assessment": {
+    "overall_risk_level": "high",
+    "geographic_distribution": "regional"
+  },
+  "recommendations": [
+    {
+      "priority": "urgent",
+      "action": "Deploy additional testing resources"
+    }
+  ]
 }
 ```
 
@@ -172,12 +175,13 @@ Generate a customized public health dashboard.
 Check the status of dashboard generation services.
 
 **Response:**
+
 ```json
 {
-    "agent_available": true,
-    "mcp_server_accessible": true,
-    "anthropic_api_available": true,
-    "timestamp": "2021-01-15T10:30:00Z"
+  "agent_available": true,
+  "mcp_server_accessible": true,
+  "anthropic_api_available": true,
+  "timestamp": "2021-01-15T10:30:00Z"
 }
 ```
 
@@ -212,14 +216,16 @@ Generate a dashboard optimized for emergency response scenarios.
 Generate comprehensive epidemiological analysis using the ReAct agent with real-time data.
 
 **Request Body:**
+
 ```json
 {
-    "query": "Analyze recent COVID-19 trends and hospital capacity nationwide",
-    "agent_type": "react"
+  "query": "Analyze recent COVID-19 trends and hospital capacity nationwide",
+  "agent_type": "react"
 }
 ```
 
 **Response:**
+
 ```json
 {
     "success": true,
@@ -241,45 +247,48 @@ Generate comprehensive epidemiological analysis using the ReAct agent with real-
 Generate multiple strategy variations based on an alert using Claude with extended thinking and policy document integration.
 
 **Request Body:**
+
 ```json
 {
-    "name": "COVID-19 Surge Alert - Seattle Metro",
-    "description": "Significant increase in COVID-19 hospitalizations and ICU capacity nearing 85%",
-    "risk_score": 7,
-    "risk_reason": "High hospitalization rate combined with new variant detection",
-    "location": "Washington State",
-    "latitude": "47.6062",
-    "longitude": "-122.3321"
+  "name": "COVID-19 Surge Alert - Seattle Metro",
+  "description": "Significant increase in COVID-19 hospitalizations and ICU capacity nearing 85%",
+  "risk_score": 7,
+  "risk_reason": "High hospitalization rate combined with new variant detection",
+  "location": "Washington State",
+  "latitude": "47.6062",
+  "longitude": "-122.3321"
 }
 ```
 
 **Response:**
+
 ```json
 [
-    {
-        "short_description": "Emergency Response Protocol Activation",
-        "full_description": "Immediate activation of emergency response protocols including surge capacity planning, resource reallocation, and coordinated multi-agency response. Timeline: 0-24 hours. Responsible: Emergency Operations Center...",
-        "alert_id": "placeholder"
-    },
-    {
-        "short_description": "Enhanced Surveillance and Monitoring",
-        "full_description": "Implement structured monitoring system with daily reporting, contact tracing enhancement, and epidemiological investigation. Timeline: 1-7 days. Responsible: Public Health Department...",
-        "alert_id": "placeholder"
-    },
-    {
-        "short_description": "Community Prevention and Education",
-        "full_description": "Deploy preventive measures including public health advisories, community education campaigns, and early warning systems. Timeline: 2-14 days. Responsible: Communications Team...",
-        "alert_id": "placeholder"
-    },
-    {
-        "short_description": "Long-term Resilience Building",
-        "full_description": "Strategic capacity building including healthcare system strengthening, policy development, and infrastructure improvements. Timeline: 1-6 months. Responsible: Strategic Planning Department...",
-        "alert_id": "placeholder"
-    }
+  {
+    "short_description": "Emergency Response Protocol Activation",
+    "full_description": "Immediate activation of emergency response protocols including surge capacity planning, resource reallocation, and coordinated multi-agency response. Timeline: 0-24 hours. Responsible: Emergency Operations Center...",
+    "alert_id": "placeholder"
+  },
+  {
+    "short_description": "Enhanced Surveillance and Monitoring",
+    "full_description": "Implement structured monitoring system with daily reporting, contact tracing enhancement, and epidemiological investigation. Timeline: 1-7 days. Responsible: Public Health Department...",
+    "alert_id": "placeholder"
+  },
+  {
+    "short_description": "Community Prevention and Education",
+    "full_description": "Deploy preventive measures including public health advisories, community education campaigns, and early warning systems. Timeline: 2-14 days. Responsible: Communications Team...",
+    "alert_id": "placeholder"
+  },
+  {
+    "short_description": "Long-term Resilience Building",
+    "full_description": "Strategic capacity building including healthcare system strengthening, policy development, and infrastructure improvements. Timeline: 1-6 months. Responsible: Strategic Planning Department...",
+    "alert_id": "placeholder"
+  }
 ]
 ```
 
 **Features:**
+
 - Uses Claude Sonnet 4.0 with extended thinking capabilities
 - Integrates with policy documents for compliance guidance
 - Generates exactly 4 strategy variations with different severity levels
@@ -295,23 +304,26 @@ Start dashboard generation as a background task.
 **Request Body:** Same as `/generate`
 
 **Response:**
+
 ```json
 {
-    "message": "Dashboard generation started in background",
-    "task_id": "dashboard_20240115_103000",
-    "timestamp": "2021-01-15T10:30:00Z"
+  "message": "Dashboard generation started in background",
+  "task_id": "dashboard_20240115_103000",
+  "timestamp": "2021-01-15T10:30:00Z"
 }
 ```
 
 ## Agent Types
 
 ### Standard Agent
+
 - **Type:** `"standard"`
 - **Description:** Uses LangGraph workflow for structured data processing
 - **Best for:** General dashboard generation, alert analysis, basic trending
 - **Features:** Sample data integration, enhanced analytics, structured responses
 
-### ReAct Agent  
+### ReAct Agent
+
 - **Type:** `"react"`
 - **Description:** Uses ReAct pattern with real-time epidemiological tools
 - **Best for:** Real-time epidemiological analysis, statistical trend detection
@@ -327,7 +339,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 # MCP Server Configuration
 MCP_SERVER_HOST=localhost  # Default: localhost
-MCP_SERVER_PORT=8000      # Default: 8000
+MCP_SERVER_PORT=8001      # Default: 8001
 ```
 
 ### Agent Configuration
@@ -340,10 +352,10 @@ All endpoints return structured error responses:
 
 ```json
 {
-    "success": false,
-    "error": "Dashboard generation failed: Connection timeout",
-    "timestamp": "2021-01-15T10:30:00Z",
-    "generation_time_seconds": 5.0
+  "success": false,
+  "error": "Dashboard generation failed: Connection timeout",
+  "timestamp": "2021-01-15T10:30:00Z",
+  "generation_time_seconds": 5.0
 }
 ```
 
@@ -372,17 +384,17 @@ if result["success"]:
 
 ```javascript
 const generateDashboard = async (query) => {
-    const response = await fetch('/dashboard/generate', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            query: query,
-            agent_type: 'standard'
-        })
-    });
-    
-    const result = await response.json();
-    return result;
+  const response = await fetch("/dashboard/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: query,
+      agent_type: "standard",
+    }),
+  });
+
+  const result = await response.json();
+  return result;
 };
 ```
 
@@ -398,7 +410,7 @@ curl -X POST http://localhost:8000/dashboard/epidemiological-analysis \
   }'
 
 # Generate strategies from alert
-curl -X POST http://localhost:8001/dashboard/generate-strategies \
+curl -X POST http://localhost:8000/dashboard/generate-strategies \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Hospital Capacity Alert",
@@ -423,10 +435,12 @@ curl -X POST http://localhost:8001/dashboard/generate-strategies \
 ### Common Issues
 
 1. **"Agent not available"**
+
    - Check Anthropic API key is set
    - Verify API key has sufficient credits
 
 2. **"MCP server not accessible"**
+
    - Ensure MCP server is running on configured port
    - Check network connectivity to MCP server
 
@@ -440,4 +454,4 @@ Set `DEBUG=1` environment variable for detailed logging:
 
 ```bash
 DEBUG=1 uvicorn app.main:app --port 8000
-``` 
+```

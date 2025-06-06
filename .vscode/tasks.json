@@ -12,7 +12,7 @@
                 "--host",
                 "0.0.0.0",
                 "--port",
-                "8000"
+                "8001"
             ],
             "group": "build",
             "presentation": {
@@ -187,7 +187,7 @@
             "command": "curl",
             "args": [
                 "-s",
-                "http://localhost:8000/sse"
+                "http://localhost:8001/sse"
             ],
             "group": "test",
             "presentation": {
@@ -267,4 +267,4 @@
             "problemMatcher": []
         }
     ]
-} 
+}

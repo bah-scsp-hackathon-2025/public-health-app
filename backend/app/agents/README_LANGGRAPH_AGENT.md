@@ -49,13 +49,13 @@ cd ../app/agents
 cp ../.env-template ../.env
 # Edit .env file with your configuration:
 # - MCP_SERVER_HOST=localhost (or your server host)
-# - MCP_SERVER_PORT=8000 (or your server port)
+# - MCP_SERVER_PORT=8001 (or your server port)
 # - OPENAI_API_KEY=your-key (optional)
 # - ANTHROPIC_API_KEY=your-key (optional)
 
 # Required: Start the FastMCP server (from the mcp directory)
 cd ../../mcp
-python3 -m uvicorn mcp_public_health:app --host 0.0.0.0 --port 8000
+python3 -m uvicorn mcp_public_health:app --host 0.0.0.0 --port 8001
 cd ../app/agents  # Return to agents directory
 
 # Optional: Set API keys for LLM providers
@@ -97,7 +97,7 @@ python health_dashboard_agent.py interactive
 
 # Available commands:
 # - "alerts only" - Focus on current alerts
-# - "trends only" - Focus on risk trends  
+# - "trends only" - Focus on risk trends
 # - "high severity" - High severity issues only
 # - "state CA" - Focus on specific state
 # - "exit" - Quit
@@ -126,13 +126,13 @@ The agent generates structured dashboard summaries like this:
 📊 PUBLIC HEALTH DASHBOARD SUMMARY
 
 🚨 CURRENT SITUATION
-The public health landscape shows elevated activity across multiple states with 
-15 active alerts affecting 2.3M people. Respiratory illnesses are trending 
+The public health landscape shows elevated activity across multiple states with
+15 active alerts affecting 2.3M people. Respiratory illnesses are trending
 upward, requiring immediate attention in high-density areas.
 
 🔥 CRITICAL ALERTS
 • HIGH: COVID-19 outbreak in nursing facilities (CA) - 45,000 affected
-• HIGH: Foodborne illness cluster (TX) - 12,000 affected  
+• HIGH: Foodborne illness cluster (TX) - 12,000 affected
 • MEDIUM: Air quality emergency (WA) - 890,000 affected
 
 📈 TREND HIGHLIGHTS
@@ -184,9 +184,9 @@ from health_dashboard_agent import PublicHealthDashboardAgent
 
 async def daily_health_report():
     agent = PublicHealthDashboardAgent()
-    
+
     result = await agent.assemble_dashboard()
-    
+
     # Save to file, send email, post to Slack, etc.
     with open(f"reports/{datetime.now().strftime('%Y%m%d')}.md", 'w') as f:
         f.write(result['dashboard_summary'])
@@ -204,9 +204,9 @@ from health_dashboard_agent import PublicHealthDashboardAgent
 async def post_health_update(channel_id: str):
     agent = PublicHealthDashboardAgent()
     slack_client = AsyncWebClient(token=os.environ["SLACK_BOT_TOKEN"])
-    
+
     result = await agent.assemble_dashboard()
-    
+
     await slack_client.chat_postMessage(
         channel=channel_id,
         text="🏥 Daily Health Dashboard Update",
@@ -231,7 +231,7 @@ The agent uses the following environment variables for configuration:
 ```bash
 # MCP Server Configuration
 MCP_SERVER_HOST=localhost          # Default: localhost
-MCP_SERVER_PORT=8000              # Default: 8000
+MCP_SERVER_PORT=8001              # Default: 8001
 
 # LLM API Keys (optional - agent works without them in basic mode)
 OPENAI_API_KEY=your-openai-key
@@ -241,27 +241,30 @@ ANTHROPIC_API_KEY=your-anthropic-key
 ### Setting Up Configuration
 
 1. **Copy the template**:
+
    ```bash
    cp .env-template .env
    ```
 
 2. **Edit your .env file**:
+
    ```bash
    # For local development
    MCP_SERVER_HOST=localhost
-   MCP_SERVER_PORT=8000
+   MCP_SERVER_PORT=8001
    OPENAI_API_KEY=sk-your-key-here
-   
+
    # For production
    MCP_SERVER_HOST=mcp.yourcompany.com
    MCP_SERVER_PORT=443
    ```
 
 3. **Load environment variables** (if using python-dotenv):
+
    ```python
    from dotenv import load_dotenv
    load_dotenv()
-   
+
    from health_dashboard_agent import PublicHealthDashboardAgent
    agent = PublicHealthDashboardAgent()  # Uses .env config
    ```
@@ -290,7 +293,7 @@ agent.llm = ChatOpenAI(
 # Connect to remote MCP server
 agent = PublicHealthDashboardAgent(
     mcp_host="production-server.com",
-    mcp_port=8000
+    mcp_port=8001
 )
 
 # Use different MCP endpoints
@@ -314,7 +317,7 @@ class CustomHealthAgent(PublicHealthDashboardAgent):
         1. Pediatric health impacts
         2. Environmental health factors
         3. Health equity considerations
-        
+
         Data: {json.dumps(alerts_data, indent=2)}
         """
 ```
@@ -367,18 +370,18 @@ The agent includes comprehensive error handling:
 
 ```python
 class PublicHealthDashboardAgent:
-    def __init__(self, llm_provider: str = "openai", 
-                 mcp_host: str = "localhost", 
-                 mcp_port: int = 8000)
-    
+    def __init__(self, llm_provider: str = "openai",
+                 mcp_host: str = "localhost",
+                 mcp_port: int = 8001)
+
     async def assemble_dashboard(self) -> Dict:
         """
         Generate dashboard summary from health data.
-        
+
         Args: None
-            
+
         Returns:
-            Dict with keys: dashboard_summary, alerts_count, trends_count, 
+            Dict with keys: dashboard_summary, alerts_count, trends_count,
                           timestamp, success, error
         """
 ```
@@ -390,7 +393,7 @@ class DashboardState(TypedDict):
     messages: List[BaseMessage]          # Conversation history
     current_request: Optional[str]       # Current request being processed
     alerts_data: Optional[Dict]          # Raw alerts from MCP server
-    trends_data: Optional[Dict]          # Raw trends from MCP server  
+    trends_data: Optional[Dict]          # Raw trends from MCP server
     analysis_result: Optional[Dict]      # LLM analysis results
     dashboard_summary: Optional[str]     # Final dashboard summary
     error_message: Optional[str]         # Error details if any
@@ -412,7 +415,8 @@ This project is part of the Public Health MCP Server toolkit. See main project l
 
 ---
 
-**Next Steps**: 
+**Next Steps**:
+
 - Try the interactive mode: `python health_dashboard_agent.py interactive`
 - Run the test suite: `python test_dashboard_agent.py`
-- Integrate into your application using the examples above 
+- Integrate into your application using the examples above

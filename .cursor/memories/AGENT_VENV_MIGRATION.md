@@ -1,9 +1,11 @@
 # Agent Virtual Environment Migration
 
 ## Summary
+
 Successfully consolidated agent dependencies and established a dedicated virtual environment for the FastAPI application, separating it from the MCP server environment.
 
 ## Problem Solved
+
 When agents were moved from `backend/mcp/` to `backend/app/agents/`, their dependencies (LangChain, LangGraph, etc.) remained in the MCP virtual environment, creating a dependency mismatch and architectural confusion.
 
 ## Changes Made
@@ -11,6 +13,7 @@ When agents were moved from `backend/mcp/` to `backend/app/agents/`, their depen
 ### 1. Package Consolidation
 
 **Updated `backend/app/requirements.txt`:**
+
 ```txt
 # FastAPI and web dependencies
 fastapi
@@ -37,6 +40,7 @@ python-dotenv>=1.0.0
 ```
 
 **Key Decision**: Did NOT include `fastmcp` package because:
+
 - Agents are **clients** that connect to MCP servers via HTTP
 - Only need `langchain-mcp-adapters` for client functionality
 - `fastmcp` is only needed for the MCP **server** itself
@@ -44,6 +48,7 @@ python-dotenv>=1.0.0
 ### 2. Virtual Environment Setup
 
 **Created `backend/app/venv/`:**
+
 ```bash
 cd backend/app
 python3 -m venv venv
@@ -55,6 +60,7 @@ pip install -r requirements.txt
 ### 3. Startup Script Updates
 
 **Updated `backend/start_fastapi.py`:**
+
 - Added proper PYTHONPATH configuration
 - Added documentation about using app virtual environment
 - Added diagnostic output for debugging
@@ -62,10 +68,12 @@ pip install -r requirements.txt
 ### 4. VS Code Integration Updates
 
 **Updated `.vscode/tasks.json`:**
+
 - "Start FastAPI App": Now uses `${workspaceFolder}/backend/app/venv/bin/python`
 - "Test Dashboard API": Now uses app venv with correct PYTHONPATH
 
 **Updated `.vscode/launch.json`:**
+
 - "Debug FastAPI App": Uses app virtual environment
 - "Debug Dashboard Agent": Uses app virtual environment
 - "Debug Dashboard Agent Tests": Uses app virtual environment
@@ -82,7 +90,7 @@ backend/
 │   ├── fastmcp_server.py  # MCP server implementation
 │   └── requirements.txt   # Server-side packages (fastmcp, etc.)
 │
-└── app/                   # FastAPI Application Environment  
+└── app/                   # FastAPI Application Environment
     ├── venv/              # Web app + agent dependencies
     ├── agents/            # LangGraph agents (clients)
     ├── routers/           # FastAPI routes
@@ -93,9 +101,9 @@ backend/
 ### Dependency Flow
 
 ```
-MCP Server (port 8000)
+MCP Server (port 8001)
     ↑ HTTP/SSE
-FastAPI App + Agents (port 8001)
+FastAPI App + Agents (port 8000)
     ↑ HTTP
 Web Clients / API Users
 ```
@@ -121,6 +129,7 @@ Web Clients / API Users
 ### ⚠️ Known Issue
 
 Dashboard generation fails with MCP connection error:
+
 ```
 ❌ Error fetching health data: unhandled errors in a TaskGroup (1 sub-exception)
 ```
@@ -132,13 +141,15 @@ This is expected when MCP server is not running and doesn't affect the virtual e
 ### Development Workflow
 
 **Start MCP Server (Terminal 1):**
+
 ```bash
 cd backend/mcp
 source venv/bin/activate
-python3 -m uvicorn fastmcp_server:app --host 0.0.0.0 --port 8000
+python3 -m uvicorn fastmcp_server:app --host 0.0.0.0 --port 8001
 ```
 
 **Start FastAPI App (Terminal 2):**
+
 ```bash
 cd backend
 source app/venv/bin/activate
@@ -146,6 +157,7 @@ python3 start_fastapi.py
 ```
 
 **Test Everything:**
+
 ```bash
 cd backend
 source app/venv/bin/activate
@@ -173,11 +185,11 @@ Both environments can share the same `.env` file:
 ```bash
 # FastAPI Server Configuration
 FASTAPI_HOST=0.0.0.0
-FASTAPI_PORT=8001
+FASTAPI_PORT=8000
 
-# MCP Server Configuration  
+# MCP Server Configuration
 MCP_SERVER_HOST=localhost
-MCP_SERVER_PORT=8000
+MCP_SERVER_PORT=8001
 
 # LLM API Keys
 OPENAI_API_KEY=your-openai-key
@@ -187,6 +199,7 @@ ANTHROPIC_API_KEY=your-anthropic-key
 ## Verification Commands
 
 **Test app virtual environment:**
+
 ```bash
 cd backend
 source app/venv/bin/activate
@@ -194,14 +207,16 @@ python3 -c "from app.agents import PublicHealthDashboardAgent; print('✅ Succes
 ```
 
 **Test FastAPI startup:**
+
 ```bash
-cd backend  
+cd backend
 source app/venv/bin/activate
 python3 start_fastapi.py
 # Should show: 🚀 Starting FastAPI server on 0.0.0.0:8001
 ```
 
 **Test VS Code task:**
+
 - Open VS Code
 - Run "Start FastAPI App" task
 - Should use app virtual environment automatically
@@ -215,4 +230,4 @@ python3 start_fastapi.py
 
 ---
 
-**Migration Complete**: The agent dependencies have been successfully moved to the FastAPI app virtual environment with proper separation of concerns and full VS Code integration. 
+**Migration Complete**: The agent dependencies have been successfully moved to the FastAPI app virtual environment with proper separation of concerns and full VS Code integration.
