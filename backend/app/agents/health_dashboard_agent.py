@@ -2,25 +2,45 @@
 """
 Public Health Dashboard Agent using LangGraph
 
-This agent workflow uses the FastMCP Public Health server to:
-1. Fetch public health alerts and risk trends
-2. Analyze the data for patterns and insights
-3. Generate comprehensive dashboard summaries
-4. Provide actionable insights for public health officials
+This agent demonstrates a multi-node LangGraph workflow that:
+Phase 1: Fetches health data from MCP tools 
+Phase 2: Analyzes the data for risk assessment
+Phase 3: Generates dashboard summary with LLM
 
-The agent demonstrates real-world usage of MCP servers with LangGraph.
+The agent showcases LangGraph capabilities for complex workflows.
 """
 
+import anthropic
 import asyncio
-import json
 import logging
 import os
+import sys
 from datetime import datetime
+
+from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
+from langchain_anthropic import ChatAnthropic
+from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.store.memory import InMemoryStore
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from typing import Dict, List, Optional, Any, TypedDict, Annotated
 from operator import add
-from typing import Dict, List, Optional, TypedDict, Annotated
+
+# Import models
+from app.models.alert import AlertCreate
+
+# Langfuse imports
+from langfuse.callback import CallbackHandler
 
 # Load configuration from settings
-from ..config import settings
+try:
+    from ..config import settings
+except ImportError:
+    # If running directly, try absolute import
+    import sys
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+    from config import settings
 
 # Load environment variables
 try:
@@ -30,32 +50,14 @@ except ImportError:
     # python-dotenv not installed, skip
     pass
 
+# PostgreSQL configuration constants
+WORKFLOW_PASSWORD_DEFAULT = "default_memory_mode"
+
 # Configure logging for LangGraph debugging
 def setup_debug_logging():
-    """Setup comprehensive debug logging for LangGraph execution"""
-    # Configure root logger
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        force=True  # Override any existing configuration
-    )
-    
-    # Set up specific loggers for debugging
-    logger = logging.getLogger(__name__)
-    langgraph_logger = logging.getLogger("langgraph")
-    langchain_logger = logging.getLogger("langchain")
-    
-    # Enable debug logging for LangGraph components
-    logger.setLevel(logging.DEBUG)
-    langgraph_logger.setLevel(logging.DEBUG)
-    langchain_logger.setLevel(logging.DEBUG)
-    
-    # Enable debug for other relevant components
-    logging.getLogger("langchain_core").setLevel(logging.DEBUG)
-    logging.getLogger("langchain_mcp_adapters").setLevel(logging.DEBUG)
-    
-    logger.debug("🔧 Debug logging enabled for LangGraph workflow")
-    return logger
+    """Setup debug logging for LangGraph components"""
+    logging.getLogger("langgraph").setLevel(logging.DEBUG)
+    logging.getLogger("langchain").setLevel(logging.DEBUG)
 
 # Setup logging and get logger
 logger = setup_debug_logging()
@@ -65,10 +67,6 @@ from langchain_anthropic import ChatAnthropic
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_mcp_adapters.client import MultiServerMCPClient
-
-# Langfuse imports
-from langfuse.callback import CallbackHandler
-
 
 # State management for the agent workflow
 class DashboardState(TypedDict):
@@ -117,8 +115,8 @@ class PublicHealthDashboardAgent:
         else:
             print("⚠️  Anthropic API key not found or invalid. Agent will work in MCP-only mode.")
         
-        # Build the workflow graph
-        self.workflow = self._build_workflow()
+        # Initialize workflow (will be built async when first needed)
+        self.workflow = None
     
     def _setup_langfuse_tracing(self):
         """Configure Langfuse tracing for workflow observability"""
@@ -148,6 +146,54 @@ class PublicHealthDashboardAgent:
             logger.warning(f"⚠️ Failed to setup Langfuse tracing: {str(e)}")
             self.langfuse_handler = None
     
+    async def _create_checkpointer_and_store(self):
+        """Create checkpointer and persistence store based on environment configuration"""
+        workflow_password = os.getenv("POSTGRES_PASSWORD", WORKFLOW_PASSWORD_DEFAULT)
+        
+        if workflow_password == WORKFLOW_PASSWORD_DEFAULT:
+            logger.info("🗄️ Using in-memory checkpointer and persistence store")
+            checkpointer = InMemorySaver()
+            store = InMemoryStore()
+            return checkpointer, store
+        else:
+            logger.info("🐘 Using PostgreSQL checkpointer with in-memory persistence store")
+            workflow_database = os.getenv("POSTGRES_DATABASE")
+            workflow_user = os.getenv("POSTGRES_USER")
+            workflow_host = os.getenv("POSTGRES_HOST")
+            workflow_port = int(os.getenv("POSTGRES_PORT", "5432"))
+            ssl_mode = os.getenv("POSTGRES_SSL_MODE", "disable")
+            
+            db_uri = f"postgres://{workflow_user}:{workflow_password}@{workflow_host}:{workflow_port}/{workflow_database}?sslmode={ssl_mode}"
+            logger.debug(f"PostgreSQL connection URI: postgres://{workflow_user}:***@{workflow_host}:{workflow_port}/{workflow_database}?sslmode={ssl_mode}")
+            
+            try:
+                # Dynamically import PostgreSQL checkpointer to avoid dependency issues
+                from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+                
+                # Create PostgreSQL checkpointer
+                checkpointer = AsyncPostgresSaver.from_conn_string(db_uri)
+                await checkpointer.setup()
+                logger.info("✅ PostgreSQL checkpointer initialized and set up")
+                
+                # Use in-memory store for now (PostgreSQL store not available in current LangGraph version)
+                store = InMemoryStore()
+                logger.info("✅ In-memory persistence store initialized (PostgreSQL store not available)")
+                
+                return checkpointer, store
+                
+            except ImportError as e:
+                logger.error(f"❌ PostgreSQL checkpointer not available: {str(e)}")
+                logger.info("🔄 Falling back to in-memory checkpointer and persistence store")
+                checkpointer = InMemorySaver()
+                store = InMemoryStore()
+                return checkpointer, store
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize PostgreSQL checkpointer: {str(e)}")
+                logger.info("🔄 Falling back to in-memory checkpointer and persistence store")
+                checkpointer = InMemorySaver()
+                store = InMemoryStore()
+                return checkpointer, store
+    
     async def _init_mcp_client(self):
         """Initialize MCP client connection"""
         if not self.mcp_client:
@@ -159,7 +205,13 @@ class PublicHealthDashboardAgent:
             }
             self.mcp_client = MultiServerMCPClient(client_config)
     
-    def _build_workflow(self) -> StateGraph:
+    async def _init_workflow(self):
+        """Initialize workflow if not already done"""
+        if self.workflow is None:
+            self.workflow = await self._build_workflow()
+            logger.debug("✅ LangGraph workflow initialized")
+    
+    async def _build_workflow(self) -> StateGraph:
         """Build the LangGraph workflow"""
         workflow = StateGraph(DashboardState)
         
@@ -193,7 +245,9 @@ class PublicHealthDashboardAgent:
             }
         )
         
-        return workflow.compile(checkpointer=MemorySaver())
+        # Configure checkpointer and persistence store based on environment
+        checkpointer, store = await self._create_checkpointer_and_store()
+        return workflow.compile(checkpointer=checkpointer, store=store)
     
     def _should_handle_error(self, state: DashboardState) -> str:
         """Determine if we should handle an error"""
@@ -843,6 +897,9 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
         logger.debug(f"Date range: {start_date} to {end_date}")
         logger.debug(f"Agent configuration - LLM: {type(self.llm).__name__ if self.llm else 'None'}")
         logger.debug(f"Agent configuration - MCP: {self.mcp_host}:{self.mcp_port}")
+        
+        # Initialize workflow if not already done
+        await self._init_workflow()
         
         # Build the dashboard generation request with date context
         dashboard_request = "Assemble a public health dashboard"
