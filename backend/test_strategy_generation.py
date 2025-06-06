@@ -49,13 +49,9 @@ def test_strategy_generation():
 
             # Verify response structure
             if len(strategies) >= 4:
-                print(
-                    f"\n✅ Requirement met: Generated {len(strategies)} strategies (minimum 4)"
-                )
+                print(f"\n✅ Requirement met: Generated {len(strategies)} strategies (minimum 4)")
             else:
-                print(
-                    f"\n⚠️ Warning: Only generated {len(strategies)} strategies (expected minimum 4)"
-                )
+                print(f"\n⚠️ Warning: Only generated {len(strategies)} strategies (expected minimum 4)")
 
             # Check strategy variation
             titles = [s["short_description"] for s in strategies]
@@ -120,17 +116,13 @@ def test_with_different_risk_levels():
 
             if response.status_code == 200:
                 strategies = response.json()
-                print(
-                    f"✅ Generated {len(strategies)} strategies for risk level {scenario['risk_score']}"
-                )
+                print(f"✅ Generated {len(strategies)} strategies for risk level {scenario['risk_score']}")
 
                 # Show first strategy as example
                 if strategies:
                     print(f"   Example: {strategies[0]['short_description']}")
             else:
-                print(
-                    f"❌ Failed for risk level {scenario['risk_score']}: {response.status_code}"
-                )
+                print(f"❌ Failed for risk level {scenario['risk_score']}: {response.status_code}")
 
         except Exception as e:
             print(f"❌ Error testing risk level {scenario['risk_score']}: {e}")

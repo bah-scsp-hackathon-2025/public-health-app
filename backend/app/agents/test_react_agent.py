@@ -114,9 +114,7 @@ async def test_mcp_tools_direct():
         # Test fetch_epi_signal
         print("\n   Testing fetch_epi_signal...")
         try:
-            fetch_tool = next(
-                (t for t in agent.tools if t.name == "fetch_epi_signal"), None
-            )
+            fetch_tool = next((t for t in agent.tools if t.name == "fetch_epi_signal"), None)
             if fetch_tool:
                 result = fetch_tool.func(
                     signal="smoothed_wcli",
@@ -141,17 +139,11 @@ async def test_mcp_tools_direct():
         # Test detect_rising_trend
         print("\n   Testing detect_rising_trend...")
         try:
-            trend_tool = next(
-                (t for t in agent.tools if t.name == "detect_rising_trend"), None
-            )
+            trend_tool = next((t for t in agent.tools if t.name == "detect_rising_trend"), None)
             if trend_tool:
-                result = trend_tool.func(
-                    signal_name="smoothed_wcli", value_column="value", window_size=7
-                )
+                result = trend_tool.func(signal_name="smoothed_wcli", value_column="value", window_size=7)
                 print("   ✅ detect_rising_trend: Trend analysis completed")
-                print(
-                    f"   📈 Rising periods detected: {result.get('total_periods', 0)}"
-                )
+                print(f"   📈 Rising periods detected: {result.get('total_periods', 0)}")
             else:
                 print("   ❌ detect_rising_trend tool not found")
         except Exception as e:
@@ -208,9 +200,7 @@ async def test_integration_scenarios():
 
             if success:
                 tools_used = result.get("tools_used", [])
-                print(
-                    f"   🔧 Tools used: {', '.join(tools_used) if tools_used else 'None'}"
-                )
+                print(f"   🔧 Tools used: {', '.join(tools_used) if tools_used else 'None'}")
             else:
                 error = result.get("error", "Unknown error")
                 print(f"   ❌ Error: {error[:80]}...")
@@ -271,9 +261,7 @@ async def main():
     passed = sum(1 for _, result in results if result)
     total = len(results)
 
-    print(
-        f"\n🎯 Overall Results: {passed}/{total} tests passed ({passed/total*100:.1f}%)"
-    )
+    print(f"\n🎯 Overall Results: {passed}/{total} tests passed ({passed/total*100:.1f}%)")
 
     if passed == total:
         print("🎉 All tests passed! ReAct agent is ready for use.")

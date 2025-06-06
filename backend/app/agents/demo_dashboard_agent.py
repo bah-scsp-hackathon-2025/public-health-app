@@ -196,10 +196,9 @@ class MockMCPClient:
     """Mock MCP client for demonstration"""
 
     async def get_tools(self):
+        """Get mock tools"""
         return [
-            MockMCPTool(
-                "fetch_epi_signal", {"message": "Mock epidemiological signal data"}
-            ),
+            MockMCPTool("fetch_epi_signal", {"message": "Mock epidemiological signal data"}),
             MockMCPTool(
                 "detect_rising_trend",
                 {"rising_periods": [], "total_periods": 0, "status": "success"},
@@ -299,9 +298,7 @@ async def demo_interactive_requests():
                 print(line)
         print("... (truncated for demo)")
 
-        print(
-            f"✅ Processed {result['alerts_count']} alerts, {result['trends_count']} trends"
-        )
+        print(f"✅ Processed {result['alerts_count']} alerts, {result['trends_count']} trends")
 
 
 if __name__ == "__main__":
@@ -318,9 +315,7 @@ if __name__ == "__main__":
     print("🎉 Demo Complete!")
     print("=" * 80)
     print("To use with real data:")
-    print(
-        "1. Start the FastMCP server: python3 -m uvicorn mcp_public_health:app --port 8001"
-    )
+    print("1. Start the FastMCP server: python3 -m uvicorn mcp_public_health:app --port 8001")
     print("2. Set API keys: export OPENAI_API_KEY=your-key")
     print("3. Run: python health_dashboard_agent.py")
     print("4. Or interactive mode: python health_dashboard_agent.py interactive")

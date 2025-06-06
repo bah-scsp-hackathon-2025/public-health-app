@@ -20,6 +20,7 @@ import tempfile
 import logging
 import json
 import requests
+
 # from load_dotenv import load_dotenv
 # load_dotenv(".env")
 
@@ -29,26 +30,28 @@ def setup_debug_logging():
     # Configure root logger
     logging.basicConfig(
         level=logging.DEBUG,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        force=True  # Override any existing configuration
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        force=True,  # Override any existing configuration
     )
-    
+
     # Set up specific loggers for debugging
     logger = logging.getLogger(__name__)
     fastmcp_logger = logging.getLogger("fastmcp")
-    
+
     # Enable debug logging
     logger.setLevel(logging.DEBUG)
     fastmcp_logger.setLevel(logging.DEBUG)
-    
+
     logger.debug("🔧 Debug logging enabled for MCP server")
     return logger
+
 
 # Setup logging and get logger
 logger = setup_debug_logging()
 
 # Create the MCP server with SSE transport
 mcp = FastMCP("Public Health FastMCP")
+
 
 @mcp.tool()
 def fetch_epi_signal(
@@ -58,12 +61,12 @@ def fetch_epi_signal(
     end_time: str,
     geo_value: str,
     geo_type: str = "state",
-    as_json: bool = True
+    as_json: bool = True,
 ) -> json:
     """
     Fetch a specific COVID-19 signal from the EpiDataContext and return a JSON.
     Args:
-        signal (str): The specific signal to fetch. The options are: 
+        signal (str): The specific signal to fetch. The options are:
         - sum_anosmia_ageusia_smoothed_search -> Description: COVID Symptom Searches on Google.
         - smoothed_wcli -> COVID-Like Symptoms
         - smoothed_whh_cmnty_cli -> Description: COVID-Like Symptoms in Community
@@ -78,7 +81,7 @@ def fetch_epi_signal(
         geo_type (Literal["state"]): The geographic granularity of the data.
 
     Returns:
-        json: A JSON containing the fetched signal data, with additional metadata columns. 
+        json: A JSON containing the fetched signal data, with additional metadata columns.
     """
     BASE_URL = "https://api.delphi.cmu.edu/epidata/covidcast/"
 
@@ -91,7 +94,7 @@ def fetch_epi_signal(
         "smoothed_adj_cli": "doctor-visits",
         "deaths_7dav_incidence_prop": "doctor-visits",
         "confirmed_7dav_incidence_prop": "jhu-csse",
-        "confirmed_admissions_covid_1d_prop_7dav": "hhs"
+        "confirmed_admissions_covid_1d_prop_7dav": "hhs",
     }
     params = {
         "data_source": signal_to_source[signal],
@@ -102,7 +105,7 @@ def fetch_epi_signal(
         # "as_of": end_time,  # Use the end_time as the 'as_of' date
         "geo_value": {geo_value},
     }
-    response = requests.get(BASE_URL, params=params, verify=False) # Disable SSL verification for testing purposes
+    response = requests.get(BASE_URL, params=params, verify=False)  # Disable SSL verification for testing purposes
     if as_json:
         response.raise_for_status()
         json_response = response.json()["epidata"]
@@ -112,17 +115,17 @@ def fetch_epi_signal(
         df = pd.DataFrame(json_response)
         # Convert the time_value column to datetime
         if not df.empty:
-            df['time_value'] = pd.to_datetime(df['time_value'], format='%Y%m%d')
+            df["time_value"] = pd.to_datetime(df["time_value"], format="%Y%m%d")
             # Sort the dataframe by time_value
-            df = df.sort_values('time_value')
-            df = df[['time_value', 'value', 'geo_value']]
+            df = df.sort_values("time_value")
+            df = df[["time_value", "value", "geo_value"]]
             # write the dataframe to a csv file
             temp_dir = tempfile.gettempdir()
             csv_file = os.path.join(temp_dir, f"{signal}_data.csv")
             df.to_csv(csv_file, index=False)
         # Return the dataframe
-        return df.to_json(orient='records')
-    
+        return df.to_json(orient="records")
+
 
 @mcp.tool()
 def detect_rising_trend(
@@ -131,13 +134,13 @@ def detect_rising_trend(
     date_column: str = "time_value",
     window_size: int = 7,
     min_log_slope: float = 0.01,
-    #smooth: bool = True
+    # smooth: bool = True
 ) -> dict:
     """
     Detects rising trends in a time series using rolling linear regression on the log-transformed values.
 
     Args:
-        signal_name (str): Name of the signal to detect rising trends for. The fetch_epi_signal must be called for that signal for prefetching the data. The options are: 
+        signal_name (str): Name of the signal to detect rising trends for. The fetch_epi_signal must be called for that signal for prefetching the data. The options are:
         - sum_anosmia_ageusia_smoothed_search -> Description: COVID Symptom Searches on Google.
         - smoothed_wcli -> COVID-Like Symptoms
         - smoothed_whh_cmnty_cli -> Description: COVID-Like Symptoms in Community
@@ -162,9 +165,9 @@ def detect_rising_trend(
         # For production, this would query the actual data source
         temp_dir = tempfile.gettempdir()
         csv_file = os.path.join(temp_dir, f"{signal_name}_data.csv")
-        
+
         logger.debug(f"🔍 Looking for data file: {csv_file}")
-        
+
         if not os.path.exists(csv_file):
             logger.warning(f"⚠️ No data file found for signal: {signal_name}")
             return {
@@ -172,112 +175,112 @@ def detect_rising_trend(
                 "total_periods": 0,
                 "sample_log_slopes": [],
                 "status": "no_data",
-                "message": f"No data available for signal: {signal_name}. Please fetch data first using fetch_epi_signal."
+                "message": f"No data available for signal: {signal_name}. Please fetch data first using fetch_epi_signal.",
             }
-        
+
         # Load the data
         df = pd.read_csv(csv_file)
         logger.debug(f"📊 Loaded data shape: {df.shape}")
         logger.debug(f"📊 Columns: {list(df.columns)}")
-        
+
         if value_column not in df.columns:
             return {
                 "rising_periods": [],
                 "total_periods": 0,
                 "sample_log_slopes": [],
                 "status": "error",
-                "message": f"Column '{value_column}' not found in data. Available columns: {list(df.columns)}"
+                "message": f"Column '{value_column}' not found in data. Available columns: {list(df.columns)}",
             }
-        
+
         if date_column not in df.columns:
             return {
                 "rising_periods": [],
                 "total_periods": 0,
                 "sample_log_slopes": [],
-                "status": "error", 
-                "message": f"Date column '{date_column}' not found in data. Available columns: {list(df.columns)}"
+                "status": "error",
+                "message": f"Date column '{date_column}' not found in data. Available columns: {list(df.columns)}",
             }
-        
+
         # Convert date column to datetime
-        df[date_column] = pd.to_datetime(df[date_column], format='%Y-%m-%d')
-        
+        df[date_column] = pd.to_datetime(df[date_column], format="%Y-%m-%d")
+
         # Sort by date
         df = df.sort_values(date_column)
-        
+
         # Remove rows with missing values
         df = df.dropna(subset=[value_column])
-        
+
         if len(df) < window_size * 2:
             return {
                 "rising_periods": [],
                 "total_periods": 0,
                 "sample_log_slopes": [],
                 "status": "insufficient_data",
-                "message": f"Not enough data points ({len(df)}) for analysis. Need at least {window_size * 2} points."
+                "message": f"Not enough data points ({len(df)}) for analysis. Need at least {window_size * 2} points.",
             }
-        
+
         # Apply smoothing if requested
         # if smooth:
         #     df[f'{value_column}_smoothed'] = df[value_column].rolling(window=3, center=True).mean()
         #     analysis_column = f'{value_column}_smoothed'
         # else:
         analysis_column = value_column
-        
+
         # Remove any zero or negative values for log transformation
         df = df[df[analysis_column] > 0]
-        
+
         if len(df) < window_size * 2:
             return {
                 "rising_periods": [],
                 "total_periods": 0,
                 "sample_log_slopes": [],
                 "status": "insufficient_positive_data",
-                "message": "Not enough positive data points for log-scale analysis."
+                "message": "Not enough positive data points for log-scale analysis.",
             }
-        
+
         # Apply log transformation
-        df['log_values'] = np.log(df[analysis_column])
-        
+        df["log_values"] = np.log(df[analysis_column])
+
         # Calculate rolling regression slopes
-        df['day_index'] = range(len(df))
-        
+        df["day_index"] = range(len(df))
+
         slopes = []
         rising_periods = []
         current_rising_start = None
-        
+
         for i in range(window_size, len(df) - window_size + 1):
             # Get window data
-            window_x = df['day_index'].iloc[i-window_size:i+window_size].values
-            window_y = df['log_values'].iloc[i-window_size:i+window_size].values
-            
+            window_x = df["day_index"].iloc[i - window_size : i + window_size].values
+            window_y = df["log_values"].iloc[i - window_size : i + window_size].values
+
             # Calculate linear regression
             try:
                 slope, intercept, r_value, p_value, std_err = linregress(window_x, window_y)
                 slopes.append(slope)
-                
+
                 # Check if this constitutes a rising trend
                 is_rising = slope >= min_log_slope
-                
+
                 if is_rising and current_rising_start is None:
                     # Start of a new rising period
-                    current_rising_start = df[date_column].iloc[i].strftime('%Y-%m-%d')
+                    current_rising_start = df[date_column].iloc[i].strftime("%Y-%m-%d")
                 elif not is_rising and current_rising_start is not None:
                     # End of current rising period
-                    current_rising_end = df[date_column].iloc[i-1].strftime('%Y-%m-%d')
+                    current_rising_end = df[date_column].iloc[i - 1].strftime("%Y-%m-%d")
                     rising_periods.append((current_rising_start, current_rising_end))
                     current_rising_start = None
-                    
+
             except Exception as reg_error:
                 logger.warning(f"⚠️ Regression error at index {i}: {str(reg_error)}")
                 continue
-        
+
         # Handle case where data ends during a rising period
         if current_rising_start is not None:
-            current_rising_end = df[date_column].iloc[-1].strftime('%Y-%m-%d')
+            current_rising_end = df[date_column].iloc[-1].strftime("%Y-%m-%d")
             rising_periods.append((current_rising_start, current_rising_end))
-        
+
         logger.debug(f"✅ Detected {len(rising_periods)} rising periods for {signal_name}")
-        
+
         return {
             "rising_periods": rising_periods,
             "total_periods": len(rising_periods),
@@ -288,25 +291,20 @@ def detect_rising_trend(
                 "min_log_slope": min_log_slope,
                 "data_points_analyzed": len(df),
                 "value_column": value_column,
-                "date_column": date_column
-            }
+                "date_column": date_column,
+            },
         }
-        
+
     except Exception as e:
         logger.error(f"❌ Error in detect_rising_trend: {str(e)}")
-        return {
-            "rising_periods": [],
-            "total_periods": 0,
-            "sample_log_slopes": [],
-            "status": "error",
-            "message": str(e)
-        }
+        return {"rising_periods": [], "total_periods": 0, "sample_log_slopes": [], "status": "error", "message": str(e)}
+
 
 @mcp.tool()
 def get_server_info() -> dict:
     """
     Returns information about the FastMCP Public Health server and its capabilities.
-    
+
     Returns:
         dict: Server information including version, capabilities, and available tools
     """
@@ -318,21 +316,19 @@ def get_server_info() -> dict:
         "capabilities": [
             "Epidemiological signal fetching from Delphi EpiData API",
             "Statistical trend detection using rolling regression",
-            "Real-time data analysis and processing"
+            "Real-time data analysis and processing",
         ],
         "tools": ["fetch_epi_signal", "detect_rising_trend", "get_server_info"],
-        "data_sources": [
-            "Delphi EpiData API (COVID-19 signals)",
-            "Real-time epidemiological surveillance data"
-        ],
+        "data_sources": ["Delphi EpiData API (COVID-19 signals)", "Real-time epidemiological surveillance data"],
         "features": [
             "Type-safe tool definitions",
-            "Comprehensive error handling", 
+            "Comprehensive error handling",
             "Debug logging support",
-            "Flexible time and geographic filtering"
+            "Flexible time and geographic filtering",
         ],
-        "last_updated": datetime.now().isoformat()
+        "last_updated": datetime.now().isoformat(),
     }
+
 
 if __name__ == "__main__":
     mcp.run(transport="sse")

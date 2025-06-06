@@ -131,21 +131,13 @@ class ReActState(TypedDict):
     end_date: str  # Format: YYYY-MM-DD
 
     # Tool data storage
-    epi_signals: Annotated[
-        List[Dict[str, Any]], add
-    ]  # Store as dicts for JSON compatibility
-    trend_analyses: Annotated[
-        List[Dict[str, Any]], add
-    ]  # Store as dicts for JSON compatibility
-    fetch_epi_signal_data: Annotated[
-        List[Dict[str, Any]], add
-    ]  # Store raw fetch_epi_signal results for trends output
+    epi_signals: Annotated[List[Dict[str, Any]], add]  # Store as dicts for JSON compatibility
+    trend_analyses: Annotated[List[Dict[str, Any]], add]  # Store as dicts for JSON compatibility
+    fetch_epi_signal_data: Annotated[List[Dict[str, Any]], add]  # Store raw fetch_epi_signal results for trends output
     alerts: Annotated[List[Dict[str, Any]], add]  # Store generated alerts
 
     # Tool execution state
-    tool_results: List[
-        Dict[str, Any]
-    ]  # Raw tool results from reasoning node (don't accumulate, always replace)
+    tool_results: List[Dict[str, Any]]  # Raw tool results from reasoning node (don't accumulate, always replace)
     has_tool_results: bool  # Flag to indicate if tool results need processing
 
     # Analysis state
@@ -185,16 +177,12 @@ class PublicHealthReActAgent:
             else os.getenv("MCP_SERVER_HOST", "localhost")
         )
         self.mcp_port = int(
-            settings.mcp_server_port
-            if hasattr(settings, "mcp_server_port")
-            else os.getenv("MCP_SERVER_PORT", "8001")
+            settings.mcp_server_port if hasattr(settings, "mcp_server_port") else os.getenv("MCP_SERVER_PORT", "8001")
         )
 
         # Get API keys from settings (keep both for future use)
         # openai_key = settings.openai_api_key if settings.openai_api_key else None
-        anthropic_key = (
-            settings.anthropic_api_key if settings.anthropic_api_key else None
-        )
+        anthropic_key = settings.anthropic_api_key if settings.anthropic_api_key else None
 
         # Initialize with Anthropic/Claude (required for ReAct mode)
         self.llm = None
@@ -210,9 +198,7 @@ class PublicHealthReActAgent:
             )
             # Initialize direct Anthropic client for Files API with SSL configuration
             # Create custom httpx client with proper SSL configuration
-            ssl_verify = (
-                settings.ssl_verify if hasattr(settings, "ssl_verify") else True
-            )
+            ssl_verify = settings.ssl_verify if hasattr(settings, "ssl_verify") else True
             if ssl_verify:
                 # Use certifi CA bundle for SSL verification
                 ca_bundle = (
@@ -225,21 +211,15 @@ class PublicHealthReActAgent:
                 logger.debug("🔒 SSL verification enabled with CA bundle: {ca_bundle}")
             else:
                 verify_setting = False
-                logger.warning(
-                    "⚠️ SSL verification disabled - this is not recommended for production"
-                )
+                logger.warning("⚠️ SSL verification disabled - this is not recommended for production")
 
             custom_httpx_client = httpx.Client(
                 verify=verify_setting,
                 timeout=httpx.Timeout(60.0, read=60.0, write=60.0, connect=10.0),
             )
-            self.anthropic_client = anthropic.Anthropic(
-                api_key=anthropic_key, http_client=custom_httpx_client
-            )
+            self.anthropic_client = anthropic.Anthropic(api_key=anthropic_key, http_client=custom_httpx_client)
         else:
-            print(
-                "⚠️  Anthropic API key not found or invalid. ReAct agent requires valid Anthropic API key."
-            )
+            print("⚠️  Anthropic API key not found or invalid. ReAct agent requires valid Anthropic API key.")
             raise ValueError("ReAct agent requires valid Anthropic API key")
 
     def _setup_langfuse_tracing(self):
@@ -290,9 +270,7 @@ class PublicHealthReActAgent:
                     f"✅ Langfuse tracing enabled for project: {settings.langfuse_project if hasattr(settings, 'langfuse_project') else 'public-health-dashboard'}"
                 )
             else:
-                logger.info(
-                    "ℹ️  Langfuse tracing disabled (missing keys or tracing disabled)"
-                )
+                logger.info("ℹ️  Langfuse tracing disabled (missing keys or tracing disabled)")
 
         except Exception as e:
             logger.warning(f"⚠️ Failed to setup Langfuse tracing: {str(e)}")
@@ -315,14 +293,8 @@ class PublicHealthReActAgent:
         logger.debug(f"Available MCP tools: {[t.name for t in mcp_tools]}")
 
         # Filter for only fetch_epi_signal and detect_rising_trend tools
-        self.tools = [
-            t
-            for t in mcp_tools
-            if t.name in ["fetch_epi_signal", "detect_rising_trend"]
-        ]
-        logger.debug(
-            f"✅ Initialized {len(self.tools)} LangChain tools: {[t.name for t in self.tools]}"
-        )
+        self.tools = [t for t in mcp_tools if t.name in ["fetch_epi_signal", "detect_rising_trend"]]
+        logger.debug(f"✅ Initialized {len(self.tools)} LangChain tools: {[t.name for t in self.tools]}")
 
         # Build the workflow if not already built
         if not self.workflow:
@@ -418,23 +390,13 @@ Respond with either:
 2. "ANALYSIS_COMPLETE" if ready for final synthesis""".format(
                     start_date=state.get("start_date", "2020-02-01"),
                     end_date=state.get("end_date", "2022-02-01"),
-                    start_date_tool=state.get("start_date", "2020-02-01").replace(
-                        "-", ""
-                    ),
+                    start_date_tool=state.get("start_date", "2020-02-01").replace("-", ""),
                     end_date_tool=state.get("end_date", "2022-02-01").replace("-", ""),
                     signal_count=len(state.get("epi_signals", [])),
                     trend_count=len(state.get("trend_analyses", [])),
-                    tools_used=(
-                        ", ".join(state.get("tools_used", []))
-                        if state.get("tools_used")
-                        else "none"
-                    ),
-                    fetch_calls=state.get("tool_call_counts", {}).get(
-                        "fetch_epi_signal", 0
-                    ),
-                    trend_calls=state.get("tool_call_counts", {}).get(
-                        "detect_rising_trend", 0
-                    ),
+                    tools_used=(", ".join(state.get("tools_used", [])) if state.get("tools_used") else "none"),
+                    fetch_calls=state.get("tool_call_counts", {}).get("fetch_epi_signal", 0),
+                    trend_calls=state.get("tool_call_counts", {}).get("detect_rising_trend", 0),
                 )
             )
 
@@ -468,17 +430,11 @@ Respond with either:
 
                     # Check if we're already at limit for this tool
                     if current_count >= 6:
-                        logger.warning(
-                            f"⚠️ Skipping {tool_name} call - limit reached (6/6)"
-                        )
+                        logger.warning(f"⚠️ Skipping {tool_name} call - limit reached (6/6)")
                         # Create an error message for the skipped call
-                        error_result = (
-                            f"Tool call skipped: {tool_name} limit reached (6/6)"
-                        )
+                        error_result = f"Tool call skipped: {tool_name} limit reached (6/6)"
                         tool_result = {
-                            "tool_call_id": tool_call.get(
-                                "id", f"call_{tool_call['name']}"
-                            ),
+                            "tool_call_id": tool_call.get("id", f"call_{tool_call['name']}"),
                             "tool_name": tool_name,
                             "tool_args": tool_call["args"],
                             "result": error_result,
@@ -488,61 +444,41 @@ Respond with either:
 
                         tool_message = ToolMessage(
                             content=error_result,
-                            tool_call_id=tool_call.get(
-                                "id", f"call_{tool_call['name']}"
-                            ),
+                            tool_call_id=tool_call.get("id", f"call_{tool_call['name']}"),
                             name=tool_name,
                         )
                         tool_messages.append(tool_message)
                         continue
 
-                    logger.debug(
-                        f"Executing tool: {tool_name} with args: {tool_call['args']}"
-                    )
+                    logger.debug(f"Executing tool: {tool_name} with args: {tool_call['args']}")
 
                     # Validate date parameters for tools that use dates
                     if tool_name in ["fetch_epi_signal", "detect_rising_trend"]:
-                        expected_start = state.get("start_date", "2020-02-01").replace(
-                            "-", ""
-                        )
-                        expected_end = state.get("end_date", "2022-02-01").replace(
-                            "-", ""
-                        )
+                        expected_start = state.get("start_date", "2020-02-01").replace("-", "")
+                        expected_end = state.get("end_date", "2022-02-01").replace("-", "")
 
                         tool_args = tool_call["args"]
-                        if (
-                            "start_time" in tool_args
-                            and tool_args["start_time"] != expected_start
-                        ):
+                        if "start_time" in tool_args and tool_args["start_time"] != expected_start:
                             logger.warning(
                                 f"⚠️ Tool {tool_name} using start_time {tool_args['start_time']}, expected {expected_start}"
                             )
-                        if (
-                            "end_time" in tool_args
-                            and tool_args["end_time"] != expected_end
-                        ):
+                        if "end_time" in tool_args and tool_args["end_time"] != expected_end:
                             logger.warning(
                                 f"⚠️ Tool {tool_name} using end_time {tool_args['end_time']}, expected {expected_end}"
                             )
 
                     # Find the tool by name
-                    tool = next(
-                        (t for t in self.tools if t.name == tool_call["name"]), None
-                    )
+                    tool = next((t for t in self.tools if t.name == tool_call["name"]), None)
                     if tool:
                         try:
                             # Execute the tool
                             result = await tool.ainvoke(tool_call["args"])
 
                             # Check if the result contains useful data
-                            has_useful_data = self._check_tool_result_has_data(
-                                tool_name, result
-                            )
+                            has_useful_data = self._check_tool_result_has_data(tool_name, result)
 
                             tool_result = {
-                                "tool_call_id": tool_call.get(
-                                    "id", f"call_{tool_call['name']}"
-                                ),
+                                "tool_call_id": tool_call.get("id", f"call_{tool_call['name']}"),
                                 "tool_name": tool_name,
                                 "tool_args": tool_call["args"],
                                 "result": result,
@@ -553,32 +489,22 @@ Respond with either:
                             # Create ToolMessage for the conversation
                             tool_message = ToolMessage(
                                 content=str(result),
-                                tool_call_id=tool_call.get(
-                                    "id", f"call_{tool_call['name']}"
-                                ),
+                                tool_call_id=tool_call.get("id", f"call_{tool_call['name']}"),
                                 name=tool_name,
                             )
                             tool_messages.append(tool_message)
 
                             # Only count successful calls with data against the limit
                             if has_useful_data:
-                                successful_calls_by_tool[tool_name] = (
-                                    successful_calls_by_tool.get(tool_name, 0) + 1
-                                )
-                                logger.debug(
-                                    f"✅ Tool {tool_name} executed successfully with data (counted)"
-                                )
+                                successful_calls_by_tool[tool_name] = successful_calls_by_tool.get(tool_name, 0) + 1
+                                logger.debug(f"✅ Tool {tool_name} executed successfully with data (counted)")
                             else:
-                                logger.debug(
-                                    f"⚠️ Tool {tool_name} executed but returned no useful data (not counted)"
-                                )
+                                logger.debug(f"⚠️ Tool {tool_name} executed but returned no useful data (not counted)")
                         except Exception as e:
                             logger.error(f"❌ Tool {tool_name} failed: {str(e)}")
                             error_result = f"Error: {str(e)}"
                             tool_result = {
-                                "tool_call_id": tool_call.get(
-                                    "id", f"call_{tool_call['name']}"
-                                ),
+                                "tool_call_id": tool_call.get("id", f"call_{tool_call['name']}"),
                                 "tool_name": tool_name,
                                 "tool_args": tool_call["args"],
                                 "result": error_result,
@@ -589,9 +515,7 @@ Respond with either:
                             # Create ToolMessage for the error
                             tool_message = ToolMessage(
                                 content=error_result,
-                                tool_call_id=tool_call.get(
-                                    "id", f"call_{tool_call['name']}"
-                                ),
+                                tool_call_id=tool_call.get("id", f"call_{tool_call['name']}"),
                                 name=tool_name,
                             )
                             tool_messages.append(tool_message)
@@ -600,9 +524,7 @@ Respond with either:
                         logger.error(f"❌ Tool {tool_name} not found")
                         error_result = f"Error: Tool {tool_name} not found"
                         tool_result = {
-                            "tool_call_id": tool_call.get(
-                                "id", f"call_{tool_call['name']}"
-                            ),
+                            "tool_call_id": tool_call.get("id", f"call_{tool_call['name']}"),
                             "tool_name": tool_name,
                             "tool_args": tool_call["args"],
                             "result": error_result,
@@ -613,9 +535,7 @@ Respond with either:
                         # Create ToolMessage for the error
                         tool_message = ToolMessage(
                             content=error_result,
-                            tool_call_id=tool_call.get(
-                                "id", f"call_{tool_call['name']}"
-                            ),
+                            tool_call_id=tool_call.get("id", f"call_{tool_call['name']}"),
                             name=tool_name,
                         )
                         tool_messages.append(tool_message)
@@ -623,15 +543,11 @@ Respond with either:
                 # Update tool call counts only for successful calls with data
                 updated_counts = current_counts.copy()
                 for tool_name, success_count in successful_calls_by_tool.items():
-                    updated_counts[tool_name] = (
-                        updated_counts.get(tool_name, 0) + success_count
-                    )
+                    updated_counts[tool_name] = updated_counts.get(tool_name, 0) + success_count
 
                 # Return partial state update - LangGraph will merge automatically
                 successful_count = sum(successful_calls_by_tool.values())
-                logger.debug(
-                    f"✅ Stored {len(tool_results)} tool results ({successful_count} successful with data)"
-                )
+                logger.debug(f"✅ Stored {len(tool_results)} tool results ({successful_count} successful with data)")
                 logger.debug(f"📊 Updated tool call counts: {updated_counts}")
                 return {
                     "messages": [response] + tool_messages,
@@ -663,9 +579,7 @@ Respond with either:
             return "process_tools"
 
         # Check if we should finish analysis
-        if state.get("analysis_complete") or "ANALYSIS_COMPLETE" in str(
-            state["messages"][-1].content
-        ):
+        if state.get("analysis_complete") or "ANALYSIS_COMPLETE" in str(state["messages"][-1].content):
             return "final_analysis"
 
         # Check tool call limits
@@ -675,24 +589,15 @@ Respond with either:
 
         # If all tool limits reached, proceed to final analysis
         if fetch_count >= 6 and trend_count >= 6:
-            logger.warning(
-                "⚠️ All tool call limits reached, proceeding to final analysis"
-            )
+            logger.warning("⚠️ All tool call limits reached, proceeding to final analysis")
             return "final_analysis"
 
         # Check for sufficient data to conclude
-        if (
-            len(state.get("epi_signals", [])) >= 2
-            and len(state.get("trend_analyses", [])) >= 1
-        ):
+        if len(state.get("epi_signals", [])) >= 2 and len(state.get("trend_analyses", [])) >= 1:
             return "final_analysis"
 
         # If we have some signals but no trends, and trend tool not maxed out, continue reasoning
-        if (
-            len(state.get("epi_signals", [])) > 0
-            and len(state.get("trend_analyses", [])) == 0
-            and trend_count < 6
-        ):
+        if len(state.get("epi_signals", [])) > 0 and len(state.get("trend_analyses", [])) == 0 and trend_count < 6:
             # Continue reasoning to analyze trends (will trigger tool calls)
             return "final_analysis"  # Let reasoning decide if more tools needed
 
@@ -729,24 +634,14 @@ Respond with either:
                 # Check if we got actual signal data
                 if isinstance(result, dict):
                     # Look for data indicators in the response
-                    has_data_keys = any(
-                        key in result
-                        for key in ["data", "values", "time_value", "geo_value"]
-                    )
+                    has_data_keys = any(key in result for key in ["data", "values", "time_value", "geo_value"])
                     has_records = len(str(result)) > 50  # Reasonable response size
-                    return (
-                        has_data_keys or has_records
-                    )  # Either data keys OR substantial content
+                    return has_data_keys or has_records  # Either data keys OR substantial content
                 elif isinstance(result, str):
                     # Look for JSON-like structure indicators or data fields
                     has_json_structure = "{" in result_str and "}" in result_str
-                    has_data_fields = any(
-                        field in result_str
-                        for field in ["time_value", "geo_value", "value"]
-                    )
-                    return (has_json_structure or has_data_fields) and len(
-                        result_str
-                    ) > 50
+                    has_data_fields = any(field in result_str for field in ["time_value", "geo_value", "value"])
+                    return (has_json_structure or has_data_fields) and len(result_str) > 50
 
             elif tool_name == "detect_rising_trend":
                 # Check if we got trend analysis data - be more flexible with structure
@@ -763,9 +658,7 @@ Respond with either:
                         ]
                     )
                     has_success = (
-                        result.get("status") == "success"
-                        if "status" in result
-                        else True
+                        result.get("status") == "success" if "status" in result else True
                     )  # Default to True if no status
                     return has_analysis_keys and has_success
                 elif isinstance(result, str):
@@ -778,17 +671,12 @@ Respond with either:
                         "increase",
                         "decrease",
                     ]
-                    has_trend_content = any(
-                        indicator in result_str.lower()
-                        for indicator in trend_indicators
-                    )
+                    has_trend_content = any(indicator in result_str.lower() for indicator in trend_indicators)
                     has_substantial_content = len(result_str) > 50
                     return has_trend_content and has_substantial_content
 
             # Default: if result is substantial (>50 chars) and not just error message
-            return len(result_str) > 50 and not any(
-                pattern in result_str for pattern in error_patterns
-            )
+            return len(result_str) > 50 and not any(pattern in result_str for pattern in error_patterns)
 
         except Exception as e:
             logger.debug(f"Error checking tool result data: {e}")
@@ -796,9 +684,7 @@ Respond with either:
 
     async def _process_tool_output_node(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """Process tool outputs and store structured data in state"""
-        logger.debug(
-            "🔧 PROCESSING TOOL OUTPUT: Extracting and storing structured data"
-        )
+        logger.debug("🔧 PROCESSING TOOL OUTPUT: Extracting and storing structured data")
 
         try:
             # Process tool results from the reasoning node
@@ -829,14 +715,10 @@ Respond with either:
 
                 # Process fetch_epi_signal outputs
                 if tool_name == "fetch_epi_signal":
-                    signal_data = self._parse_epi_signal_output(
-                        tool_content, tool_result.get("tool_args", {})
-                    )
+                    signal_data = self._parse_epi_signal_output(tool_content, tool_result.get("tool_args", {}))
                     if signal_data:
                         new_epi_signals.append(signal_data.dict())
-                        logger.debug(
-                            f"Stored epidemiological signal: {signal_data.signal_name}"
-                        )
+                        logger.debug(f"Stored epidemiological signal: {signal_data.signal_name}")
 
                     # Store raw fetch_epi_signal data if it has useful data (for trends output)
                     if has_data:
@@ -849,17 +731,11 @@ Respond with either:
                                     "timestamp": datetime.now().isoformat(),
                                 }
                             )
-                            logger.debug(
-                                f"Stored raw fetch_epi_signal data for trends output"
-                            )
+                            logger.debug(f"Stored raw fetch_epi_signal data for trends output")
                         else:
-                            logger.debug(
-                                f"fetch_epi_signal has_data=True but raw_result is empty"
-                            )
+                            logger.debug(f"fetch_epi_signal has_data=True but raw_result is empty")
                     else:
-                        logger.debug(
-                            f"fetch_epi_signal call has_data=False, not storing for trends"
-                        )
+                        logger.debug(f"fetch_epi_signal call has_data=False, not storing for trends")
 
                 # Process detect_rising_trend outputs - ALWAYS attempt to parse, regardless of has_data flag
                 elif tool_name == "detect_rising_trend":
@@ -868,17 +744,13 @@ Respond with either:
                     )
 
                     # Always try to parse trend analysis, even if has_data=False
-                    trend_data = self._parse_trend_analysis_output(
-                        tool_content, tool_result.get("tool_args", {})
-                    )
+                    trend_data = self._parse_trend_analysis_output(tool_content, tool_result.get("tool_args", {}))
                     if trend_data:
                         new_trend_analyses.append(trend_data.dict())
                         logger.debug(f"Stored trend analysis: {trend_data.signal_name}")
 
                         # Generate alert for this trend detection
-                        logger.debug(
-                            f"🚨 Attempting to generate alert for trend: {trend_data.signal_name}"
-                        )
+                        logger.debug(f"🚨 Attempting to generate alert for trend: {trend_data.signal_name}")
                         try:
                             alert = await self._generate_alert_for_trend(
                                 trend_data, tool_result.get("tool_args", {}), state
@@ -889,20 +761,12 @@ Respond with either:
                                     f"✅ Generated alert: {alert.get('name', 'Unknown')} (risk: {alert.get('risk_score', 0)})"
                                 )
                             else:
-                                logger.warning(
-                                    f"⚠️ Alert generation returned None for trend: {trend_data.signal_name}"
-                                )
+                                logger.warning(f"⚠️ Alert generation returned None for trend: {trend_data.signal_name}")
                         except Exception as e:
-                            logger.error(
-                                f"❌ Alert generation failed for {trend_data.signal_name}: {str(e)}"
-                            )
+                            logger.error(f"❌ Alert generation failed for {trend_data.signal_name}: {str(e)}")
                     else:
-                        logger.warning(
-                            f"⚠️ Failed to parse trend analysis from detect_rising_trend output"
-                        )
-                        logger.debug(
-                            f"🔍 Raw tool content for failed parse: {tool_content[:500]}..."
-                        )
+                        logger.warning(f"⚠️ Failed to parse trend analysis from detect_rising_trend output")
+                        logger.debug(f"🔍 Raw tool content for failed parse: {tool_content[:500]}...")
 
             logger.debug(
                 f"✅ Processed all tool results. New signals: {len(new_epi_signals)}, New trends: {len(new_trend_analyses)}, New fetch data: {len(new_fetch_epi_signal_data)}, New alerts: {len(new_alerts)}"
@@ -923,9 +787,7 @@ Respond with either:
             logger.error(f"❌ Error processing tool output: {str(e)}")
             return {"error_message": f"Tool output processing failed: {str(e)}"}
 
-    def _parse_epi_signal_output(
-        self, content: str, tool_args: Dict[str, Any] = None
-    ) -> Optional[EpiSignalData]:
+    def _parse_epi_signal_output(self, content: str, tool_args: Dict[str, Any] = None) -> Optional[EpiSignalData]:
         """Parse epidemiological signal data from tool output with actual data extraction"""
         try:
             import json
@@ -975,9 +837,7 @@ Respond with either:
                 # Try to parse the content as JSON array (time series data)
                 if content.strip().startswith("[") and content.strip().endswith("]"):
                     data_points = json.loads(content)
-                    logger.debug(
-                        f"✅ Parsed {len(data_points)} data points from JSON array"
-                    )
+                    logger.debug(f"✅ Parsed {len(data_points)} data points from JSON array")
                 elif content.strip().startswith("{") and content.strip().endswith("}"):
                     # Single data point or wrapped response
                     data_obj = json.loads(content)
@@ -987,9 +847,7 @@ Respond with either:
                         data_points = data_obj["data"]
                     else:
                         data_points = [data_obj]
-                    logger.debug(
-                        f"✅ Parsed {len(data_points)} data points from JSON object"
-                    )
+                    logger.debug(f"✅ Parsed {len(data_points)} data points from JSON object")
 
                 # Extract current value and calculate trend
                 if data_points and len(data_points) > 0:
@@ -1010,9 +868,7 @@ Respond with either:
                             else:
                                 trend_direction = "stable"
 
-                            logger.debug(
-                                f"✅ Calculated trend: {trend_direction} ({first_val:.2f} → {last_val:.2f})"
-                            )
+                            logger.debug(f"✅ Calculated trend: {trend_direction} ({first_val:.2f} → {last_val:.2f})")
                         except (ValueError, TypeError):
                             trend_direction = "unknown"
 
@@ -1033,9 +889,7 @@ Respond with either:
                     try:
                         current_value = float(value_matches[-1])  # Last value
                         data_quality = "medium"
-                        logger.debug(
-                            f"✅ Extracted current value from text: {current_value}"
-                        )
+                        logger.debug(f"✅ Extracted current value from text: {current_value}")
                     except ValueError:
                         pass
 
@@ -1048,9 +902,7 @@ Respond with either:
                 display_name=signal_display_names.get(signal_name, signal_name),
                 description=f"Epidemiological data for {signal_display_names.get(signal_name, signal_name)}",
                 geographic_areas=geo_areas or ["US"],
-                data_points=(
-                    data_points[:10] if data_points else []
-                ),  # Limit to first 10 for storage
+                data_points=(data_points[:10] if data_points else []),  # Limit to first 10 for storage
                 current_value=current_value,
                 trend_direction=trend_direction,
                 data_quality=data_quality,
@@ -1085,14 +937,10 @@ Respond with either:
                     raw_rising_periods = trend_data.get("rising_periods", 0)
                     # Convert list to count if it's a list
                     rising_periods = (
-                        len(raw_rising_periods)
-                        if isinstance(raw_rising_periods, list)
-                        else raw_rising_periods
+                        len(raw_rising_periods) if isinstance(raw_rising_periods, list) else raw_rising_periods
                     )
                     total_periods = trend_data.get("total_periods", 0)
-                    signal_name = trend_data.get(
-                        "signal", trend_data.get("signal_name", "unknown_signal")
-                    )
+                    signal_name = trend_data.get("signal", trend_data.get("signal_name", "unknown_signal"))
                     if "status" in trend_data and trend_data["status"] == "success":
                         logger.debug(
                             f"✅ Parsed complete JSON: {rising_periods}/{total_periods} rising periods (raw: {raw_rising_periods})"
@@ -1116,9 +964,7 @@ Respond with either:
                             raw_rising_periods = trend_data.get("rising_periods", 0)
                             # Convert list to count if it's a list
                             rising_periods = (
-                                len(raw_rising_periods)
-                                if isinstance(raw_rising_periods, list)
-                                else raw_rising_periods
+                                len(raw_rising_periods) if isinstance(raw_rising_periods, list) else raw_rising_periods
                             )
                             total_periods = trend_data.get("total_periods", 0)
                             signal_name = trend_data.get(
@@ -1134,21 +980,15 @@ Respond with either:
 
                 # If JSON parsing fails, try to extract numbers from text
                 if rising_periods == 0 and total_periods == 0:
-                    rising_match = re.search(
-                        r"rising[_\s]*periods?[:\s]*(\d+)", content, re.IGNORECASE
-                    )
-                    total_match = re.search(
-                        r"total[_\s]*periods?[:\s]*(\d+)", content, re.IGNORECASE
-                    )
+                    rising_match = re.search(r"rising[_\s]*periods?[:\s]*(\d+)", content, re.IGNORECASE)
+                    total_match = re.search(r"total[_\s]*periods?[:\s]*(\d+)", content, re.IGNORECASE)
 
                     if rising_match:
                         rising_periods = int(rising_match.group(1))
                     if total_match:
                         total_periods = int(total_match.group(1))
 
-                    logger.debug(
-                        f"✅ Extracted from text patterns: {rising_periods}/{total_periods} periods"
-                    )
+                    logger.debug(f"✅ Extracted from text patterns: {rising_periods}/{total_periods} periods")
 
             # Try to extract signal name from tool arguments first, then content
             if tool_args is None:
@@ -1191,9 +1031,7 @@ Respond with either:
             )
 
             if rising_periods == 0 and total_periods == 0:
-                logger.warning(
-                    f"⚠️ Trend analysis has zero periods - this may not trigger alert generation"
-                )
+                logger.warning(f"⚠️ Trend analysis has zero periods - this may not trigger alert generation")
 
             return TrendAnalysisData(
                 signal_name=signal_name,
@@ -1204,9 +1042,7 @@ Respond with either:
                 analysis_timestamp=datetime.now().isoformat(),
                 statistical_evidence={
                     "rising_ratio": rising_periods / max(total_periods, 1),
-                    "raw_content_sample": (
-                        content[:100] + "..." if len(content) > 100 else content
-                    ),
+                    "raw_content_sample": (content[:100] + "..." if len(content) > 100 else content),
                 },
             )
 
@@ -1235,9 +1071,7 @@ Respond with either:
             policy_file_ids = await self._get_policy_file_ids()
 
             # Build alert generation prompt
-            alert_prompt = self._build_alert_generation_prompt(
-                trend_data, tool_args, state, policy_file_ids
-            )
+            alert_prompt = self._build_alert_generation_prompt(trend_data, tool_args, state, policy_file_ids)
 
             system_content = """You are a Public Health Alert Generator AI. Your task is to generate actionable alerts based on rising trend detection results.
 
@@ -1272,9 +1106,7 @@ Use the policy documents provided to ensure your recommendations and risk assess
 
             # Generate alert using LLM with policy files
             if policy_file_ids:
-                logger.debug(
-                    f"📄 Including {len(policy_file_ids)} policy documents in alert generation"
-                )
+                logger.debug(f"📄 Including {len(policy_file_ids)} policy documents in alert generation")
                 response = await self._invoke_with_files(messages, policy_file_ids)
             else:
                 logger.debug("📄 No policy documents found, proceeding without files")
@@ -1327,9 +1159,7 @@ Use the policy documents provided to ensure your recommendations and risk assess
                             "latitude",
                             "longitude",
                         ]
-                        missing_fields = [
-                            f for f in required_fields if f not in alert_data
-                        ]
+                        missing_fields = [f for f in required_fields if f not in alert_data]
 
                         if len(missing_fields) == 0:
                             # Create AlertCreate object to validate structure
@@ -1339,26 +1169,18 @@ Use the policy documents provided to ensure your recommendations and risk assess
                             )
                             return alert_create.dict()
                         else:
-                            logger.warning(
-                                f"⚠️ Alert missing required fields: {missing_fields}"
-                            )
-                            logger.debug(
-                                f"🔍 Available fields: {list(alert_data.keys())}"
-                            )
+                            logger.warning(f"⚠️ Alert missing required fields: {missing_fields}")
+                            logger.debug(f"🔍 Available fields: {list(alert_data.keys())}")
 
                     except json.JSONDecodeError as e:
-                        logger.warning(
-                            f"⚠️ Could not parse alert JSON from pattern {pattern}: {e}"
-                        )
+                        logger.warning(f"⚠️ Could not parse alert JSON from pattern {pattern}: {e}")
                         continue
                     except Exception as e:
                         logger.warning(f"⚠️ Error creating AlertCreate object: {e}")
                         logger.debug(f"🔍 Failed alert data: {alert_data}")
                         continue
 
-            logger.warning(
-                f"⚠️ No valid JSON found in alert response. Full response: {response_text}"
-            )
+            logger.warning(f"⚠️ No valid JSON found in alert response. Full response: {response_text}")
             logger.debug(f"🔍 Tried {len(json_patterns)} JSON extraction patterns")
 
             return None
@@ -1375,37 +1197,25 @@ Use the policy documents provided to ensure your recommendations and risk assess
         policy_file_ids: Optional[List[str]] = None,
     ) -> str:
         """Build prompt for alert generation based on trend analysis"""
-        prompt_parts = [
-            "Generate a public health alert based on the following rising trend detection:\n"
-        ]
+        prompt_parts = ["Generate a public health alert based on the following rising trend detection:\n"]
 
         # Add policy document information if available
         if policy_file_ids:
-            prompt_parts.append(
-                f"POLICY DOCUMENTS: {len(policy_file_ids)} COVID-19 policy briefs are attached."
-            )
-            prompt_parts.append(
-                "Reference these documents for guidance on alert thresholds and response protocols.\n"
-            )
+            prompt_parts.append(f"POLICY DOCUMENTS: {len(policy_file_ids)} COVID-19 policy briefs are attached.")
+            prompt_parts.append("Reference these documents for guidance on alert thresholds and response protocols.\n")
 
         # Add trend analysis details
         prompt_parts.append("TREND ANALYSIS RESULTS:")
         prompt_parts.append(f"- Signal: {trend_data.signal_name}")
-        prompt_parts.append(
-            f"- Rising Periods: {trend_data.rising_periods} out of {trend_data.total_periods}"
-        )
+        prompt_parts.append(f"- Rising Periods: {trend_data.rising_periods} out of {trend_data.total_periods}")
         prompt_parts.append(f"- Risk Level: {trend_data.risk_level}")
         prompt_parts.append(f"- Trend Strength: {trend_data.trend_strength}")
 
         # Add tool arguments context
         if tool_args:
             prompt_parts.append(f"\nDATA CONTEXT:")
-            prompt_parts.append(
-                f"- Geographic Area: {tool_args.get('geo_value', 'Unknown').upper()}"
-            )
-            prompt_parts.append(
-                f"- Time Period: {tool_args.get('start_time', '')} to {tool_args.get('end_time', '')}"
-            )
+            prompt_parts.append(f"- Geographic Area: {tool_args.get('geo_value', 'Unknown').upper()}")
+            prompt_parts.append(f"- Time Period: {tool_args.get('start_time', '')} to {tool_args.get('end_time', '')}")
             prompt_parts.append(f"- Data Type: {tool_args.get('time_type', 'daily')}")
 
         # Add other intelligence gathered
@@ -1434,12 +1244,8 @@ Use the policy documents provided to ensure your recommendations and risk assess
         prompt_parts.append(f"- Suggested Coordinates: {lat}, {lon}")
 
         prompt_parts.append(f"\nALERT GENERATION GUIDELINES:")
-        prompt_parts.append(
-            "- Only generate alerts for significant public health concerns"
-        )
-        prompt_parts.append(
-            "- Risk score should reflect actual epidemiological evidence"
-        )
+        prompt_parts.append("- Only generate alerts for significant public health concerns")
+        prompt_parts.append("- Risk score should reflect actual epidemiological evidence")
         prompt_parts.append("- Include specific metrics and actionable recommendations")
         prompt_parts.append("- Reference policy guidelines when available")
 
@@ -1480,9 +1286,7 @@ Use the structured data provided to create specific, evidence-based insights tha
 
             # Add policy files to the message if available
             if policy_file_ids:
-                logger.debug(
-                    f"📄 Including {len(policy_file_ids)} policy documents in analysis"
-                )
+                logger.debug(f"📄 Including {len(policy_file_ids)} policy documents in analysis")
                 # Use direct Anthropic client for file-enabled message
                 response = await self._invoke_with_files(messages, policy_file_ids)
             else:
@@ -1514,9 +1318,7 @@ Use the structured data provided to create specific, evidence-based insights tha
                 "risk_assessment": self._build_risk_assessment_from_state(state),
                 "recommendations": self._build_recommendations_from_state(state),
                 "analysis_complete": True,
-                "messages": [
-                    response
-                ],  # LangGraph will handle accumulation with 'add' annotation
+                "messages": [response],  # LangGraph will handle accumulation with 'add' annotation
             }
 
         except Exception as e:
@@ -1526,9 +1328,7 @@ Use the structured data provided to create specific, evidence-based insights tha
     async def _get_policy_file_ids(self) -> List[str]:
         """Get file IDs for policy documents from Anthropic Files API"""
         if not self.anthropic_client:
-            logger.warning(
-                "⚠️ Anthropic client not initialized, cannot fetch policy files"
-            )
+            logger.warning("⚠️ Anthropic client not initialized, cannot fetch policy files")
             return []
 
         try:
@@ -1545,9 +1345,7 @@ Use the structured data provided to create specific, evidence-based insights tha
                 filename = getattr(file_obj, "filename", getattr(file_obj, "id", ""))
                 if filename.startswith("policy-brief_covid-19"):
                     policy_files.append(file_obj.id)
-                    logger.debug(
-                        f"📄 Found policy document: {filename} (ID: {file_obj.id})"
-                    )
+                    logger.debug(f"📄 Found policy document: {filename} (ID: {file_obj.id})")
 
             logger.debug(f"✅ Found {len(policy_files)} policy documents")
             return policy_files
@@ -1556,14 +1354,10 @@ Use the structured data provided to create specific, evidence-based insights tha
             logger.error(f"❌ Error fetching policy files: {str(e)}")
             return []
 
-    async def _invoke_with_files(
-        self, messages: List[BaseMessage], file_ids: List[str]
-    ) -> BaseMessage:
+    async def _invoke_with_files(self, messages: List[BaseMessage], file_ids: List[str]) -> BaseMessage:
         """Invoke Claude with file attachments using LangChain ChatAnthropic"""
         try:
-            logger.debug(
-                f"🤖 Using LangChain ChatAnthropic with {len(file_ids)} policy documents..."
-            )
+            logger.debug(f"🤖 Using LangChain ChatAnthropic with {len(file_ids)} policy documents...")
 
             # Create a ChatAnthropic instance with files API enabled
             files_llm = ChatAnthropic(
@@ -1604,9 +1398,7 @@ Use the structured data provided to create specific, evidence-based insights tha
 
             # Invoke with file attachments
             response = await files_llm.ainvoke(converted_messages)
-            logger.debug(
-                f"✅ Successfully invoked Claude with {len(file_ids)} policy documents"
-            )
+            logger.debug(f"✅ Successfully invoked Claude with {len(file_ids)} policy documents")
             return response
 
         except Exception as e:
@@ -1615,13 +1407,9 @@ Use the structured data provided to create specific, evidence-based insights tha
             logger.debug("🔄 Falling back to regular LangChain call without files")
             return await self.llm.ainvoke(messages)
 
-    def _build_final_analysis_prompt(
-        self, state: Dict[str, Any], policy_file_ids: Optional[List[str]] = None
-    ) -> str:
+    def _build_final_analysis_prompt(self, state: Dict[str, Any], policy_file_ids: Optional[List[str]] = None) -> str:
         """Build comprehensive analysis prompt from structured state data"""
-        prompt_parts = [
-            "Generate a comprehensive public health dashboard based on the following structured data:\n"
-        ]
+        prompt_parts = ["Generate a comprehensive public health dashboard based on the following structured data:\n"]
 
         # Add policy document information if available
         if policy_file_ids:
@@ -1637,9 +1425,7 @@ Use the structured data provided to create specific, evidence-based insights tha
         if state.get("epi_signals"):
             prompt_parts.append("EPIDEMIOLOGICAL SIGNALS:")
             for signal in state["epi_signals"]:
-                prompt_parts.append(
-                    f"- {signal.get('display_name')} ({signal.get('signal_name')})"
-                )
+                prompt_parts.append(f"- {signal.get('display_name')} ({signal.get('signal_name')})")
                 prompt_parts.append(f"  Data quality: {signal.get('data_quality')}")
                 prompt_parts.append(f"  Fetched: {signal.get('fetch_timestamp')}")
             prompt_parts.append("")
@@ -1649,9 +1435,7 @@ Use the structured data provided to create specific, evidence-based insights tha
             prompt_parts.append("TREND ANALYSES:")
             for trend in state["trend_analyses"]:
                 prompt_parts.append(f"- Signal: {trend.get('signal_name')}")
-                prompt_parts.append(
-                    f"  Rising periods: {trend.get('rising_periods')}/{trend.get('total_periods')}"
-                )
+                prompt_parts.append(f"  Rising periods: {trend.get('rising_periods')}/{trend.get('total_periods')}")
                 prompt_parts.append(f"  Risk level: {trend.get('risk_level')}")
             prompt_parts.append("")
 
@@ -1661,16 +1445,12 @@ Use the structured data provided to create specific, evidence-based insights tha
 
         return "\n".join(prompt_parts)
 
-    def _build_risk_assessment_from_state(
-        self, state: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _build_risk_assessment_from_state(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """Build risk assessment from structured state data"""
         # Calculate overall risk based on trend analyses
         trend_analyses = state.get("trend_analyses", [])
         high_risk_trends = [t for t in trend_analyses if t.get("risk_level") == "high"]
-        medium_risk_trends = [
-            t for t in trend_analyses if t.get("risk_level") == "medium"
-        ]
+        medium_risk_trends = [t for t in trend_analyses if t.get("risk_level") == "medium"]
 
         if len(high_risk_trends) >= 2:
             overall_risk = "high"
@@ -1698,14 +1478,10 @@ Use the structured data provided to create specific, evidence-based insights tha
         epi_signals = state.get("epi_signals", [])
 
         if len(trend_analyses) > 0:
-            high_risk_trends = [
-                t for t in trend_analyses if t.get("risk_level") == "high"
-            ]
+            high_risk_trends = [t for t in trend_analyses if t.get("risk_level") == "high"]
 
             if high_risk_trends:
-                trend_names = ", ".join(
-                    t.get("signal_name", "unknown") for t in high_risk_trends
-                )
+                trend_names = ", ".join(t.get("signal_name", "unknown") for t in high_risk_trends)
                 recommendations.append(
                     f"HIGH PRIORITY: Enhanced surveillance for rising epidemiological trends. "
                     f"Multiple signals showing concerning upward trends: {trend_names}. "
@@ -1758,13 +1534,9 @@ An error occurred while generating the epidemiological dashboard:
         end_date: Optional[str] = "2022-02-01",
     ) -> Dict:
         """Generate a dashboard summary using LangGraph ReAct workflow with typed data storage"""
-        logger.info(
-            f"🚀 LANGGRAPH REACT WORKFLOW: Starting epidemiological dashboard generation"
-        )
+        logger.info(f"🚀 LANGGRAPH REACT WORKFLOW: Starting epidemiological dashboard generation")
         logger.debug(f"Date range: {start_date} to {end_date}")
-        logger.debug(
-            f"Agent configuration - LLM: {type(self.llm).__name__ if self.llm else 'None'}"
-        )
+        logger.debug(f"Agent configuration - LLM: {type(self.llm).__name__ if self.llm else 'None'}")
         logger.debug(f"Agent configuration - MCP: {self.mcp_host}:{self.mcp_port}")
 
         # Build the dashboard generation request with date context
@@ -1814,11 +1586,7 @@ An error occurred while generating the epidemiological dashboard:
                 "tags": ["public-health", "react-agent", "epidemiological-analysis"],
                 "metadata": {
                     "agent_type": "react",
-                    "date_range": (
-                        f"{start_date} to {end_date}"
-                        if start_date or end_date
-                        else "default"
-                    ),
+                    "date_range": (f"{start_date} to {end_date}" if start_date or end_date else "default"),
                     "workflow_version": "v1.0",
                     "data_sources": ["delphi_epidata", "policy_documents"],
                 },
@@ -1836,31 +1604,23 @@ An error occurred while generating the epidemiological dashboard:
 
             # Build final result from typed state data
             final_result = {
-                "dashboard_summary": final_state.get(
-                    "dashboard_summary", "No summary generated"
-                ),
+                "dashboard_summary": final_state.get("dashboard_summary", "No summary generated"),
                 "timestamp": final_state.get("timestamp"),
                 "success": not bool(final_state.get("error_message")),
                 "error": final_state.get("error_message"),
                 "agent_type": "react",
                 "tools_used": final_state.get("tools_used", []),
                 # Enhanced structured data directly from typed state
-                "alerts": final_state.get(
-                    "alerts", []
-                ),  # Generated alerts from trend detections
+                "alerts": final_state.get("alerts", []),  # Generated alerts from trend detections
                 "rising_trends": self._format_rising_trends_from_state(final_state),
-                "epidemiological_signals": self._format_epi_signals_from_state(
-                    final_state
-                ),
+                "epidemiological_signals": self._format_epi_signals_from_state(final_state),
                 "risk_assessment": final_state.get("risk_assessment", {}),
                 "recommendations": final_state.get("recommendations", []),
                 # Add trends list with TrendResponse objects
                 "trends": self._format_trends_from_fetch_data(final_state),
             }
 
-            logger.info(
-                "🎉 LangGraph ReAct dashboard generation completed successfully"
-            )
+            logger.info("🎉 LangGraph ReAct dashboard generation completed successfully")
             return final_result
 
         except Exception as e:
@@ -1891,9 +1651,7 @@ An error occurred while generating the epidemiological dashboard:
             formatted_trends.append(
                 {
                     "signal_name": trend.get("signal_name", "unknown"),
-                    "trend_direction": (
-                        "rising" if trend.get("rising_periods", 0) > 0 else "stable"
-                    ),
+                    "trend_direction": ("rising" if trend.get("rising_periods", 0) > 0 else "stable"),
                     "rising_periods": trend.get("rising_periods", 0),
                     "total_periods": trend.get("total_periods", 0),
                     "risk_level": trend.get("risk_level", "unknown"),
@@ -1932,9 +1690,7 @@ An error occurred while generating the epidemiological dashboard:
         trends = []
 
         fetch_data_list = state.get("fetch_epi_signal_data", [])
-        logger.debug(
-            f"🔍 Processing {len(fetch_data_list)} fetch_epi_signal results for trends output"
-        )
+        logger.debug(f"🔍 Processing {len(fetch_data_list)} fetch_epi_signal results for trends output")
 
         for fetch_data in fetch_data_list:
             try:
@@ -1963,9 +1719,7 @@ An error occurred while generating the epidemiological dashboard:
                 # Wrap in TrendResponse format (data field required by model)
                 trend_response = {"data": trend_item}
                 trends.append(trend_response)
-                logger.debug(
-                    f"Created TrendResponse with parsed data from {fetch_data.get('timestamp', 'unknown')}"
-                )
+                logger.debug(f"Created TrendResponse with parsed data from {fetch_data.get('timestamp', 'unknown')}")
 
             except Exception as e:
                 logger.warning(f"⚠️ Could not format fetch data: {str(e)}")
@@ -2004,16 +1758,14 @@ async def run_interactive_react_dashboard():
     """Interactive ReAct dashboard generator"""
     print("🏥 Interactive Public Health ReAct Dashboard Agent")
     print("=" * 60)
-    print(
-        "Enter requests to generate health dashboards using real epidemiological data."
-    )
+    print("Enter requests to generate health dashboards using real epidemiological data.")
     print("Type 'exit' to quit.\n")
 
     agent = PublicHealthReActAgent()
 
     while True:
         try:
-            print(f"\n🔄 Processing:")
+            print("\n🔄 Processing:")
             print("-" * 40)
 
             result = await agent.assemble_dashboard()

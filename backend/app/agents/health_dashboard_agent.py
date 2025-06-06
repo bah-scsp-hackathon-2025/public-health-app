@@ -104,16 +104,12 @@ class PublicHealthDashboardAgent:
             else os.getenv("MCP_SERVER_HOST", "localhost")
         )
         self.mcp_port = int(
-            settings.mcp_server_port
-            if hasattr(settings, "mcp_server_port")
-            else os.getenv("MCP_SERVER_PORT", "8001")
+            settings.mcp_server_port if hasattr(settings, "mcp_server_port") else os.getenv("MCP_SERVER_PORT", "8001")
         )
 
         # Get API keys from settings (keep both for future use)
         openai_key = settings.openai_api_key if settings.openai_api_key else None
-        anthropic_key = (
-            settings.anthropic_api_key if settings.anthropic_api_key else None
-        )
+        anthropic_key = settings.anthropic_api_key if settings.anthropic_api_key else None
 
         # Initialize with Anthropic/Claude
         self.llm = None
@@ -127,9 +123,7 @@ class PublicHealthDashboardAgent:
                 api_key=anthropic_key,
             )
         else:
-            print(
-                "⚠️  Anthropic API key not found or invalid. Agent will work in MCP-only mode."
-            )
+            print("⚠️  Anthropic API key not found or invalid. Agent will work in MCP-only mode.")
 
         # Build the workflow graph
         self.workflow = self._build_workflow()
@@ -182,9 +176,7 @@ class PublicHealthDashboardAgent:
                     f"✅ Langfuse tracing enabled for project: {settings.langfuse_project if hasattr(settings, 'langfuse_project') else 'public-health-dashboard'}"
                 )
             else:
-                logger.info(
-                    "ℹ️  Langfuse tracing disabled (missing keys or tracing disabled)"
-                )
+                logger.info("ℹ️  Langfuse tracing disabled (missing keys or tracing disabled)")
 
         except Exception as e:
             logger.warning("⚠️ Failed to setup Langfuse tracing: {str(e)}")
@@ -255,9 +247,7 @@ class PublicHealthDashboardAgent:
             # We'll use mock data for basic functionality while the real focus is on epidemiological signals
 
             # Create basic mock data for demonstration purposes
-            logger.info(
-                "🔍 Using mock health data for basic dashboard functionality..."
-            )
+            logger.info("🔍 Using mock health data for basic dashboard functionality...")
 
             alerts_data = {
                 "total_alerts": 3,
@@ -342,9 +332,7 @@ class PublicHealthDashboardAgent:
                 },
             }
 
-            logger.debug(
-                f"Using sample alerts data - total alerts: {alerts_data.get('total_alerts', 'unknown')}"
-            )
+            logger.debug(f"Using sample alerts data - total alerts: {alerts_data.get('total_alerts', 'unknown')}")
             logger.debug(
                 f"Using sample trends data - trend types: {trends_data.get('metadata', {}).get('total_trend_types', 'unknown')}"
             )
@@ -356,9 +344,7 @@ class PublicHealthDashboardAgent:
                 "trends_data": trends_data,
                 "timestamp": datetime.now().isoformat(),
             }
-            logger.debug(
-                f"✅ _fetch_health_data_node completed - new state keys: {list(new_state.keys())}"
-            )
+            logger.debug(f"✅ _fetch_health_data_node completed - new state keys: {list(new_state.keys())}")
             return new_state
 
         except Exception as e:
@@ -392,9 +378,7 @@ class PublicHealthDashboardAgent:
                 logger.debug(f"LLM provider: {type(self.llm).__name__}")
 
                 analysis_prompt = self._create_analysis_prompt(alerts_data, trends_data)
-                logger.debug(
-                    f"Analysis prompt length: {len(analysis_prompt)} characters"
-                )
+                logger.debug(f"Analysis prompt length: {len(analysis_prompt)} characters")
 
                 logger.info("🧠 Analyzing health data with LLM...")
                 messages = [
@@ -437,36 +421,26 @@ class PublicHealthDashboardAgent:
                 callbacks = [self.langfuse_handler] if self.langfuse_handler else []
                 config = {"callbacks": callbacks} if callbacks else {}
                 response = await self.llm.ainvoke(messages, config=config)
-                logger.debug(
-                    f"LLM response received - length: {len(response.content)} characters"
-                )
+                logger.debug(f"LLM response received - length: {len(response.content)} characters")
 
                 # Parse the analysis result
                 try:
                     analysis_result = json.loads(response.content)
                     logger.debug("✅ Successfully parsed LLM response as JSON")
-                    logger.debug(
-                        f"Analysis result keys: {list(analysis_result.keys())}"
-                    )
+                    logger.debug(f"Analysis result keys: {list(analysis_result.keys())}")
                 except json.JSONDecodeError:
-                    logger.warning(
-                        "⚠️ LLM response is not valid JSON, creating structured fallback"
-                    )
+                    logger.warning("⚠️ LLM response is not valid JSON, creating structured fallback")
                     # If not valid JSON, create a structured format
                     analysis_result = {
                         "analysis_text": response.content,
-                        "critical_findings": [
-                            "Analysis completed but needs structured parsing"
-                        ],
+                        "critical_findings": ["Analysis completed but needs structured parsing"],
                         "recommendations": ["Review the full analysis text"],
                     }
             else:
                 # Basic analysis without LLM
                 logger.info("📊 Performing basic data analysis (no LLM)...")
                 analysis_result = self._basic_data_analysis(alerts_data, trends_data)
-                logger.debug(
-                    f"Basic analysis result keys: {list(analysis_result.keys())}"
-                )
+                logger.debug(f"Basic analysis result keys: {list(analysis_result.keys())}")
 
             logger.info("✅ Data analysis completed")
             new_state = {**state, "analysis_result": analysis_result}
@@ -505,9 +479,7 @@ class PublicHealthDashboardAgent:
                 logger.info("📊 Starting LLM-powered summary generation...")
                 logger.debug(f"LLM provider: {type(self.llm).__name__}")
 
-                summary_prompt = self._create_summary_prompt(
-                    analysis_result, alerts_data, trends_data
-                )
+                summary_prompt = self._create_summary_prompt(analysis_result, alerts_data, trends_data)
                 logger.debug(f"Summary prompt length: {len(summary_prompt)} characters")
 
                 logger.info("📊 Generating dashboard summary with LLM...")
@@ -530,19 +502,13 @@ class PublicHealthDashboardAgent:
                 callbacks = [self.langfuse_handler] if self.langfuse_handler else []
                 config = {"callbacks": callbacks} if callbacks else {}
                 response = await self.llm.ainvoke(messages, config=config)
-                logger.debug(
-                    f"LLM summary response received - length: {len(response.content)} characters"
-                )
+                logger.debug(f"LLM summary response received - length: {len(response.content)} characters")
                 dashboard_summary = response.content
             else:
                 # Basic summary generation without LLM
                 logger.info("📊 Generating basic dashboard summary...")
-                dashboard_summary = self._create_basic_summary(
-                    analysis_result, alerts_data, trends_data
-                )
-                logger.debug(
-                    f"Basic summary length: {len(dashboard_summary)} characters"
-                )
+                dashboard_summary = self._create_basic_summary(analysis_result, alerts_data, trends_data)
+                logger.debug(f"Basic summary length: {len(dashboard_summary)} characters")
 
             logger.info("✅ Dashboard summary generated")
             new_state = {**state, "dashboard_summary": dashboard_summary}
@@ -598,19 +564,13 @@ class PublicHealthDashboardAgent:
 
         return prompt
 
-    def _create_summary_prompt(
-        self, analysis_result: Dict, alerts_data: Dict, trends_data: Dict
-    ) -> str:
+    def _create_summary_prompt(self, analysis_result: Dict, alerts_data: Dict, trends_data: Dict) -> str:
         """Create summary prompt for dashboard generation"""
 
         # Extract key statistics
         total_alerts = alerts_data.get("total_alerts", 0)
-        high_severity_alerts = len(
-            [a for a in alerts_data.get("alerts", []) if a.get("severity") == "HIGH"]
-        )
-        total_affected = sum(
-            a.get("affected_population", 0) for a in alerts_data.get("alerts", [])
-        )
+        high_severity_alerts = len([a for a in alerts_data.get("alerts", []) if a.get("severity") == "HIGH"])
+        total_affected = sum(a.get("affected_population", 0) for a in alerts_data.get("alerts", []))
         trend_categories = len(trends_data.get("trends", {}))
 
         prompt = f"""
@@ -681,19 +641,13 @@ class PublicHealthDashboardAgent:
             ],
         }
 
-    def _create_basic_summary(
-        self, analysis_result: Dict, alerts_data: Dict, trends_data: Dict
-    ) -> str:
+    def _create_basic_summary(self, analysis_result: Dict, alerts_data: Dict, trends_data: Dict) -> str:
         """Create basic dashboard summary without LLM"""
 
         # Extract key statistics
         total_alerts = alerts_data.get("total_alerts", 0)
-        high_severity_alerts = len(
-            [a for a in alerts_data.get("alerts", []) if a.get("severity") == "HIGH"]
-        )
-        total_affected = sum(
-            a.get("affected_population", 0) for a in alerts_data.get("alerts", [])
-        )
+        high_severity_alerts = len([a for a in alerts_data.get("alerts", []) if a.get("severity") == "HIGH"])
+        total_affected = sum(a.get("affected_population", 0) for a in alerts_data.get("alerts", []))
 
         # Get analysis insights
         critical_findings = analysis_result.get("critical_findings", [])
@@ -731,9 +685,7 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
 
         return summary
 
-    def _process_alerts_for_dashboard(
-        self, alerts_data: Dict, analysis_result: Dict
-    ) -> List[Dict]:
+    def _process_alerts_for_dashboard(self, alerts_data: Dict, analysis_result: Dict) -> List[Dict]:
         """Process alerts with analysis for dashboard response"""
         if not alerts_data or not alerts_data.get("alerts"):
             return []
@@ -771,9 +723,7 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
             processed_alerts.append(processed_alert)
 
         # Sort by priority score (highest first)
-        processed_alerts.sort(
-            key=lambda x: x["analysis"]["priority_score"], reverse=True
-        )
+        processed_alerts.sort(key=lambda x: x["analysis"]["priority_score"], reverse=True)
         return processed_alerts
 
     def _extract_trend_analysis(self, trends_data: Dict, analysis_result: Dict) -> Dict:
@@ -797,9 +747,7 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
             # Calculate trend direction
             recent_values = [point["value"] for point in data_points[-3:]]
             if len(recent_values) >= 2:
-                trend_direction = (
-                    "rising" if recent_values[-1] > recent_values[0] else "declining"
-                )
+                trend_direction = "rising" if recent_values[-1] > recent_values[0] else "declining"
                 change_percent = data_points[-1].get("change_percent", 0)
 
                 trend_item = {
@@ -812,9 +760,7 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
                     "data_points": len(data_points),
                     "last_updated": data_points[-1]["date"],
                     "risk_level": (
-                        "high"
-                        if abs(change_percent) > 15
-                        else "medium" if abs(change_percent) > 5 else "low"
+                        "high" if abs(change_percent) > 15 else "medium" if abs(change_percent) > 5 else "low"
                     ),
                 }
 
@@ -859,9 +805,7 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
 
         # Recency scoring (newer alerts get higher scores)
         try:
-            alert_time = datetime.fromisoformat(
-                alert.get("timestamp", "").replace("Z", "+00:00")
-            )
+            alert_time = datetime.fromisoformat(alert.get("timestamp", "").replace("Z", "+00:00"))
             days_old = (datetime.now(alert_time.tzinfo) - alert_time).days
             if days_old < 1:
                 score += 10
@@ -885,9 +829,7 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
         else:
             return "low"
 
-    def _build_basic_risk_assessment(
-        self, alerts_data: Dict, trends_data: Dict
-    ) -> Dict:
+    def _build_basic_risk_assessment(self, alerts_data: Dict, trends_data: Dict) -> Dict:
         """Build basic risk assessment when analysis is not available"""
         alerts = alerts_data.get("alerts", [])
 
@@ -908,17 +850,11 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
             "high_severity_alerts": high_severity_count,
             "total_population_affected": total_affected,
             "states_with_alerts": len(states_affected),
-            "geographic_spread": (
-                "widespread" if len(states_affected) > 5 else "localized"
-            ),
-            "key_concerns": [
-                a.get("alert_type") for a in alerts if a.get("severity") == "HIGH"
-            ][:3],
+            "geographic_spread": ("widespread" if len(states_affected) > 5 else "localized"),
+            "key_concerns": [a.get("alert_type") for a in alerts if a.get("severity") == "HIGH"][:3],
         }
 
-    def _generate_basic_recommendations(
-        self, alerts_data: Dict, trends_data: Dict
-    ) -> List[str]:
+    def _generate_basic_recommendations(self, alerts_data: Dict, trends_data: Dict) -> List[str]:
         """Assemble basic recommendations when analysis is not available"""
         recommendations = []
         alerts = alerts_data.get("alerts", [])
@@ -926,22 +862,14 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
         high_severity_alerts = [a for a in alerts if a.get("severity") == "HIGH"]
 
         if high_severity_alerts:
-            recommendations.append(
-                "Immediate attention required for high-severity alerts"
-            )
-            recommendations.append(
-                "Activate emergency response protocols for affected areas"
-            )
+            recommendations.append("Immediate attention required for high-severity alerts")
+            recommendations.append("Activate emergency response protocols for affected areas")
 
         if any(a.get("alert_type") == "OUTBREAK" for a in alerts):
-            recommendations.append(
-                "Implement enhanced surveillance and contact tracing"
-            )
+            recommendations.append("Implement enhanced surveillance and contact tracing")
 
         if any(a.get("alert_type") == "ENVIRONMENTAL" for a in alerts):
-            recommendations.append(
-                "Monitor environmental conditions and issue public advisories"
-            )
+            recommendations.append("Monitor environmental conditions and issue public advisories")
 
         total_affected = sum(a.get("affected_population", 0) for a in alerts)
         if total_affected > 100000:
@@ -960,9 +888,7 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
         """Assemble a dashboard summary"""
         logger.info(f"🚀 LANGGRAPH WORKFLOW: Starting dashboard generation")
         logger.debug(f"Date range: {start_date} to {end_date}")
-        logger.debug(
-            f"Agent configuration - LLM: {type(self.llm).__name__ if self.llm else 'None'}"
-        )
+        logger.debug(f"Agent configuration - LLM: {type(self.llm).__name__ if self.llm else 'None'}")
         logger.debug(f"Agent configuration - MCP: {self.mcp_host}:{self.mcp_port}")
 
         # Build the dashboard generation request with date context
@@ -999,11 +925,7 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
             "tags": ["public-health", "standard-agent", "alert-analysis"],
             "metadata": {
                 "agent_type": "standard",
-                "date_range": (
-                    f"{start_date} to {end_date}"
-                    if start_date or end_date
-                    else "default"
-                ),
+                "date_range": (f"{start_date} to {end_date}" if start_date or end_date else "default"),
                 "workflow_version": "v1.0",
                 "data_sources": ["mcp_server", "alerts_api"],
             },
@@ -1031,9 +953,7 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
         analysis_result = final_state.get("analysis_result") or {}
 
         # Process alerts with analysis
-        processed_alerts = self._process_alerts_for_dashboard(
-            alerts_data, analysis_result
-        )
+        processed_alerts = self._process_alerts_for_dashboard(alerts_data, analysis_result)
 
         # Extract trend analysis (basic for now, will be enhanced with MCP trends later)
         trend_analysis = self._extract_trend_analysis(trends_data, analysis_result)
@@ -1041,21 +961,15 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
         # Build risk assessment
         risk_assessment = analysis_result.get("risk_assessment", {})
         if not risk_assessment and alerts_data:
-            risk_assessment = self._build_basic_risk_assessment(
-                alerts_data, trends_data
-            )
+            risk_assessment = self._build_basic_risk_assessment(alerts_data, trends_data)
 
         # Extract recommendations
         recommendations = analysis_result.get("recommendations", [])
         if not recommendations:
-            recommendations = self._generate_basic_recommendations(
-                alerts_data, trends_data
-            )
+            recommendations = self._generate_basic_recommendations(alerts_data, trends_data)
 
         result = {
-            "dashboard_summary": final_state.get(
-                "dashboard_summary", "No summary generated"
-            ),
+            "dashboard_summary": final_state.get("dashboard_summary", "No summary generated"),
             "timestamp": final_state.get("timestamp"),
             "success": not bool(final_state.get("error_message")),
             "error": final_state.get("error_message"),
@@ -1070,9 +984,7 @@ The public health system is monitoring {total_alerts} active alerts affecting {t
 
         alerts_count = len(result.get("alerts", []))
         trends_count = len(result.get("rising_trends", []))
-        logger.debug(
-            f"Result summary - Success: {result['success']}, Alerts: {alerts_count}, Trends: {trends_count}"
-        )
+        logger.debug(f"Result summary - Success: {result['success']}, Alerts: {alerts_count}, Trends: {trends_count}")
         logger.info("🎉 Dashboard generation completed")
 
         return result
@@ -1086,9 +998,7 @@ async def test_dashboard_agent():
 
     # Check for API keys
     if not os.getenv("OPENAI_API_KEY") and not os.getenv("ANTHROPIC_API_KEY"):
-        print(
-            "⚠️  No API keys found. Set OPENAI_API_KEY or ANTHROPIC_API_KEY environment variable."
-        )
+        print("⚠️  No API keys found. Set OPENAI_API_KEY or ANTHROPIC_API_KEY environment variable.")
         print("For testing without LLM, this will still demonstrate MCP integration.")
 
     try:

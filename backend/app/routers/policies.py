@@ -57,9 +57,7 @@ async def get_policy(policy_id: str, db: Session = Depends(get_db)):
 
 
 @router.put("/{policy_id}", response_model=PolicyResponse)
-async def update_policy(
-    policy_id: str, policy_update: PolicyUpdate, db: Session = Depends(get_db)
-):
+async def update_policy(policy_id: str, policy_update: PolicyUpdate, db: Session = Depends(get_db)):
     policy = db.query(Policy).filter(Policy.id == policy_id).first()
     if policy is None:
         raise HTTPException(status_code=404, detail="Policy not found")
@@ -121,7 +119,7 @@ async def get_policies_by_status_by_alert(status_: str, alert_id: str, db: Sessi
     db_policies = get_policies_by_alert_from_db(alert_id, db)
     if db_policies is None:
         db_policies = []
-    return  [db_policy for db_policy in db_policies if db_policy.approved == approved]
+    return [db_policy for db_policy in db_policies if db_policy.approved == approved]
 
 
 @router.get("/alert/{alert_id}", response_model=List[PolicyResponse])

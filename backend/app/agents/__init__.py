@@ -9,4 +9,4 @@ from .health_dashboard_agent import PublicHealthDashboardAgent
 from .health_dashboard_react_agent import PublicHealthReActAgent
 from .strategy_generation_agent import StrategyGenerationAgent
 
-__all__ = ["PublicHealthDashboardAgent", "PublicHealthReActAgent", "StrategyGenerationAgent"] 
+__all__ = ["PublicHealthDashboardAgent", "PublicHealthReActAgent", "StrategyGenerationAgent"]

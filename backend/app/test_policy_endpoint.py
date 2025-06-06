@@ -74,9 +74,7 @@ def test_policy_draft_endpoint():
             print(f"   Approved: {policy_data.get('approved', 'N/A')}")
             print(f"   Alert ID: {policy_data.get('alert_id', 'N/A')}")
             print(f"   Strategy ID: {policy_data.get('strategy_id', 'N/A')}")
-            print(
-                f"   Content length: {len(policy_data.get('content', ''))} characters"
-            )
+            print(f"   Content length: {len(policy_data.get('content', ''))} characters")
 
             # Show content preview
             content = policy_data.get("content", "")
@@ -176,9 +174,7 @@ def main():
             print("⚠️  FastAPI server responded but may not be fully ready")
     except:
         print("❌ FastAPI server is not accessible")
-        print(
-            "   Please start the server with: uvicorn app.main:app --reload --port 8000"
-        )
+        print("   Please start the server with: uvicorn app.main:app --reload --port 8000")
         return
 
     test_results = []

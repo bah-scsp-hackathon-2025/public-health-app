@@ -41,14 +41,10 @@ async def test_comprehensive_integration():
         print("   ✅ Basic dashboard generation successful!")
 
         if "alerts_data" in result and result["alerts_data"]:
-            print(
-                f'   📊 Total alerts processed: {result["alerts_data"]["total_alerts"]}'
-            )
+            print(f'   📊 Total alerts processed: {result["alerts_data"]["total_alerts"]}')
 
         if "trends_data" in result and result["trends_data"]:
-            print(
-                f'   📈 Trend types processed: {result["trends_data"]["metadata"]["total_trend_types"]}'
-            )
+            print(f'   📈 Trend types processed: {result["trends_data"]["metadata"]["total_trend_types"]}')
 
         if "dashboard_summary" in result and result["dashboard_summary"]:
             summary_length = len(result["dashboard_summary"])
@@ -109,9 +105,7 @@ async def test_react_agent():
 
         # Enhanced features test
         print("\n🔬 REACT ENHANCED FEATURES:")
-        print(
-            f"• Epidemiological Signals: {len(result.get('epidemiological_signals', []))}"
-        )
+        print(f"• Epidemiological Signals: {len(result.get('epidemiological_signals', []))}")
         print(f"• Rising Trends: {len(result.get('rising_trends', []))}")
         print(f"• Risk Assessment: {'✅' if result.get('risk_assessment') else '❌'}")
         print(f"• Recommendations: {len(result.get('recommendations', []))}")

@@ -80,9 +80,7 @@ def add_strategy_to_db(strategy: StrategyCreate, alert_id: str, db: Session = De
 
 
 @router.put("/{strategy_id}", response_model=StrategyResponse)
-async def update_strategy(
-    strategy_id: str, strategy_update: StrategyUpdate, db: Session = Depends(get_db)
-):
+async def update_strategy(strategy_id: str, strategy_update: StrategyUpdate, db: Session = Depends(get_db)):
     strategy = db.query(Strategy).filter(Strategy.id == strategy_id).first()
     if strategy is None:
         raise HTTPException(status_code=404, detail="Strategy not found")

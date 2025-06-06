@@ -52,9 +52,7 @@ class DashboardAPITester:
 
         try:
             start_time = time.time()
-            response = requests.post(
-                f"{self.base_url}/dashboard/generate", json=payload, timeout=30
-            )
+            response = requests.post(f"{self.base_url}/dashboard/generate", json=payload, timeout=30)
             end_time = time.time()
 
             response.raise_for_status()
@@ -80,15 +78,11 @@ class DashboardAPITester:
             print(f"   Alerts: {alerts_count}")
             print(f"   Rising Trends: {trends_count}")
             print(f"   Epi Signals: {epi_signals_count}")
-            print(
-                f"   Risk Assessment: {'Yes' if result.get('risk_assessment') else 'No'}"
-            )
+            print(f"   Risk Assessment: {'Yes' if result.get('risk_assessment') else 'No'}")
             print(f"   Recommendations: {recommendations_count}")
 
             # Show total items for summary
-            total_items = (
-                alerts_count + trends_count + epi_signals_count + recommendations_count
-            )
+            total_items = alerts_count + trends_count + epi_signals_count + recommendations_count
             print(f"   Total Data Items: {total_items}")
 
             if result.get("error"):
@@ -105,9 +99,7 @@ class DashboardAPITester:
         print("🚨 Testing alerts summary...")
 
         try:
-            response = requests.get(
-                f"{self.base_url}/dashboard/alerts-summary", timeout=30
-            )
+            response = requests.get(f"{self.base_url}/dashboard/alerts-summary", timeout=30)
             response.raise_for_status()
 
             result = response.json()
@@ -124,9 +116,7 @@ class DashboardAPITester:
         print("📈 Testing trends summary...")
 
         try:
-            response = requests.get(
-                f"{self.base_url}/dashboard/trends-summary", timeout=30
-            )
+            response = requests.get(f"{self.base_url}/dashboard/trends-summary", timeout=30)
             response.raise_for_status()
 
             result = response.json()
@@ -164,9 +154,7 @@ class DashboardAPITester:
             # Show enhanced epidemiological data
             print(f"\n🔬 Epidemiological Data:")
             print(f"   Rising Trends Detected: {len(result.get('rising_trends', []))}")
-            print(
-                f"   Signals Analyzed: {len(result.get('epidemiological_signals', []))}"
-            )
+            print(f"   Signals Analyzed: {len(result.get('epidemiological_signals', []))}")
             if result.get("risk_assessment"):
                 risk = result["risk_assessment"]
                 print(f"   Overall Risk: {risk.get('overall_risk_level', 'unknown')}")
@@ -185,9 +173,7 @@ class DashboardAPITester:
 
         print("\n💡 Note: Make sure the FastAPI server is running:")
         print("   cd backend")
-        print(
-            "   PYTHONPATH=mcp:. python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
-        )
+        print("   PYTHONPATH=mcp:. python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload")
         print("   (Also ensure FastMCP server is running on port 8001)\n")
 
         results = {}

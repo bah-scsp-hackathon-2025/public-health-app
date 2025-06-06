@@ -21,8 +21,8 @@ class StrategyCreate(BaseModel):
 
 
 class StrategyUpdate(BaseModel):
-    short_description:  Optional[str]
-    full_description:  Optional[str]
+    short_description: Optional[str]
+    full_description: Optional[str]
     alert_id: Optional[str]
 
 

@@ -16,18 +16,20 @@ import os
 
 # Add necessary paths for imports
 sys.path.insert(0, os.path.dirname(__file__))  # Add backend directory
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'mcp'))  # Add mcp directory
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "mcp"))  # Add mcp directory
+
 
 from app.config import settings
+
 
 if __name__ == "__main__":
     print(f"🚀 Starting FastAPI server on {settings.fastapi_host}:{settings.fastapi_port}")
     print(f"💡 Using environment: app virtual environment")
     print(f"📁 Working directory: {os.getcwd()}")
-    
+
     uvicorn.run(
         "app.main:app",
         host=settings.fastapi_host,
         port=settings.fastapi_port,
-        reload=True
-    ) 
+        reload=True,
+    )
