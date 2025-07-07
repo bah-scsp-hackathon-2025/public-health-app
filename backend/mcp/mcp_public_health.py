@@ -13,6 +13,7 @@ Uses FastMCP framework with SSE transport for improved developer experience.
 from datetime import datetime
 from fastmcp import FastMCP
 import pandas as pd
+from pathlib import Path
 import numpy as np
 from scipy.stats import linregress
 import os
@@ -331,4 +332,27 @@ def get_server_info() -> dict:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="sse")
+    # Load environment variables from dotenv if available
+    try:
+        from dotenv import load_dotenv
+
+        # Try multiple locations for .env file
+        env_locations = [
+            Path(".env"),  # Current directory
+            Path("../.env"),  # Parent directory
+            Path("../../.env"),  # Two levels up (for nested structures)
+        ]
+
+        for env_path in env_locations:
+            if env_path.exists():
+                load_dotenv(env_path)
+                print(f"Loaded environment variables from {env_path}")
+                break
+        else:
+            print("No .env file found in standard locations")
+
+    except ImportError:
+        print("python-dotenv not installed, loading from system environment only")
+
+    port = os.getenv("MCP_SERVER_PORT", "8001")
+    mcp.run(transport="sse", port=port)
