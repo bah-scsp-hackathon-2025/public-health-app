@@ -106,7 +106,9 @@ def fetch_epi_signal(
         # "as_of": end_time,  # Use the end_time as the 'as_of' date
         "geo_value": {geo_value},
     }
-    response = requests.get(BASE_URL, params=params, verify=False)  # Disable SSL verification for testing purposes
+    response = requests.get(
+        BASE_URL, params=params, verify=False
+    )  # Disable SSL verification for testing purposes
     if as_json:
         response.raise_for_status()
         json_response = response.json()["epidata"]
@@ -256,7 +258,9 @@ def detect_rising_trend(
 
             # Calculate linear regression
             try:
-                slope, intercept, r_value, p_value, std_err = linregress(window_x, window_y)
+                slope, intercept, r_value, p_value, std_err = linregress(
+                    window_x, window_y
+                )
                 slopes.append(slope)
 
                 # Check if this constitutes a rising trend
@@ -267,7 +271,9 @@ def detect_rising_trend(
                     current_rising_start = df[date_column].iloc[i].strftime("%Y-%m-%d")
                 elif not is_rising and current_rising_start is not None:
                     # End of current rising period
-                    current_rising_end = df[date_column].iloc[i - 1].strftime("%Y-%m-%d")
+                    current_rising_end = (
+                        df[date_column].iloc[i - 1].strftime("%Y-%m-%d")
+                    )
                     rising_periods.append((current_rising_start, current_rising_end))
                     current_rising_start = None
 
@@ -280,12 +286,16 @@ def detect_rising_trend(
             current_rising_end = df[date_column].iloc[-1].strftime("%Y-%m-%d")
             rising_periods.append((current_rising_start, current_rising_end))
 
-        logger.debug(f"✅ Detected {len(rising_periods)} rising periods for {signal_name}")
+        logger.debug(
+            f"✅ Detected {len(rising_periods)} rising periods for {signal_name}"
+        )
 
         return {
             "rising_periods": rising_periods,
             "total_periods": len(rising_periods),
-            "sample_log_slopes": slopes[-10:] if len(slopes) > 10 else slopes,  # Last 10 slopes as sample
+            "sample_log_slopes": (
+                slopes[-10:] if len(slopes) > 10 else slopes
+            ),  # Last 10 slopes as sample
             "status": "success",
             "analysis_details": {
                 "window_size": window_size,
@@ -298,7 +308,13 @@ def detect_rising_trend(
 
     except Exception as e:
         logger.error(f"❌ Error in detect_rising_trend: {str(e)}")
-        return {"rising_periods": [], "total_periods": 0, "sample_log_slopes": [], "status": "error", "message": str(e)}
+        return {
+            "rising_periods": [],
+            "total_periods": 0,
+            "sample_log_slopes": [],
+            "status": "error",
+            "message": str(e),
+        }
 
 
 @mcp.tool()
@@ -320,7 +336,10 @@ def get_server_info() -> dict:
             "Real-time data analysis and processing",
         ],
         "tools": ["fetch_epi_signal", "detect_rising_trend", "get_server_info"],
-        "data_sources": ["Delphi EpiData API (COVID-19 signals)", "Real-time epidemiological surveillance data"],
+        "data_sources": [
+            "Delphi EpiData API (COVID-19 signals)",
+            "Real-time epidemiological surveillance data",
+        ],
         "features": [
             "Type-safe tool definitions",
             "Comprehensive error handling",
@@ -354,5 +373,5 @@ if __name__ == "__main__":
     except ImportError:
         print("python-dotenv not installed, loading from system environment only")
 
-    port = os.getenv("MCP_SERVER_PORT", "8001")
+    port = int(os.getenv("MCP_SERVER_PORT", "8001"))
     mcp.run(transport="sse", port=port)
