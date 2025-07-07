@@ -9,7 +9,6 @@ python-jose[cryptography]
 passlib[bcrypt]
 pytest
 httpx
-json
 
 # LangGraph and LangChain dependencies for agents
 langgraph>=0.4.7
