@@ -1,3 +1,4 @@
+import { marked } from "marked";
 
 function PolicyDocument({ policy }) {
     
@@ -11,7 +12,9 @@ function PolicyDocument({ policy }) {
         <strong>Author:</strong> {policy.author}
       </p>
         <p>
-        {policy.content}
+         <div 
+                  dangerouslySetInnerHTML={{ __html: marked(policy.content) }}
+                />
       </p>
     </div>
   );

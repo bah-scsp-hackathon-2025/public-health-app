@@ -1,4 +1,5 @@
 import { MapPin } from "lucide-react";
+import { marked } from 'marked';
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { fetchAlertByLocation, fetchAlerts, fetchSummaries, fetchTrends } from "../../common/api";

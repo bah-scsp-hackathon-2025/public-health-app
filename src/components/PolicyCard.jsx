@@ -1,4 +1,5 @@
 import { SquareCheckBig, SquarePen } from "lucide-react";
+import { marked } from 'marked';
 import React from 'react';
 import { updatePolicy } from '../common/api';
 import Modal from './Modal';
@@ -43,7 +44,9 @@ function PolicyCard({ policy, onUpdate }) {
         <strong>Author:</strong> {policy.author}
       </p>
       <p>
-        <strong>Description:</strong> {policy.content}
+        <strong>Description:</strong>  <div 
+          dangerouslySetInnerHTML={{ __html: marked(policy.content) }}
+        />
       </p>
       {/* {policy.approved && <button>Translate to</button>} */}
       {!policy.approved && 
